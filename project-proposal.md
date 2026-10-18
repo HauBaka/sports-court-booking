@@ -239,7 +239,7 @@ TODO - Hậu: bổ sung các mốc nộp giữa kỳ của giáo viên vào cu�
 
 #### 4.5 Triển khai, bảo trì
 
-- **Triển khai:** dựng bản thử từ Sprint 1 để kiểm thử liên tục; triển khai bản chính thức lên hosting của nhóm ở tuần 9 (hướng đến triển khai Backend Python lên Render).
+- **Triển khai:** Thiết lập môi trường Staging từ Sprint 1 để kiểm thử liên tục trước khi phát hành. Mã nguồn được quản lý trên GitHub; triển khai bằng SSH hoặc quy trình tự động sau khi Pull Request được xem xét và chấp thuận. Các biến môi trường được cấu hình riêng trên máy chủ qua file .env và không đưa vào Git. Nếu sử dụng VPS có quyền quản trị, PM2 được dùng để quản lý tiến trình và tự khởi động lại ứng dụng khi gặp sự cố; Nginx làm Reverse Proxy và thiết lập HTTPS bằng Certbot với chứng chỉ Let's Encrypt. Môi trường Staging và Production cần được tách biệt về cấu hình và dữ liệu.
 - **Bảo trì:** sửa lỗi phát hiện trong quá trình demo và chấm điểm.
 - **Thành phẩm:** hệ thống chạy trên máy chủ; hướng dẫn cài đặt và hướng dẫn sử dụng.
 
