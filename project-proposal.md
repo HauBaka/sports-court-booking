@@ -57,7 +57,7 @@ Người chơi cầu lông, pickleball, bóng đá mini hiện vẫn đặt sân
 
 **Tình huống 2 – Hoàn cọc tùy chủ sân.** Khách báo hủy trước một ngày vì trời mưa. Mỗi sân một kiểu: có sân hoàn đủ, có sân hoàn một nửa, có sân không hoàn. Khách phải nhắn qua lại nhiều lần, và vì không có quy định công bố trước nên khách thường chịu thiệt.
 
-**Tình huống 3 – Mức giá đặt sân khác nhau.** Khi đặt sân vào những khung giờ cao điểm hoặc là các ngày cuối tuần, ngày lễ sẽ có mức giá khác nhau, đồng thời có những ưu đãi dành cho một số đối tượng như là học sinh/sinh viên. Điều đó dẫn đến khi đặt sân thủ công có thể gây bất cập về giá cả.
+**Tình huống 3 – Mức giá đặt sân khác nhau.** Khi đặt sân vào những khung giờ cao điểm hoặc là các ngày cuối tuần, ngày lễ sẽ có mức giá khác nhau, đồng thời có những ưu đãi dành cho một số đối tượng như là học sinh/sinh viên. Khi khách đặt lịch, chủ sân hoặc nhân viên phải nhớ áp dụng bảng giá phức tạp (ví dụ: ngày thường khác cuối tuần, giờ vàng từ 17h–20h khác giờ thấp điểm, hoặc phải kiểm tra thẻ học sinh/sinh viên). Việc tính toán nhẩm hoặc tra bảng giá thủ công rất dễ dẫn đến nhầm lẫn, tính thừa hoặc thiếu tiền của khách dẫn đến khách có thể cảm thấy không công bằng nếu họ nghi ngờ chủ sân áp dụng "giá tùy hứng".
 
 
 #### Các giải pháp hiện có
@@ -86,14 +86,14 @@ Hệ thống là ứng dụng web với ba nhóm người dùng. Chủ sân tạ
 #### Môi trường hoạt động
 
 - Client: trình duyệt web hỗ trợ HTML5/CSS3/JavaScript trên máy tính và điện thoại.
-- Server: Nếu triển khai trên VPS do nhóm quản trị, sử dụng Window Server/ Ubuntu Server, Python(FastAPI / Uvicorn); Nginx làm Reverse Proxy và xử lý HTTPS, PM2 / Systemd quản lý tiến trình Backend. Cấu hình máy chủ dự kiến: 1 vCPU, 1 GB RAM, 20 GB SSD; có thể bổ sung 1–2 GB Swap nếu máy chủ hỗ trợ. Cơ sở dữ liệu được triển khai riêng hoặc trên máy chủ hiện có tùy theo phương án được nhóm thống nhất..
+- Server: Cấu hình máy chủ dự kiến với 1 vCPU, 1 GB RAM, 20 GB SSD.
 - Dịch vụ ngoài: dịch vụ email để gửi OTP và xác nhận đặt sân; dịch vụ bản đồ (TODO - Đăng: chọn dịch vụ).
 
 #### Ràng buộc thiết kế và triển khai
 
 - Frontend và Backend tách riêng, giao tiếp qua REST API.
 - Frontend: TODO - Đăng: chọn framework (ví dụ React.js).
-- Backend: Python (FastAPI / Django REST Framework).
+- Backend: Python (FastAPI).
 - CSDL quan hệ: TODO - Bảo: chọn hệ quản trị (ví dụ PostgreSQL, MySQL).
 - Mật khẩu mã hóa bằng Bcrypt, giao tiếp qua HTTPS, xác thực bằng JWT.
 - Mã nguồn quản lý bằng Git/GitHub.
@@ -155,7 +155,7 @@ Hệ thống là ứng dụng web với ba nhóm người dùng. Chủ sân tạ
 
 #### 3.2 Phần cứng
 
-- Máy chủ: Sử dụng hosting/VPS hiện có của nhóm với cấu hình dự kiến 1 vCPU, 1 GB RAM và 20 GB SSD. Ưu tiên triển khai cơ sở dữ liệu trên dịch vụ quản lý riêng nếu điều kiện cho phép nhằm giảm tải cho máy chủ ứng dụng. Nếu chạy chung Backend và CSDL trên một máy chủ, nhóm sẽ kiểm thử và theo dõi tài nguyên trước khi triển khai chính thức. Có thể cấu hình thêm Swap nếu máy chủ hỗ trợ.
+- Máy chủ: Sử dụng hosting/VPS hiện có của nhóm với cấu hình dự kiến 1 vCPU, 1 GB RAM và 20 GB SSD.
 - Người dùng: máy tính hoặc điện thoại có trình duyệt và Internet.
 
 # 4 Kế hoạch phát triển
