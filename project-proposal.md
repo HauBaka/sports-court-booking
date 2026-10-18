@@ -14,17 +14,30 @@ Khoa Công nghệ thông tin
 
 **MỤC LỤC**
 
-[**Các nội dung chính**](#các-nội-dung-chính)
-
-[**1 Bảng đánh giá thành viên**](#1-bảng-đánh-giá-thành-viên)
-
-[**2 Phát biểu bài toán sơ lược**](#2-phát-biểu-bài-toán-sơ-lược)
-
-[**3 Giải pháp đề xuất**](#3-giải-pháp-đề-xuất)
-
-[**4 Kế hoạch phát triển**](#4-kế-hoạch-phát-triển)
-
-[**5 Kế hoạch nhân sự & chi phí**](#5-kế-hoạch-nhân-sự--chi-phí)
+- [Các nội dung chính](#các-nội-dung-chính)
+- [1 Bảng đánh giá thành viên](#1-bảng-đánh-giá-thành-viên)
+- [2 Phát biểu bài toán sơ lược](#2-phát-biểu-bài-toán-sơ-lược)
+  - [Thực trạng](#thực-trạng)
+  - [Các giải pháp hiện có](#các-giải-pháp-hiện-có)
+  - [Điểm khác biệt](#điểm-khác-biệt)
+  - [Mô tả hệ thống](#mô-tả-hệ-thống)
+  - [Môi trường hoạt động](#môi-trường-hoạt-động)
+  - [Ràng buộc thiết kế và triển khai](#ràng-buộc-thiết-kế-và-triển-khai)
+- [3 Giải pháp đề xuất](#3-giải-pháp-đề-xuất)
+  - [3.1 Phần mềm](#31-phần-mềm)
+    - [3.1.1 Danh sách các chức năng phần mềm](#311-danh-sách-các-chức-năng-phần-mềm)
+    - [3.1.2 Kiến trúc tổng thể phần mềm](#312-kiến-trúc-tổng-thể-phần-mềm)
+    - [3.1.3 Các phần không thực hiện](#313-các-phần-không-thực-hiện)
+  - [3.2 Phần cứng](#32-phần-cứng)
+- [4 Kế hoạch phát triển](#4-kế-hoạch-phát-triển)
+  - [4.1 Phân tích yêu cầu](#41-phân-tích-yêu-cầu)
+  - [4.2 Thiết kế phần mềm](#42-thiết-kế-phần-mềm)
+  - [4.3 Cài đặt (implement) phần mềm](#43-cài-đặt-implement-phần-mềm)
+  - [4.4 Kiểm thử phần mềm](#44-kiểm-thử-phần-mềm)
+  - [4.5 Triển khai, bảo trì](#45-triển-khai-bảo-trì)
+- [5 Kế hoạch nhân sự & chi phí](#5-kế-hoạch-nhân-sự--chi-phí)
+  - [5.1 Nhân sự](#51-nhân-sự)
+  - [5.2 Chi phí dự kiến](#52-chi-phí-dự-kiến)
 
 **Project Proposal**
 
@@ -103,13 +116,13 @@ Hệ thống là ứng dụng web với ba nhóm người dùng. Chủ sân tạ
 
 #### 3.1.1. Danh sách các chức năng phần mềm
 
-| # | Câu chuyện người dùng | Chức năng | Ưu tiên |
-| --- | --- | --- | --- |
-| 1 | Là chủ sân, tôi muốn đăng sân và đặt giá theo từng khung giờ để khách đặt được và tôi tối ưu doanh thu. | Quản lý sân, khung giờ, bảng giá theo thời điểm | Cao |
-| 2 | Là khách hàng, tôi muốn tìm sân còn trống và đặt ngay, biết trước tổng tiền, để không phải gọi điện hỏi từng sân. | Tìm, lọc sân trống; đặt sân; khóa khung giờ đã đặt | Cao |
-| 3 | Là khách hàng, tôi muốn đặt cọc và được hoàn cọc theo quy định rõ ràng khi hủy, để không phải thương lượng với chủ sân. | Đặt cọc từ ví; hủy sân và hoàn cọc tự động; Admin cấp tiền vào ví | Cao |
-| 4 | Là người chơi thiếu người, tôi muốn đăng bài tìm đồng đội để đủ người chơi. | Đăng bài ghép đội; đăng ký tham gia | Thấp |
-| 5 | Là người dùng, tôi muốn có thêm các tiện ích để dùng hệ thống thuận tiện hơn. | Đánh giá sân; dịch vụ đi kèm; xem vị trí sân trên bản đồ; dashboard Admin | Thấp |
+| # | Tính năng | Câu chuyện người dùng | Story cốt lõi | Ưu tiên |
+| --- | --- | --- | --- | --- |
+| 1 | Quản lý sân và bảng giá | Là chủ sân, tôi muốn đăng sân và đặt giá theo từng khung giờ để khách đặt được và tôi tối ưu doanh thu. | Tạo cụm sân và sân con; cấu hình giờ mở cửa; bảng giá theo thời điểm | Cao |
+| 2 | Tìm và đặt sân | Là khách hàng, tôi muốn tìm sân còn trống và đặt ngay, biết trước tổng tiền, để không phải gọi điện hỏi từng sân. | Xem lịch trống theo ngày; đặt sân và tính tổng tiền; chống đặt trùng khung giờ | Cao |
+| 3 | Cọc và hoàn cọc qua ví | Là khách hàng, tôi muốn đặt cọc và được hoàn cọc theo quy định rõ ràng khi hủy, để không phải thương lượng với chủ sân. | Đặt cọc 30% từ ví; hủy sân và hoàn cọc tự động; Admin cấp tiền vào ví | Cao |
+| 4 | Ghép đội | Là người chơi thiếu người, tôi muốn đăng bài tìm đồng đội để đủ người chơi. | Đăng bài tìm người; đăng ký tham gia | Thấp |
+| 5 | Tiện ích | Là người dùng, tôi muốn có thêm tiện ích như đánh giá sân, dịch vụ đi kèm, bản đồ, dashboard Admin để dùng hệ thống thuận tiện hơn. | Đánh giá sân; dịch vụ đi kèm | Thấp |
 
 **Quy định liên quan**
 
@@ -125,24 +138,41 @@ Hệ thống là ứng dụng web với ba nhóm người dùng. Chủ sân tạ
 
 #### 3.1.2. Kiến trúc tổng thể phần mềm
 
+Hệ thống theo kiến trúc ba tầng: giao diện, nghiệp vụ, dữ liệu. Frontend chỉ giao tiếp với Backend qua REST API; mọi quy định về giá, cọc, hoàn cọc được xử lý ở Backend.
+
 ```text
-┌──────────────────────────────────────────────────────────┐
-│ CLIENT – Ứng dụng web                                    │
-│ Khách hàng  |  Chủ sân  |  Admin                         │
-└────────────────────────────┬─────────────────────────────┘
-                             │ HTTPS – REST API (JWT)
-                             ▼
-┌──────────────────────────────────────────────────────────┐
-│ BACKEND                                                  │
-│ Xác thực | Sân & bảng giá | Đặt sân | Ví | Ghép đội      │
-└──────────────┬──────────────────────────────┬────────────┘
-               ▼                              ▼
-┌───────────────────────────┐   ┌──────────────────────────┐
-│ CSDL quan hệ              │   │ Dịch vụ ngoài            │
-│ tài khoản, sân, lịch đặt, │   │ Email, bản đồ            │
-│ ví, giao dịch             │   │                          │
-└───────────────────────────┘   └──────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                     NGƯỜI DÙNG – TRÌNH DUYỆT WEB                     │
+│              Khách hàng          Chủ sân          Admin              │
+└───────────────────────────────────┬──────────────────────────────────┘
+                                    │ HTTPS
+┌───────────────────────────────────▼──────────────────────────────────┐
+│ FRONTEND – Ứng dụng web                                              │
+│ Tìm và đặt sân · Quản lý sân, bảng giá · Ví · Ghép đội · Quản trị    │
+└───────────────────────────────────┬──────────────────────────────────┘
+                                    │ REST API (JSON) · JWT
+┌───────────────────────────────────▼──────────────────────────────────┐
+│ BACKEND – Xử lý nghiệp vụ, áp dụng quy định QĐ1–QĐ7                  │
+│                                                                      │
+│   ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐   │
+│   │ Xác thực │ │  Sân và  │ │ Đặt sân  │ │  Ví và   │ │ Ghép đội │   │
+│   │phân quyền│ │ bảng giá │ │ khóa giờ │ │giao dịch │ │          │   │
+│   └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘   │
+└────────────────┬────────────────────────────────────┬────────────────┘
+                 │ SQL (transaction)                  │ API
+┌────────────────▼────────────────┐ ┌─────────────────▼────────────────┐
+│ CSDL QUAN HỆ                    │ │ DỊCH VỤ NGOÀI                    │
+│ Tài khoản · Sân · Lịch đặt      │ │ Email: OTP, xác nhận đặt sân     │
+│ Ví · Giao dịch ví               │ │ Bản đồ: vị trí sân               │
+└─────────────────────────────────┘ └──────────────────────────────────┘
 ```
+
+| Tầng | Thành phần | Nhiệm vụ chính |
+| --- | --- | --- |
+| Giao diện | Ứng dụng web cho khách hàng, chủ sân, Admin | Hiển thị dữ liệu, nhận thao tác người dùng, gọi API |
+| Nghiệp vụ | Backend gồm 5 module: xác thực và phân quyền, sân và bảng giá, đặt sân, ví và giao dịch, ghép đội | Áp dụng quy định QĐ1–QĐ7; kiểm tra quyền; xử lý tiền trong transaction |
+| Dữ liệu | CSDL quan hệ | Lưu trữ dữ liệu; ràng buộc số dư ví không âm và không trùng khung giờ |
+| Dịch vụ ngoài | Dịch vụ email, dịch vụ bản đồ | Gửi OTP, xác nhận đặt sân; hiển thị vị trí sân |
 
 #### 3.1.3. Các phần không thực hiện
 
@@ -172,10 +202,13 @@ Nhóm phát triển theo quy trình **Scrum**, chia thành 5 sprint. Mỗi sprin
 
 | Buổi họp | Khi nào | Nội dung |
 | --- | --- | --- |
-| Sprint Planning | Đầu sprint | Chọn việc từ Product Backlog, phân công task trên Jira |
+| Backlog Refinement | Trước Sprint Planning; có thể gộp vào họp giữa sprint trước | PM chuẩn bị bản nháp sprint (mục tiêu, backlog dự kiến, câu hỏi về yêu cầu kèm phương án đề xuất); nhóm làm rõ yêu cầu, thống nhất kỹ thuật; PM cập nhật lại backlog |
+| Sprint Planning | Đầu sprint | Chọn việc từ Product Backlog đã cập nhật, chia task, phân công trên Jira |
 | Họp giữa sprint | Giữa sprint | Kiểm tra tiến độ, gỡ vướng mắc, điều chỉnh task |
 | Sprint Review + Retrospective | Cuối sprint | Demo Increment, rút kinh nghiệm cho sprint sau |
 | Họp đột xuất | Khi phát sinh task quan trọng | Phân công lại |
+
+Trình tự chuẩn bị một sprint: PM soạn bản nháp sprint → Backlog Refinement → PM cập nhật backlog → Sprint Planning.
 
 **Công cụ:** Jira (backlog, sprint, bảng task, theo dõi lỗi); GitHub và GitHub Actions (quản lý mã nguồn, Pull Request và CI); Google Meet (họp); Postman (kiểm thử API).
 
@@ -195,69 +228,87 @@ Nhóm phát triển theo quy trình **Scrum**, chia thành 5 sprint. Mỗi sprin
 
 #### 4.1 Phân tích yêu cầu
 
-- **Khi nào:** chủ yếu ở Sprint 0 (tuần 1–2); đầu mỗi sprint làm rõ thêm các chức năng của sprint đó trong Sprint Planning.
-- **Công việc:** đọc mô tả đề tài, viết user story, xác định quy định nghiệp vụ, sắp ưu tiên backlog.
-- **Thành phẩm:** Project Proposal; Product Backlog trên Jira; tài liệu phân tích yêu cầu.
+| Hoạt động | Thời điểm | Phụ trách | Thành phẩm |
+| --- | --- | --- | --- |
+| Phân tích đề tài, xác định phạm vi và 5 tính năng | Sprint 0 | Cả nhóm | Project Proposal |
+| Viết user story, tiêu chí chấp nhận, quy định nghiệp vụ | Sprint 0 | Hậu | Product Backlog trên Jira |
+| Làm rõ yêu cầu cho sprint kế tiếp | Backlog Refinement mỗi sprint | Cả nhóm | Backlog cập nhật; câu hỏi về yêu cầu đã được chốt |
+| Hoàn thiện tài liệu phân tích theo đợt nộp | Theo yêu cầu của giáo viên | Cả nhóm | Tài liệu phân tích yêu cầu |
 
 #### 4.2 Thiết kế phần mềm
 
-- **Khi nào:** thiết kế tổng thể ở Sprint 0; thiết kế chi tiết từng chức năng ngay trong sprint làm chức năng đó.
-- **Công việc:** chốt công nghệ; thiết kế CSDL (đặc biệt bảng ví và giao dịch); thiết kế danh sách API; thiết kế giao diện.
-- **Thành phẩm:** sơ đồ kiến trúc; lược đồ CSDL (Bảo); tài liệu API (Tuân, Toàn); bản thiết kế giao diện (Đăng).
+| Hoạt động | Thời điểm | Phụ trách | Thành phẩm |
+| --- | --- | --- | --- |
+| Thiết kế kiến trúc, chốt công nghệ | Sprint 0 | Tuân, Toàn | Sơ đồ kiến trúc; quyết định công nghệ |
+| Thiết kế CSDL, gồm ràng buộc về tiền và khung giờ | Sprint 0; bổ sung trong từng sprint | Bảo | Lược đồ CSDL (ERD) |
+| Thiết kế API | Sprint 0; bổ sung trong từng sprint | Tuân, Toàn | Tài liệu API |
+| Thiết kế giao diện | Sprint 0 (wireframe); chi tiết trong sprint làm chức năng | Đăng | Wireframe, bản thiết kế giao diện |
 
 #### 4.3 Cài đặt (implement) phần mềm
 
-- **Khi nào:** Sprint 1 – Sprint 4, theo lịch sprint ở trên.
-- **Cách làm:** mỗi task là một nhánh Git; xong thì tạo Pull Request để ít nhất 1 thành viên khác xem trước khi gộp vào nhánh **dev**.
-- **Thành phẩm:** Increment chạy được sau mỗi sprint, demo ở Sprint Review.
+| Hoạt động | Thời điểm | Phụ trách | Thành phẩm |
+| --- | --- | --- | --- |
+| Lập trình chức năng theo Sprint Backlog | Sprint 1 – Sprint 4 | Tuân, Toàn (Backend); Bảo (CSDL); Đăng (Frontend) | Mã nguồn trên GitHub |
+| Review code qua Pull Request | Mỗi task | Ít nhất 1 thành viên khác | Pull Request đã được duyệt |
+| Tích hợp liên tục (CI) | Mỗi Pull Request vào `dev` | GitHub Actions | Kết quả CI trên Pull Request |
+| Demo Increment | Cuối mỗi sprint | Cả nhóm | Bản chạy được trên môi trường thử |
+
+**Quản lý mã nguồn**
+
+| Nhánh | Mục đích | Quy tắc |
+| --- | --- | --- |
+| `main` | Bản chính thức | Chỉ merge từ `dev` sau Sprint Review |
+| `dev` | Bản tích hợp, triển khai lên môi trường thử | Chỉ merge qua Pull Request: ít nhất 1 người review và CI thành công |
+| `feature/<mã task>`, `fix/<mã task>` | Làm từng task hoặc sửa lỗi | Tạo từ `dev`, xóa sau khi merge |
+
+**Tích hợp liên tục (CI)**
+
+| Mục | Nội dung |
+| --- | --- |
+| Công cụ | GitHub Actions, workflow lưu trong repository |
+| Kích hoạt | Mỗi Pull Request vào `dev` và mỗi lần `dev` được cập nhật |
+| Các bước | Cài đặt dependencies → kiểm tra code → chạy unit test và integration test → build |
+| Điều kiện merge | CI thành công và có ít nhất 1 người review; thiết lập bằng branch protection |
+| Thành phẩm | Workflow GitHub Actions; kết quả CI hiển thị trên từng Pull Request |
 
 #### 4.4 Kiểm thử phần mềm
 
-- **Khi nào:** trong từng sprint (kiểm thử từng chức năng khi xong) và tuần 9 (kiểm thử toàn hệ thống).
-- **Môi trường:** kiểm thử trên một bản thử (staging) tách riêng với bản chính thức, để dữ liệu test (nhất là số dư ví) không ảnh hưởng bản demo.
+| Hoạt động | Thời điểm | Phụ trách | Thành phẩm |
+| --- | --- | --- | --- |
+| Kiểm thử từng chức năng | Trong sprint, khi task chuyển sang trạng thái In Reviewing | Hậu | Kết quả kiểm thử theo kịch bản |
+| Kiểm thử hồi quy | Trước mỗi Sprint Review | Hậu | Kết quả chạy lại Postman Collection |
+| Kiểm thử toàn hệ thống | Sprint 4 (tuần 9) | Hậu, cả nhóm | Báo cáo kết quả kiểm thử |
+
+- **Môi trường:** kiểm thử trên môi trường thử (staging) tách riêng với bản chính thức, để dữ liệu test (nhất là số dư ví) không ảnh hưởng bản demo.
 - **Các lớp kiểm thử:**
 
 | Lớp | Cách làm | Người phụ trách |
 | --- | --- | --- |
 | Unit test | Test tự động cho các hàm tính tiền: tổng tiền, cọc 30%, hoàn cọc 80% / 50% / 0%, số dư ví | Tuân, Toàn |
 | Kiểm thử API | Bộ request Postman cho từng chức năng; chạy lại toàn bộ trước mỗi Sprint Review | Hậu (dựa trên tài liệu API do Backend cung cấp) |
-| Kiểm thử chức năng | Kịch bản test viết từ user story và quy định QĐ1–QĐ7; bấm thử trên giao diện, ghi đạt/không đạt | Hậu |
-| Kiểm tra build | Kiểm tra ứng dụng có thể build thành công theo framework đã chọn | Thành viên phụ trách phần tương ứng |
+| Kiểm thử chức năng | Kịch bản test viết từ user story và quy định QĐ1–QĐ7; thao tác trên giao diện | Hậu |
+| Kiểm tra build | Chạy tự động qua CI | Thành viên phụ trách phần tương ứng |
 
 - Lỗi phát hiện được tạo thành task loại **Bug** trên Jira và giao lại cho người làm task đó.
 - **Định nghĩa "Xong" (Definition of Done)** – một task chỉ xong khi:
   1. Code đã được đẩy lên GitHub và được ít nhất một thành viên khác review trước khi merge.
-  2. Các test tự động liên quan đã chạy thành công; với task chưa có test tự động phù hợp, nhóm thực hiện kiểm tra tương ứng và ghi nhận kết quả.
-  3. Chức năng đã được kiểm thử trên môi trường thử nghiệm khi môi trường đó sẵn sàng, không chỉ trên máy người code.
+  2. Các bước CI bắt buộc và các test tự động liên quan đã chạy thành công.
+  3. Chức năng đã được kiểm thử trên môi trường thử, không chỉ trên máy người code.
   4. Các kịch bản kiểm thử chức năng liên quan đã được thực hiện và đạt.
-  5. Chức năng đáp ứng Acceptance Criteria và các quy định nghiệp vụ liên quan.
-  6. Khi CI đã được cấu hình cho nhánh đích, các bước kiểm tra bắt buộc trên Pull Request phải thành công trước khi merge.
-- **Thành phẩm:** bộ Postman Collection; các test tự động của dự án; danh sách kịch bản và kết quả kiểm thử; danh sách lỗi trên Jira.
+  5. Chức năng đáp ứng tiêu chí chấp nhận (Acceptance Criteria) và các quy định nghiệp vụ liên quan.
+- **Thành phẩm:** bộ Postman Collection; các test tự động; danh sách kịch bản và kết quả kiểm thử; danh sách lỗi trên Jira.
 
-#### 4.5 Tích hợp liên tục (Continuous Integration – CI)
+#### 4.5 Triển khai, bảo trì
 
-TODO - Hậu
+| Hoạt động | Thời điểm | Phụ trách | Thành phẩm |
+| --- | --- | --- | --- |
+| Dựng môi trường thử (staging) | Sprint 0 – Sprint 1 | - | Môi trường thử truy cập được qua Internet |
+| Cập nhật môi trường thử | Sau mỗi lần merge vào `dev` | - | Môi trường thử chạy bản mới nhất |
+| Triển khai bản chính thức (production) | Sprint 4 (tuần 9) | - | Hệ thống chạy trên hosting qua HTTPS; CSDL có bản sao lưu |
+| Viết hướng dẫn cài đặt và sử dụng | Sprint 4 | Đăng, Tuân | Tài liệu hướng dẫn |
+| Bảo trì: sửa lỗi phát sinh khi demo và chấm điểm | Sau khi triển khai đến khi kết thúc môn học | Cả nhóm | Bản sửa lỗi trên `main` |
 
-- **Mục tiêu:** phát hiện sớm lỗi tích hợp và giúp nhóm kiểm tra thay đổi trước khi merge vào nhánh `dev`.
-- **Công cụ:** GitHub Actions, sử dụng workflow được lưu trong repository. Chi tiết cấu hình phụ thuộc vào framework và công nghệ được nhóm chốt.
-- **Quy trình dự kiến:**
-  1. Khi có Pull Request vào `dev` hoặc có thay đổi được push lên `dev`, GitHub Actions chạy workflow.
-  2. Cài đặt dependencies và thực hiện các bước kiểm tra code đã được cấu hình.
-  3. Chạy unit test và integration test đã được thiết lập.
-  4. Build ứng dụng nếu framework yêu cầu bước build.
-  5. Hiển thị kết quả thành công hoặc thất bại trên Pull Request để nhóm xử lý trước khi merge.
-- Nhóm dự kiến cấu hình branch protection hoặc ruleset để yêu cầu các bước CI bắt buộc thành công trước khi merge, nếu repository và gói GitHub hỗ trợ. CI không thay thế việc review code của thành viên khác.
-- Ban đầu, nhóm ưu tiên tự động hóa unit test, integration test và build. Việc tự động chạy Postman Collection bằng Newman hoặc công cụ tương đương sẽ được bổ sung khi API, dữ liệu kiểm thử và biến môi trường đã sẵn sàng.
-- **CD (Continuous Delivery/Deployment):** sau khi CI hoạt động ổn định, nhóm có thể xem xét tự động triển khai lên staging khi các bước kiểm tra thành công. Việc triển khai production cần được xác nhận riêng. Đây là hướng mở rộng dự kiến, không phải tính năng đã triển khai sẵn.
-
-- **Thành phẩm:** workflow GitHub Actions; kết quả CI trên Pull Request; hướng dẫn ngắn về cách kiểm tra và xử lý khi workflow thất bại.
-
-
-#### 4.6 Triển khai, bảo trì
-
-- **Triển khai:** dựng bản thử từ Sprint 1 để kiểm thử liên tục; triển khai bản chính thức lên hosting của nhóm ở tuần 9 (TODO - Tuân, Toàn: ghi cách triển khai sau khi chốt framework).
-- **Bảo trì:** sửa lỗi phát hiện trong quá trình demo và chấm điểm.
-- **Thành phẩm:** hệ thống chạy trên máy chủ; hướng dẫn cài đặt và hướng dẫn sử dụng.
+TODO - Tuân, Toàn: ghi cách triển khai cụ thể sau khi chốt framework.
 
 # 5 Kế hoạch nhân sự & chi phí
 
@@ -273,11 +324,11 @@ TODO - Hậu
 
 **Rủi ro nhân sự và hướng xử lý**
 
-| Rủi ro | Hướng xử lý |
-| --- | --- |
-| Frontend chỉ có 1 người, khối lượng giao diện lớn (3 nhóm người dùng) | Thành viên backend rảnh việc hỗ trợ một phần giao diện (ví dụ trang Admin) |
-| Việc CSDL dồn ở đầu dự án, ít dần về sau | Từ Sprint 2, Bảo hỗ trợ dữ liệu mẫu, truy vấn và kiểm thử luồng tiền |
-| Trễ tiến độ do lịch học, thi | Cắt giảm theo thứ tự ở mục 4; giữ nguyên luồng chính |
+| Rủi ro | Mức độ | Dấu hiệu nhận biết | Phòng ngừa | Xử lý khi xảy ra | Người theo dõi |
+| --- | --- | --- | --- | --- | --- |
+| Khối lượng Frontend dồn vào 1 người (giao diện cho 3 nhóm người dùng) | Cao | Có hơn 2 subtask Frontend đang làm cùng lúc, hoặc trễ hạn quá 2 ngày | Giao trước một phần Frontend cho thành viên Backend và CSDL ngay từ Sprint Planning | Chuyển subtask Frontend chưa bắt đầu sang thành viên còn trống thời gian | Hậu |
+| Việc CSDL nhiều ở đầu dự án, ít dần về sau | TB | Từ Sprint 2, thành viên CSDL có ít thời gian làm viêc hơn | Giao thêm dữ liệu mẫu, tối ưu truy vấn, một phần Frontend và hỗ trợ kiểm thử luồng tiền | Kéo việc của tính năng 5 vào sprint và giao cho thành viên CSDL | Hậu |
+| Trễ tiến độ do lịch học, thi | Cao | Ở họp giữa sprint, hơn một nửa story point chưa chuyển sang In Review | Chỉ lên kế hoạch khoảng 70% thời gian rảnh của mỗi thành viên | Cắt giảm theo thứ tự ở mục 4, giữ nguyên luồng chính | Hậu |
 
 #### 5.2 Chi phí dự kiến
 
