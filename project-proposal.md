@@ -93,7 +93,7 @@ Hệ thống là ứng dụng web với ba nhóm người dùng. Chủ sân tạ
 - Frontend và Backend tách riêng, giao tiếp qua REST API.
 - Frontend: TODO - Đăng: chọn framework (ví dụ React.js).
 - Backend: TODO - Tuân, Toàn: chọn framework, ưu tiên nền Node.js hoặc Python vì hosting hiện tại chạy được.
-- CSDL quan hệ: TODO - Bảo: chọn hệ quản trị (ví dụ PostgreSQL, MySQL).
+- CSDL quan hệ: MySQL
 - Mật khẩu mã hóa bằng Bcrypt, giao tiếp qua HTTPS, xác thực bằng JWT.
 - Mã nguồn quản lý bằng Git/GitHub.
 
