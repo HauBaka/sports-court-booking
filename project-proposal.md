@@ -57,7 +57,7 @@ Tài liệu gồm các nội dung:
 | 24120307 | Vòng Sau Hậu | TODO - Hậu | |
 | 24120264 | Nguyễn Huỳnh Gia Bảo | TODO - Hậu | |
 | 24120230 | Dương Danh Toàn | TODO - Hậu | |
-| 24120278 | Nguyễn Khánh Đăng | TODO - Hậu | |
+| 24120278 | Võ Văn Khánh Đăng | TODO - Hậu | |
 | 24120236 | Bùi Đặng Khả Tuân | TODO - Hậu | |
 
 # 2 Phát biểu bài toán sơ lược
@@ -70,26 +70,27 @@ Người chơi cầu lông, pickleball, bóng đá mini hiện vẫn đặt sân
 
 **Tình huống 2 – Hoàn cọc tùy chủ sân.** Khách báo hủy trước một ngày vì trời mưa. Mỗi sân một kiểu: có sân hoàn đủ, có sân hoàn một nửa, có sân không hoàn. Khách phải nhắn qua lại nhiều lần, và vì không có quy định công bố trước nên khách thường chịu thiệt.
 
-TODO - Toàn: xem xét lại 2 tình huống (bổ sung số liệu hoặc ví dụ thực tế nếu có).
+**Tình huống 3 – Mức giá đặt sân khác nhau.** Khi đặt sân vào những khung giờ cao điểm hoặc là các ngày cuối tuần, ngày lễ sẽ có mức giá khác nhau, đồng thời có những ưu đãi dành cho một số đối tượng như là học sinh/sinh viên. Khi khách đặt lịch, chủ sân hoặc nhân viên phải nhớ áp dụng bảng giá phức tạp (ví dụ: ngày thường khác cuối tuần, giờ vàng từ 17h–20h khác giờ thấp điểm, hoặc phải kiểm tra thẻ học sinh/sinh viên). Việc tính toán nhẩm hoặc tra bảng giá thủ công rất dễ dẫn đến nhầm lẫn, tính thừa hoặc thiếu tiền của khách dẫn đến khách có thể cảm thấy không công bằng nếu họ nghi ngờ chủ sân áp dụng "giá tùy hứng".
+
 
 #### Các giải pháp hiện có
 
 | Sản phẩm | Đối tượng | Làm tốt | Hạn chế so với bài toán |
 | --- | --- | --- | --- |
-| Datsan247 (Việt Nam) | Người chơi | Nhiều môn, xem giờ trống, đặt và thanh toán | Chỉ là kênh đặt sân cho khách |
-| ALOBO (Việt Nam) | Chủ sân | Quản lý lịch, dịch vụ, công nợ, hóa đơn | Phần mềm cho chủ sân, khách không tìm sân ở đây |
+| Datsan247 (Việt Nam) | Chủ sân và người chơi | Nhiều môn, xem giờ trống, đặt và thanh toán |Nhiều sân không có địa chỉ rõ ràng, chưa đề xuất được sân bãi lân cận|
+| ALOBO và ALOBooking (Việt Nam) | ALOBO dàng cho Chủ sân, ALO Booking dành cho người chơi | Quản lý lịch sân, dịch vụ, công nợ, hóa đơn | Người chơi và chủ sân tách ra 2 nền tảng riêng biệt, vé vãng lai phụ thuộc có chủ hội nhóm/ban tổ chức hôm đó có đứng ra tổ chức giao lưu hay không |
 | Playtomic (quốc tế) | Người chơi, câu lạc bộ | Ghép trận theo trình độ, tự hủy và hoàn tiền khi không đủ người | Tập trung padel/tennis ở châu Âu, gần như chưa có ở Việt Nam |
 | CourtReserve (quốc tế) | Câu lạc bộ | Luật đặt sân tùy chỉnh, chống đặt trùng, thu tiền trước | Giao diện di động bị đánh giá khó dùng; thu phí theo tháng |
 
-TODO - Toàn: tải thử Datsan247, ALOBO để kiểm chứng bảng trên.
 
 #### Điểm khác biệt
 
 - Một hệ thống chung cho cả chủ sân và người chơi, thay vì tách thành app riêng cho mỗi bên.
 - Chính sách cọc và hoàn cọc công khai, tính tự động qua ví nội bộ, hai bên không phải thương lượng.
 - Hướng tới sân cầu lông, pickleball, bóng đá mini tại Việt Nam.
+- Hiển thị sân bãi khu vực lân cận.
+- Cung cấp rõ ràng thông tin cho khách đặt sân.
 
-TODO - Toàn: xem lại điểm khác biệt sau khi kiểm chứng đối thủ.
 
 #### Mô tả hệ thống
 
@@ -98,15 +99,15 @@ Hệ thống là ứng dụng web với ba nhóm người dùng. Chủ sân tạ
 #### Môi trường hoạt động
 
 - Client: trình duyệt web hỗ trợ HTML5/CSS3/JavaScript trên máy tính và điện thoại.
-- Server: TODO - Tuân, Toàn: ghi môi trường server sau khi chốt framework (hosting hiện tại hỗ trợ Node.js hoặc Python, 1 CPU, 1 GB RAM, 20 GB ổ đĩa).
-- Dịch vụ ngoài: dịch vụ email để gửi OTP và xác nhận đặt sân; dịch vụ bản đồ (TODO - Đăng: chọn dịch vụ).
+- Server: Cấu hình máy chủ dự kiến với 1 vCPU, 1 GB RAM, 20 GB SSD.
+- Dịch vụ ngoài: dịch vụ email để gửi OTP và xác nhận đặt sân Brevo; dịch vụ bản đồ Leaflet và OpenStreetMap.
 
 #### Ràng buộc thiết kế và triển khai
 
 - Frontend và Backend tách riêng, giao tiếp qua REST API.
-- Frontend: TODO - Đăng: chọn framework (ví dụ React.js).
-- Backend: TODO - Tuân, Toàn: chọn framework, ưu tiên nền Node.js hoặc Python vì hosting hiện tại chạy được.
-- CSDL quan hệ: TODO - Bảo: chọn hệ quản trị (ví dụ PostgreSQL, MySQL).
+- Frontend: React.js.
+- Backend: Python (FastAPI).
+- CSDL quan hệ: MySQL
 - Mật khẩu mã hóa bằng Bcrypt, giao tiếp qua HTTPS, xác thực bằng JWT.
 - Mã nguồn quản lý bằng Git/GitHub.
 
@@ -184,7 +185,7 @@ Hệ thống theo kiến trúc ba tầng: giao diện, nghiệp vụ, dữ liệ
 
 #### 3.2 Phần cứng
 
-- Máy chủ: TODO - Tuân, Toàn: cập nhật sau khi Backend và Frontend chốt framework (hosting hiện tại: 1 CPU, 1 GB RAM, 20 GB ổ đĩa).
+- Máy chủ: Sử dụng hosting/VPS hiện có của nhóm với cấu hình dự kiến 1 vCPU, 1 GB RAM và 20 GB SSD.
 - Người dùng: máy tính hoặc điện thoại có trình duyệt và Internet.
 
 # 4 Kế hoạch phát triển
@@ -196,7 +197,7 @@ Nhóm phát triển theo quy trình **Scrum**, chia thành 5 sprint. Mỗi sprin
 | Vai trò | Thành viên |
 | --- | --- |
 | Product Owner, Scrum Master | Vòng Sau Hậu |
-| Development Team | Bùi Đặng Khả Tuân, Dương Danh Toàn, Nguyễn Huỳnh Gia Bảo, Nguyễn Khánh Đăng |
+| Development Team | Bùi Đặng Khả Tuân, Dương Danh Toàn, Nguyễn Huỳnh Gia Bảo, Võ Văn Khánh Đăng |
 
 **Sự kiện Scrum**
 
@@ -320,7 +321,7 @@ TODO - Tuân, Toàn: ghi cách triển khai cụ thể sau khi chốt framework.
 | Bùi Đặng Khả Tuân | 24120236 | Backend | Xây dựng API, nghiệp vụ đặt sân, ví, unit test |
 | Dương Danh Toàn | 24120230 | Backend | Xây dựng API, nghiệp vụ đặt sân, ví, unit test |
 | Nguyễn Huỳnh Gia Bảo | 24120264 | Cơ sở dữ liệu | Thiết kế và quản lý CSDL, dữ liệu mẫu, truy vấn tìm kiếm sân |
-| Nguyễn Khánh Đăng | 24120278 | Frontend | Thiết kế và xây dựng giao diện web cho khách hàng, chủ sân, admin |
+| Võ Văn Khánh Đăng | 24120278 | Frontend | Thiết kế và xây dựng giao diện web cho khách hàng, chủ sân, admin |
 
 **Rủi ro nhân sự và hướng xử lý**
 
@@ -338,7 +339,7 @@ TODO - Tuân, Toàn: ghi cách triển khai cụ thể sau khi chốt framework.
 | --- | --- | --- |
 | Nhân công | 5 sinh viên thực hiện trong khuôn khổ môn học | 0đ |
 | Quản lý dự án, mã nguồn, họp, kiểm thử | Jira Free, GitHub, Google Meet, Postman | 0đ |
-| Máy chủ / hosting | Hosting sẵn có của nhóm (TODO - Tuân, Toàn: cập nhật nếu đổi hosting sau khi chốt framework) | TODO - Hậu: xác nhận chi phí hosting |
+| Máy chủ / hosting | Tận dụng hosting/VPS hiện có của nhóm (cấu hình dự kiến 1 vCPU, 1 GB RAM, 20 GB SSD), không thuê thêm máy chủ | TODO - Hậu: xác nhận chi phí hosting |
 | Tên miền và chứng chỉ SSL | Tên miền phụ miễn phí; SSL miễn phí (Let's Encrypt) | 0đ |
 | Dịch vụ bản đồ | Trong hạn mức miễn phí | 0đ |
 | Gửi email (OTP, thông báo) | Dịch vụ email miễn phí | 0đ |
