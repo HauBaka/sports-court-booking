@@ -4,7 +4,7 @@
 
 **Đề tài:** Hệ thống Quản lý và Đặt sân Thể thao
 
-**Nhóm:** TODO - Hậu: điền STT nhóm
+**Nhóm:** 6
 
 Bộ môn Công nghệ phần mềm
 
@@ -159,7 +159,7 @@ Hệ thống là ứng dụng web với ba nhóm người dùng. Chủ sân tạ
 
 # 4 Kế hoạch phát triển
 
-Nhóm phát triển theo quy trình **Scrum**. Dự án kéo dài khoảng **9 tuần**, bắt đầu từ 12/10/2026 (TODO - Hậu: điền hạn cuối chính thức), chia thành 5 sprint. Mỗi sprint kết thúc bằng một bản chạy được (Increment). Các giai đoạn 4.1–4.5 không làm tuần tự một lần mà lặp lại trong từng sprint; mỗi mục ghi rõ giai đoạn đó diễn ra khi nào và tạo ra thành phẩm gì.
+Nhóm phát triển theo quy trình **Scrum**, chia thành 5 sprint. Mỗi sprint kết thúc bằng một bản chạy được (Increment). Các giai đoạn 4.1–4.5 không làm tuần tự một lần mà lặp lại trong từng sprint.
 
 **Vai trò Scrum**
 
@@ -168,20 +168,18 @@ Nhóm phát triển theo quy trình **Scrum**. Dự án kéo dài khoảng **9 t
 | Product Owner, Scrum Master | Vòng Sau Hậu |
 | Development Team | Bùi Đặng Khả Tuân, Dương Danh Toàn, Nguyễn Huỳnh Gia Bảo, Nguyễn Khánh Đăng |
 
-**Sự kiện Scrum** (họp online qua Google Meet)
+**Sự kiện Scrum**
 
 | Buổi họp | Khi nào | Nội dung |
 | --- | --- | --- |
-| Sprint Planning | Đầu sprint | Chọn việc từ Product Backlog, chia task trên Jira |
+| Sprint Planning | Đầu sprint | Chọn việc từ Product Backlog, phân công task trên Jira |
 | Họp giữa sprint | Giữa sprint | Kiểm tra tiến độ, gỡ vướng mắc, điều chỉnh task |
 | Sprint Review + Retrospective | Cuối sprint | Demo Increment, rút kinh nghiệm cho sprint sau |
 | Họp đột xuất | Khi phát sinh task quan trọng | Phân công lại |
 
-Những ngày không họp, mỗi thành viên tự cập nhật trạng thái task trên Jira và báo lên nhóm chat khi bị vướng.
+**Công cụ:** Jira (backlog, sprint, bảng task, theo dõi lỗi); GitHub và GitHub Actions (quản lý mã nguồn, Pull Request và CI); Google Meet (họp); Postman (kiểm thử API).
 
-**Công cụ:** Jira (backlog, sprint, bảng task, theo dõi lỗi); GitHub (mã nguồn); Google Meet (họp); Postman (kiểm thử API).
-
-**Lịch sprint**
+**Lịch sprint dự kiến**
 
 | Sprint | Tuần | Thời gian | Mục tiêu | Chức năng | Thành phẩm |
 | --- | --- | --- | --- | --- | --- |
@@ -190,8 +188,6 @@ Những ngày không họp, mỗi thành viên tự cập nhật trạng thái t
 | 2 | Tuần 5–6 | 09/11 – 22/11 | Tìm và đặt sân; ví và đặt cọc | 2, 3 | Tìm/lọc sân, đặt sân, khóa khung giờ; Admin cấp tiền; cọc từ ví |
 | 3 | Tuần 7–8 | 23/11 – 06/12 | Hủy và hoàn cọc; ghép đội | 3, 4 | Đủ luồng đặt – hủy – hoàn cọc vào ví; ghép đội |
 | 4 | Tuần 9 | 07/12 – 13/12 | Tiện ích, kiểm thử toàn hệ thống, triển khai | 5 (nếu kịp) | Đánh giá sân, dịch vụ đi kèm, bản đồ, dashboard; bản đã triển khai; báo cáo cuối kỳ |
-
-TODO - Hậu: bổ sung các mốc nộp giữa kỳ của giáo viên vào cuối sprint gần nhất.
 
 **Thứ tự cắt giảm khi trễ tiến độ:** chức năng 5 → chức năng 4 (làm bản đơn giản).
 
@@ -212,7 +208,7 @@ TODO - Hậu: bổ sung các mốc nộp giữa kỳ của giáo viên vào cu�
 #### 4.3 Cài đặt (implement) phần mềm
 
 - **Khi nào:** Sprint 1 – Sprint 4, theo lịch sprint ở trên.
-- **Cách làm:** mỗi task là một nhánh Git; xong thì tạo Pull Request để ít nhất 1 thành viên khác xem trước khi gộp vào nhánh chính. Thành viên rảnh việc hỗ trợ thành viên khác.
+- **Cách làm:** mỗi task là một nhánh Git; xong thì tạo Pull Request để ít nhất 1 thành viên khác xem trước khi gộp vào nhánh **dev**.
 - **Thành phẩm:** Increment chạy được sau mỗi sprint, demo ở Sprint Review.
 
 #### 4.4 Kiểm thử phần mềm
@@ -226,17 +222,38 @@ TODO - Hậu: bổ sung các mốc nộp giữa kỳ của giáo viên vào cu�
 | Unit test | Test tự động cho các hàm tính tiền: tổng tiền, cọc 30%, hoàn cọc 80% / 50% / 0%, số dư ví | Tuân, Toàn |
 | Kiểm thử API | Bộ request Postman cho từng chức năng; chạy lại toàn bộ trước mỗi Sprint Review | Hậu (dựa trên tài liệu API do Backend cung cấp) |
 | Kiểm thử chức năng | Kịch bản test viết từ user story và quy định QĐ1–QĐ7; bấm thử trên giao diện, ghi đạt/không đạt | Hậu |
+| Kiểm tra build | Kiểm tra ứng dụng có thể build thành công theo framework đã chọn | Thành viên phụ trách phần tương ứng |
 
 - Lỗi phát hiện được tạo thành task loại **Bug** trên Jira và giao lại cho người làm task đó.
 - **Định nghĩa "Xong" (Definition of Done)** – một task chỉ xong khi:
-  1. Code đã đẩy lên GitHub và được ít nhất 1 thành viên khác xem qua.
-  2. Chạy được trên bản thử, không chỉ trên máy người code.
-  3. Đã có request Postman hoặc kịch bản test cho chức năng đó.
-  4. Tester đã kiểm thử và đánh dấu đạt.
-  5. Đúng các quy định nghiệp vụ liên quan (nếu có).
-- **Thành phẩm:** bộ Postman Collection; danh sách kịch bản test và kết quả; danh sách lỗi trên Jira.
+  1. Code đã được đẩy lên GitHub và được ít nhất một thành viên khác review trước khi merge.
+  2. Các test tự động liên quan đã chạy thành công; với task chưa có test tự động phù hợp, nhóm thực hiện kiểm tra tương ứng và ghi nhận kết quả.
+  3. Chức năng đã được kiểm thử trên môi trường thử nghiệm khi môi trường đó sẵn sàng, không chỉ trên máy người code.
+  4. Các kịch bản kiểm thử chức năng liên quan đã được thực hiện và đạt.
+  5. Chức năng đáp ứng Acceptance Criteria và các quy định nghiệp vụ liên quan.
+  6. Khi CI đã được cấu hình cho nhánh đích, các bước kiểm tra bắt buộc trên Pull Request phải thành công trước khi merge.
+- **Thành phẩm:** bộ Postman Collection; các test tự động của dự án; danh sách kịch bản và kết quả kiểm thử; danh sách lỗi trên Jira.
 
-#### 4.5 Triển khai, bảo trì
+#### 4.5 Tích hợp liên tục (Continuous Integration – CI)
+
+TODO - Hậu
+
+- **Mục tiêu:** phát hiện sớm lỗi tích hợp và giúp nhóm kiểm tra thay đổi trước khi merge vào nhánh `dev`.
+- **Công cụ:** GitHub Actions, sử dụng workflow được lưu trong repository. Chi tiết cấu hình phụ thuộc vào framework và công nghệ được nhóm chốt.
+- **Quy trình dự kiến:**
+  1. Khi có Pull Request vào `dev` hoặc có thay đổi được push lên `dev`, GitHub Actions chạy workflow.
+  2. Cài đặt dependencies và thực hiện các bước kiểm tra code đã được cấu hình.
+  3. Chạy unit test và integration test đã được thiết lập.
+  4. Build ứng dụng nếu framework yêu cầu bước build.
+  5. Hiển thị kết quả thành công hoặc thất bại trên Pull Request để nhóm xử lý trước khi merge.
+- Nhóm dự kiến cấu hình branch protection hoặc ruleset để yêu cầu các bước CI bắt buộc thành công trước khi merge, nếu repository và gói GitHub hỗ trợ. CI không thay thế việc review code của thành viên khác.
+- Ban đầu, nhóm ưu tiên tự động hóa unit test, integration test và build. Việc tự động chạy Postman Collection bằng Newman hoặc công cụ tương đương sẽ được bổ sung khi API, dữ liệu kiểm thử và biến môi trường đã sẵn sàng.
+- **CD (Continuous Delivery/Deployment):** sau khi CI hoạt động ổn định, nhóm có thể xem xét tự động triển khai lên staging khi các bước kiểm tra thành công. Việc triển khai production cần được xác nhận riêng. Đây là hướng mở rộng dự kiến, không phải tính năng đã triển khai sẵn.
+
+- **Thành phẩm:** workflow GitHub Actions; kết quả CI trên Pull Request; hướng dẫn ngắn về cách kiểm tra và xử lý khi workflow thất bại.
+
+
+#### 4.6 Triển khai, bảo trì
 
 - **Triển khai:** dựng bản thử từ Sprint 1 để kiểm thử liên tục; triển khai bản chính thức lên hosting của nhóm ở tuần 9 (TODO - Tuân, Toàn: ghi cách triển khai sau khi chốt framework).
 - **Bảo trì:** sửa lỗi phát hiện trong quá trình demo và chấm điểm.
@@ -253,8 +270,6 @@ TODO - Hậu: bổ sung các mốc nộp giữa kỳ của giáo viên vào cu�
 | Dương Danh Toàn | 24120230 | Backend | Xây dựng API, nghiệp vụ đặt sân, ví, unit test |
 | Nguyễn Huỳnh Gia Bảo | 24120264 | Cơ sở dữ liệu | Thiết kế và quản lý CSDL, dữ liệu mẫu, truy vấn tìm kiếm sân |
 | Nguyễn Khánh Đăng | 24120278 | Frontend | Thiết kế và xây dựng giao diện web cho khách hàng, chủ sân, admin |
-
-Thành viên rảnh việc sẽ hỗ trợ các mảng khác.
 
 **Rủi ro nhân sự và hướng xử lý**
 
