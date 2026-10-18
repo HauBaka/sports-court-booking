@@ -44,7 +44,7 @@ Tài liệu gồm các nội dung:
 | 24120307 | Vòng Sau Hậu | TODO - Hậu | |
 | 24120264 | Nguyễn Huỳnh Gia Bảo | TODO - Hậu | |
 | 24120230 | Dương Danh Toàn | TODO - Hậu | |
-| 24120278 | Nguyễn Khánh Đăng | TODO - Hậu | |
+| 24120278 | Võ Văn Khánh Đăng | TODO - Hậu | |
 | 24120236 | Bùi Đặng Khả Tuân | TODO - Hậu | |
 
 # 2 Phát biểu bài toán sơ lược
@@ -87,12 +87,12 @@ Hệ thống là ứng dụng web với ba nhóm người dùng. Chủ sân tạ
 
 - Client: trình duyệt web hỗ trợ HTML5/CSS3/JavaScript trên máy tính và điện thoại.
 - Server: Cấu hình máy chủ dự kiến với 1 vCPU, 1 GB RAM, 20 GB SSD.
-- Dịch vụ ngoài: dịch vụ email để gửi OTP và xác nhận đặt sân; dịch vụ bản đồ (TODO - Đăng: chọn dịch vụ).
+- Dịch vụ ngoài: dịch vụ email để gửi OTP và xác nhận đặt sân Brevo; dịch vụ bản đồ Leaflet và OpenStreetMap.
 
 #### Ràng buộc thiết kế và triển khai
 
 - Frontend và Backend tách riêng, giao tiếp qua REST API.
-- Frontend: TODO - Đăng: chọn framework (ví dụ React.js).
+- Frontend: React.js.
 - Backend: Python (FastAPI).
 - CSDL quan hệ: MySQL
 - Mật khẩu mã hóa bằng Bcrypt, giao tiếp qua HTTPS, xác thực bằng JWT.
@@ -167,7 +167,7 @@ Nhóm phát triển theo quy trình **Scrum**. Dự án kéo dài khoảng **9 t
 | Vai trò | Thành viên |
 | --- | --- |
 | Product Owner, Scrum Master | Vòng Sau Hậu |
-| Development Team | Bùi Đặng Khả Tuân, Dương Danh Toàn, Nguyễn Huỳnh Gia Bảo, Nguyễn Khánh Đăng |
+| Development Team | Bùi Đặng Khả Tuân, Dương Danh Toàn, Nguyễn Huỳnh Gia Bảo, Võ Văn Khánh Đăng |
 
 **Sự kiện Scrum** (họp online qua Google Meet)
 
@@ -253,7 +253,7 @@ TODO - Hậu: bổ sung các mốc nộp giữa kỳ của giáo viên vào cu�
 | Bùi Đặng Khả Tuân | 24120236 | Backend | Xây dựng API, nghiệp vụ đặt sân, ví, unit test |
 | Dương Danh Toàn | 24120230 | Backend | Xây dựng API, nghiệp vụ đặt sân, ví, unit test |
 | Nguyễn Huỳnh Gia Bảo | 24120264 | Cơ sở dữ liệu | Thiết kế và quản lý CSDL, dữ liệu mẫu, truy vấn tìm kiếm sân |
-| Nguyễn Khánh Đăng | 24120278 | Frontend | Thiết kế và xây dựng giao diện web cho khách hàng, chủ sân, admin |
+| Võ Văn Khánh Đăng | 24120278 | Frontend | Thiết kế và xây dựng giao diện web cho khách hàng, chủ sân, admin |
 
 Thành viên rảnh việc sẽ hỗ trợ các mảng khác.
 
