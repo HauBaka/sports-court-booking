@@ -77,12 +77,13 @@ body {
   border-bottom: 1px solid var(--line);
   margin-bottom: 32px;
 }
+.cover h3 { font-size: 17px; font-weight: 700; letter-spacing: .06em; margin: 2px 0; color: var(--ink); }
+.cover h3:nth-of-type(3) { margin-bottom: 36px; }
 .cover p { margin: 4px 0; }
-.cover p:nth-child(1) { font-size: 13px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
-.cover p:nth-child(2) { font-size: 40px; font-weight: 700; color: var(--accent); margin: 18px 0 6px; line-height: 1.2; }
-.cover p:nth-child(3) { font-size: 19px; font-weight: 500; }
-.cover p:nth-child(4) { color: var(--muted); margin-bottom: 28px; }
-.cover p:nth-child(n+5) { font-size: 13.5px; color: var(--muted); margin: 0; }
+.cover p:nth-of-type(1) { font-size: 13.5px; letter-spacing: .14em; color: var(--muted); }
+.cover h2 { font-size: 40px; font-weight: 700; color: var(--accent); margin: 10px 0 14px; line-height: 1.2; border: 0; }
+.cover p:nth-of-type(2) { font-size: 19px; font-weight: 500; }
+.cover p:nth-of-type(3) { color: var(--muted); }
 .cover::after {
   content: ""; display: block; width: 64px; height: 3px; margin: 28px auto 0;
   background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 2px;
@@ -97,6 +98,10 @@ body {
 .toc-card p:first-child { font-size: 12.5px; letter-spacing: .12em; color: var(--muted); margin-bottom: 10px; }
 .toc-card p:last-child:not(:first-child) { display: none; } /* trailing "Project Proposal" label */
 .toc-card a { color: var(--ink); text-decoration: none; }
+.toc-card ul { list-style: none; margin: 0; padding-left: 0; }
+.toc-card ul ul { padding-left: 20px; }
+.toc-card li { margin: 4px 0; }
+.toc-card > ul > li > a { font-weight: 600; }
 .toc-card a:hover { color: var(--accent); }
 
 /* headings */
@@ -154,7 +159,7 @@ body {
   .layout { grid-template-columns: 1fr; padding: 16px 16px 48px; }
   .sidebar { display: none; }
   .paper { padding: 32px 22px; }
-  .cover p:nth-child(2) { font-size: 30px; }
+  .cover h2 { font-size: 30px; }
 }
 
 /* ---------- print (A4) ---------- */
@@ -187,56 +192,59 @@ body {
   </main>
 </div>
 
-<!-- Nội dung được sinh tự động từ project-proposal.md bằng tools/build_html.py. Không sửa trực tiếp. -->
+<!-- Nội dung được sinh tự động từ project-proposal.md bằng .tools/build_html.py. Không sửa trực tiếp. -->
 <script type="text/markdown" id="md-source">
+### ĐẠI HỌC KHOA HỌC TỰ NHIÊN TP HCM
+
+### KHOA CÔNG NGHỆ THÔNG TIN
+
+### BỘ MÔN CÔNG NGHỆ PHẦN MỀM
+
 **NHẬP MÔN CÔNG NGHỆ PHẦN MỀM**
 
-**Project Proposal**
+## Project Proposal
 
 **Đề tài:** Hệ thống Quản lý và Đặt sân Thể thao
 
-**Nhóm:** TODO - Hậu: điền STT nhóm
-
-Bộ môn Công nghệ phần mềm
-
-Khoa Công nghệ thông tin
-
-Đại học Khoa học tự nhiên TP HCM
+**Nhóm:** 6
 
 **MỤC LỤC**
 
-[**Các nội dung chính**](#các-nội-dung-chính)
-
-[**1 Bảng đánh giá thành viên**](#1-bảng-đánh-giá-thành-viên)
-
-[**2 Phát biểu bài toán sơ lược**](#2-phát-biểu-bài-toán-sơ-lược)
-
-[**3 Giải pháp đề xuất**](#3-giải-pháp-đề-xuất)
-
-[**4 Kế hoạch phát triển**](#4-kế-hoạch-phát-triển)
-
-[**5 Kế hoạch nhân sự & chi phí**](#5-kế-hoạch-nhân-sự--chi-phí)
+- [1 Bảng đánh giá thành viên](#1-bảng-đánh-giá-thành-viên)
+- [2 Phát biểu bài toán sơ lược](#2-phát-biểu-bài-toán-sơ-lược)
+  - [Thực trạng](#thực-trạng)
+  - [Các giải pháp hiện có](#các-giải-pháp-hiện-có)
+  - [Điểm khác biệt](#điểm-khác-biệt)
+  - [Mô tả hệ thống](#mô-tả-hệ-thống)
+  - [Môi trường hoạt động](#môi-trường-hoạt-động)
+  - [Ràng buộc thiết kế và triển khai](#ràng-buộc-thiết-kế-và-triển-khai)
+- [3 Giải pháp đề xuất](#3-giải-pháp-đề-xuất)
+  - [3.1 Phần mềm](#31-phần-mềm)
+    - [3.1.1 Danh sách các chức năng phần mềm](#311-danh-sách-các-chức-năng-phần-mềm)
+    - [3.1.2 Kiến trúc tổng thể phần mềm](#312-kiến-trúc-tổng-thể-phần-mềm)
+    - [3.1.3 Các phần không thực hiện](#313-các-phần-không-thực-hiện)
+  - [3.2 Phần cứng](#32-phần-cứng)
+- [4 Kế hoạch phát triển](#4-kế-hoạch-phát-triển)
+  - [4.1 Phân tích yêu cầu](#41-phân-tích-yêu-cầu)
+  - [4.2 Thiết kế phần mềm](#42-thiết-kế-phần-mềm)
+  - [4.3 Cài đặt (implement) phần mềm](#43-cài-đặt-implement-phần-mềm)
+  - [4.4 Kiểm thử phần mềm](#44-kiểm-thử-phần-mềm)
+  - [4.5 Triển khai, bảo trì](#45-triển-khai-bảo-trì)
+- [5 Kế hoạch nhân sự & chi phí](#5-kế-hoạch-nhân-sự--chi-phí)
+  - [5.1 Nhân sự](#51-nhân-sự)
+  - [5.2 Chi phí dự kiến](#52-chi-phí-dự-kiến)
 
 **Project Proposal**
-
-# Các nội dung chính
-
-Tài liệu gồm các nội dung:
-
-- Phát biểu bài toán sơ lược
-- Giải pháp đề xuất
-- Kế hoạch phát triển
-- Kế hoạch nhân sự & chi phí
 
 # 1 Bảng đánh giá thành viên
 
 | **MSSV** | **Họ Tên** | **% đóng góp (tối đa 100%)** | **Chữ ký** |
 | --- | --- | --- | --- |
-| 24120307 | Vòng Sau Hậu | TODO - Hậu | |
-| 24120264 | Nguyễn Huỳnh Gia Bảo | TODO - Hậu | |
-| 24120230 | Dương Danh Toàn | TODO - Hậu | |
-| 24120278 | Nguyễn Khánh Đăng | TODO - Hậu | |
-| 24120236 | Bùi Đặng Khả Tuân | TODO - Hậu | |
+| 24120307 | Vòng Sau Hậu | 100% | |
+| 24120264 | Nguyễn Huỳnh Gia Bảo | 100%  | |
+| 24120230 | Dương Danh Toàn | 100%  | |
+| 24120278 | Võ Văn Khánh Đăng | 100%  | |
+| 24120236 | Bùi Đặng Khả Tuân | 100%  | |
 
 # 2 Phát biểu bài toán sơ lược
 
@@ -248,26 +256,27 @@ Người chơi cầu lông, pickleball, bóng đá mini hiện vẫn đặt sân
 
 **Tình huống 2 – Hoàn cọc tùy chủ sân.** Khách báo hủy trước một ngày vì trời mưa. Mỗi sân một kiểu: có sân hoàn đủ, có sân hoàn một nửa, có sân không hoàn. Khách phải nhắn qua lại nhiều lần, và vì không có quy định công bố trước nên khách thường chịu thiệt.
 
-TODO - Toàn: xem xét lại 2 tình huống (bổ sung số liệu hoặc ví dụ thực tế nếu có).
+**Tình huống 3 – Mức giá đặt sân khác nhau.** Khi đặt sân vào những khung giờ cao điểm hoặc là các ngày cuối tuần, ngày lễ sẽ có mức giá khác nhau, đồng thời có những ưu đãi dành cho một số đối tượng như là học sinh/sinh viên. Khi khách đặt lịch, chủ sân hoặc nhân viên phải nhớ áp dụng bảng giá phức tạp (ví dụ: ngày thường khác cuối tuần, giờ vàng từ 17h–20h khác giờ thấp điểm, hoặc phải kiểm tra thẻ học sinh/sinh viên). Việc tính toán nhẩm hoặc tra bảng giá thủ công rất dễ dẫn đến nhầm lẫn, tính thừa hoặc thiếu tiền của khách dẫn đến khách có thể cảm thấy không công bằng nếu họ nghi ngờ chủ sân áp dụng "giá tùy hứng".
+
 
 #### Các giải pháp hiện có
 
 | Sản phẩm | Đối tượng | Làm tốt | Hạn chế so với bài toán |
 | --- | --- | --- | --- |
-| Datsan247 (Việt Nam) | Người chơi | Nhiều môn, xem giờ trống, đặt và thanh toán | Chỉ là kênh đặt sân cho khách |
-| ALOBO (Việt Nam) | Chủ sân | Quản lý lịch, dịch vụ, công nợ, hóa đơn | Phần mềm cho chủ sân, khách không tìm sân ở đây |
+| Datsan247 (Việt Nam) | Chủ sân và người chơi | Nhiều môn, xem giờ trống, đặt và thanh toán | Nhiều sân không có địa chỉ rõ ràng, chưa đề xuất được sân bãi lân cận |
+| ALOBO và ALOBooking (Việt Nam) | ALOBO dành cho chủ sân, ALOBooking dành cho người chơi | Quản lý lịch sân, dịch vụ, công nợ, hóa đơn | Người chơi và chủ sân tách ra 2 nền tảng riêng biệt, vé vãng lai phụ thuộc vào việc chủ hội nhóm/ban tổ chức hôm đó có mở buổi giao lưu hay không |
 | Playtomic (quốc tế) | Người chơi, câu lạc bộ | Ghép trận theo trình độ, tự hủy và hoàn tiền khi không đủ người | Tập trung padel/tennis ở châu Âu, gần như chưa có ở Việt Nam |
 | CourtReserve (quốc tế) | Câu lạc bộ | Luật đặt sân tùy chỉnh, chống đặt trùng, thu tiền trước | Giao diện di động bị đánh giá khó dùng; thu phí theo tháng |
 
-TODO - Toàn: tải thử Datsan247, ALOBO để kiểm chứng bảng trên.
 
 #### Điểm khác biệt
 
 - Một hệ thống chung cho cả chủ sân và người chơi, thay vì tách thành app riêng cho mỗi bên.
 - Chính sách cọc và hoàn cọc công khai, tính tự động qua ví nội bộ, hai bên không phải thương lượng.
 - Hướng tới sân cầu lông, pickleball, bóng đá mini tại Việt Nam.
+- Hiển thị sân bãi khu vực lân cận.
+- Cung cấp rõ ràng thông tin cho khách đặt sân.
 
-TODO - Toàn: xem lại điểm khác biệt sau khi kiểm chứng đối thủ.
 
 #### Mô tả hệ thống
 
@@ -276,15 +285,15 @@ Hệ thống là ứng dụng web với ba nhóm người dùng. Chủ sân tạ
 #### Môi trường hoạt động
 
 - Client: trình duyệt web hỗ trợ HTML5/CSS3/JavaScript trên máy tính và điện thoại.
-- Server: TODO - Tuân, Toàn: ghi môi trường server sau khi chốt framework (hosting hiện tại hỗ trợ Node.js hoặc Python, 1 CPU, 1 GB RAM, 20 GB ổ đĩa).
-- Dịch vụ ngoài: dịch vụ email để gửi OTP và xác nhận đặt sân; dịch vụ bản đồ (TODO - Đăng: chọn dịch vụ).
+- Server: Cấu hình máy chủ dự kiến với 1 vCPU, 1 GB RAM, 20 GB SSD.
+- Dịch vụ ngoài: dịch vụ email Brevo để gửi OTP và xác nhận đặt sân; bản đồ Leaflet với dữ liệu OpenStreetMap.
 
 #### Ràng buộc thiết kế và triển khai
 
 - Frontend và Backend tách riêng, giao tiếp qua REST API.
-- Frontend: TODO - Đăng: chọn framework (ví dụ React.js).
-- Backend: TODO - Tuân, Toàn: chọn framework, ưu tiên nền Node.js hoặc Python vì hosting hiện tại chạy được.
-- CSDL quan hệ: TODO - Bảo: chọn hệ quản trị (ví dụ PostgreSQL, MySQL).
+- Frontend: React.js.
+- Backend: Python (FastAPI).
+- CSDL quan hệ: MySQL.
 - Mật khẩu mã hóa bằng Bcrypt, giao tiếp qua HTTPS, xác thực bằng JWT.
 - Mã nguồn quản lý bằng Git/GitHub.
 
@@ -294,13 +303,13 @@ Hệ thống là ứng dụng web với ba nhóm người dùng. Chủ sân tạ
 
 #### 3.1.1. Danh sách các chức năng phần mềm
 
-| # | Câu chuyện người dùng | Chức năng | Ưu tiên |
-| --- | --- | --- | --- |
-| 1 | Là chủ sân, tôi muốn đăng sân và đặt giá theo từng khung giờ để khách đặt được và tôi tối ưu doanh thu. | Quản lý sân, khung giờ, bảng giá theo thời điểm | Cao |
-| 2 | Là khách hàng, tôi muốn tìm sân còn trống và đặt ngay, biết trước tổng tiền, để không phải gọi điện hỏi từng sân. | Tìm, lọc sân trống; đặt sân; khóa khung giờ đã đặt | Cao |
-| 3 | Là khách hàng, tôi muốn đặt cọc và được hoàn cọc theo quy định rõ ràng khi hủy, để không phải thương lượng với chủ sân. | Đặt cọc từ ví; hủy sân và hoàn cọc tự động; Admin cấp tiền vào ví | Cao |
-| 4 | Là người chơi thiếu người, tôi muốn đăng bài tìm đồng đội để đủ người chơi. | Đăng bài ghép đội; đăng ký tham gia | Thấp |
-| 5 | Là người dùng, tôi muốn có thêm các tiện ích để dùng hệ thống thuận tiện hơn. | Đánh giá sân; dịch vụ đi kèm; xem vị trí sân trên bản đồ; dashboard Admin | Thấp |
+| # | Tính năng | Câu chuyện người dùng | Story cốt lõi | Ưu tiên |
+| --- | --- | --- | --- | --- |
+| 1 | Quản lý sân và bảng giá | Là chủ sân, tôi muốn đăng sân và đặt giá theo từng khung giờ để khách đặt được và tôi tối ưu doanh thu. | Tạo cụm sân và sân con; cấu hình giờ mở cửa; bảng giá theo thời điểm | Cao |
+| 2 | Tìm và đặt sân | Là khách hàng, tôi muốn tìm sân còn trống và đặt ngay, biết trước tổng tiền, để không phải gọi điện hỏi từng sân. | Xem lịch trống theo ngày; đặt sân và tính tổng tiền; chống đặt trùng khung giờ | Cao |
+| 3 | Cọc và hoàn cọc qua ví | Là khách hàng, tôi muốn đặt cọc và được hoàn cọc theo quy định rõ ràng khi hủy, để không phải thương lượng với chủ sân. | Đặt cọc 30% từ ví; hủy sân và hoàn cọc tự động; Admin cấp tiền vào ví | Cao |
+| 4 | Ghép đội | Là người chơi thiếu người, tôi muốn đăng bài tìm đồng đội để đủ người chơi. | Đăng bài tìm người; đăng ký tham gia | Thấp |
+| 5 | Tiện ích | Là người dùng, tôi muốn có thêm tiện ích như đánh giá sân, dịch vụ đi kèm, bản đồ, dashboard Admin để dùng hệ thống thuận tiện hơn. | Đánh giá sân; dịch vụ đi kèm | Thấp |
 
 **Quy định liên quan**
 
@@ -316,24 +325,41 @@ Hệ thống là ứng dụng web với ba nhóm người dùng. Chủ sân tạ
 
 #### 3.1.2. Kiến trúc tổng thể phần mềm
 
+Hệ thống theo kiến trúc ba tầng: giao diện, nghiệp vụ, dữ liệu. Frontend chỉ giao tiếp với Backend qua REST API; mọi quy định về giá, cọc, hoàn cọc được xử lý ở Backend.
+
 ```text
-┌──────────────────────────────────────────────────────────┐
-│ CLIENT – Ứng dụng web                                    │
-│ Khách hàng  |  Chủ sân  |  Admin                         │
-└────────────────────────────┬─────────────────────────────┘
-                             │ HTTPS – REST API (JWT)
-                             ▼
-┌──────────────────────────────────────────────────────────┐
-│ BACKEND                                                  │
-│ Xác thực | Sân & bảng giá | Đặt sân | Ví | Ghép đội      │
-└──────────────┬──────────────────────────────┬────────────┘
-               ▼                              ▼
-┌───────────────────────────┐   ┌──────────────────────────┐
-│ CSDL quan hệ              │   │ Dịch vụ ngoài            │
-│ tài khoản, sân, lịch đặt, │   │ Email, bản đồ            │
-│ ví, giao dịch             │   │                          │
-└───────────────────────────┘   └──────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                     NGƯỜI DÙNG – TRÌNH DUYỆT WEB                     │
+│              Khách hàng          Chủ sân          Admin              │
+└───────────────────────────────────┬──────────────────────────────────┘
+                                    │ HTTPS
+┌───────────────────────────────────▼──────────────────────────────────┐
+│ FRONTEND – Ứng dụng web                                              │
+│ Tìm và đặt sân · Quản lý sân, bảng giá · Ví · Ghép đội · Quản trị    │
+└───────────────────────────────────┬──────────────────────────────────┘
+                                    │ REST API (JSON) · JWT
+┌───────────────────────────────────▼──────────────────────────────────┐
+│ BACKEND – Xử lý nghiệp vụ, áp dụng quy định QĐ1–QĐ7                  │
+│                                                                      │
+│   ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐   │
+│   │ Xác thực │ │  Sân và  │ │ Đặt sân  │ │  Ví và   │ │ Ghép đội │   │
+│   │phân quyền│ │ bảng giá │ │ khóa giờ │ │giao dịch │ │          │   │
+│   └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘   │
+└────────────────┬────────────────────────────────────┬────────────────┘
+                 │ SQL (transaction)                  │ API
+┌────────────────▼────────────────┐ ┌─────────────────▼────────────────┐
+│ CSDL QUAN HỆ                    │ │ DỊCH VỤ NGOÀI                    │
+│ Tài khoản · Sân · Lịch đặt      │ │ Email: OTP, xác nhận đặt sân     │
+│ Ví · Giao dịch ví               │ │ Bản đồ: vị trí sân               │
+└─────────────────────────────────┘ └──────────────────────────────────┘
 ```
+
+| Tầng | Thành phần | Nhiệm vụ chính |
+| --- | --- | --- |
+| Giao diện | Ứng dụng web cho khách hàng, chủ sân, Admin | Hiển thị dữ liệu, nhận thao tác người dùng, gọi API |
+| Nghiệp vụ | Backend gồm 5 module: xác thực và phân quyền, sân và bảng giá, đặt sân, ví và giao dịch, ghép đội | Áp dụng quy định QĐ1–QĐ7; kiểm tra quyền; xử lý tiền trong transaction |
+| Dữ liệu | CSDL quan hệ | Lưu trữ dữ liệu; ràng buộc số dư ví không âm và không trùng khung giờ |
+| Dịch vụ ngoài | Dịch vụ email, dịch vụ bản đồ | Gửi OTP, xác nhận đặt sân; hiển thị vị trí sân |
 
 #### 3.1.3. Các phần không thực hiện
 
@@ -345,44 +371,41 @@ Hệ thống là ứng dụng web với ba nhóm người dùng. Chủ sân tạ
 
 #### 3.2 Phần cứng
 
-- Máy chủ: TODO - Tuân, Toàn: cập nhật sau khi Backend và Frontend chốt framework (hosting hiện tại: 1 CPU, 1 GB RAM, 20 GB ổ đĩa).
+- Máy chủ: Sử dụng hosting/VPS hiện có của nhóm với cấu hình dự kiến 1 vCPU, 1 GB RAM và 20 GB SSD.
 - Người dùng: máy tính hoặc điện thoại có trình duyệt và Internet.
 
 # 4 Kế hoạch phát triển
 
-Nhóm phát triển theo quy trình **Scrum**. Dự án kéo dài khoảng **9 tuần**, bắt đầu từ 12/10/2026 (TODO - Hậu: điền hạn cuối chính thức), chia thành 5 sprint. Mỗi sprint kết thúc bằng một bản chạy được (Increment). Các giai đoạn 4.1–4.5 không làm tuần tự một lần mà lặp lại trong từng sprint; mỗi mục ghi rõ giai đoạn đó diễn ra khi nào và tạo ra thành phẩm gì.
+Nhóm phát triển theo quy trình **Scrum**, chia thành 5 sprint. Mỗi sprint kết thúc bằng một bản chạy được (Increment). Các giai đoạn 4.1–4.5 không làm tuần tự một lần mà lặp lại trong từng sprint.
 
 **Vai trò Scrum**
 
 | Vai trò | Thành viên |
 | --- | --- |
 | Product Owner, Scrum Master | Vòng Sau Hậu |
-| Development Team | Bùi Đặng Khả Tuân, Dương Danh Toàn, Nguyễn Huỳnh Gia Bảo, Nguyễn Khánh Đăng |
+| Development Team | Bùi Đặng Khả Tuân, Dương Danh Toàn, Nguyễn Huỳnh Gia Bảo, Võ Văn Khánh Đăng |
 
-**Sự kiện Scrum** (họp online qua Google Meet)
+**Sự kiện Scrum**
 
 | Buổi họp | Khi nào | Nội dung |
 | --- | --- | --- |
-| Sprint Planning | Đầu sprint | Chọn việc từ Product Backlog, chia task trên Jira |
+| Backlog Refinement | Trước Sprint Planning; có thể gộp vào họp giữa sprint trước | PM chuẩn bị bản nháp sprint (mục tiêu, backlog dự kiến, câu hỏi về yêu cầu kèm phương án đề xuất); nhóm làm rõ yêu cầu, thống nhất kỹ thuật; PM cập nhật lại backlog |
+| Sprint Planning | Đầu sprint | Chọn việc từ Product Backlog đã cập nhật, chia task, phân công trên Jira |
 | Họp giữa sprint | Giữa sprint | Kiểm tra tiến độ, gỡ vướng mắc, điều chỉnh task |
 | Sprint Review + Retrospective | Cuối sprint | Demo Increment, rút kinh nghiệm cho sprint sau |
 | Họp đột xuất | Khi phát sinh task quan trọng | Phân công lại |
 
-Những ngày không họp, mỗi thành viên tự cập nhật trạng thái task trên Jira và báo lên nhóm chat khi bị vướng.
+**Công cụ:** Jira (backlog, sprint, bảng task, theo dõi lỗi); GitHub và GitHub Actions (quản lý mã nguồn, Pull Request và CI); Google Meet (họp); Postman (kiểm thử API).
 
-**Công cụ:** Jira (backlog, sprint, bảng task, theo dõi lỗi); GitHub (mã nguồn); Google Meet (họp); Postman (kiểm thử API).
-
-**Lịch sprint**
+**Lịch sprint dự kiến**
 
 | Sprint | Tuần | Thời gian | Mục tiêu | Chức năng | Thành phẩm |
 | --- | --- | --- | --- | --- | --- |
-| 0 | Tuần 1–2 | 12/10 – 25/10 | Phân tích, thiết kế, chuẩn bị | – | Project Proposal; Product Backlog trên Jira; chốt công nghệ; thiết kế CSDL và API ban đầu; repo và khung dự án |
-| 1 | Tuần 3–4 | 26/10 – 08/11 | Đăng nhập; chủ sân tạo sân và bảng giá | 1 | Đăng ký/đăng nhập; quản lý sân, khung giờ, bảng giá |
-| 2 | Tuần 5–6 | 09/11 – 22/11 | Tìm và đặt sân; ví và đặt cọc | 2, 3 | Tìm/lọc sân, đặt sân, khóa khung giờ; Admin cấp tiền; cọc từ ví |
-| 3 | Tuần 7–8 | 23/11 – 06/12 | Hủy và hoàn cọc; ghép đội | 3, 4 | Đủ luồng đặt – hủy – hoàn cọc vào ví; ghép đội |
-| 4 | Tuần 9 | 07/12 – 13/12 | Tiện ích, kiểm thử toàn hệ thống, triển khai | 5 (nếu kịp) | Đánh giá sân, dịch vụ đi kèm, bản đồ, dashboard; bản đã triển khai; báo cáo cuối kỳ |
-
-TODO - Hậu: bổ sung các mốc nộp giữa kỳ của giáo viên vào cuối sprint gần nhất.
+| 1 | Tuần 1–2 | 12/10 – 25/10 | Phân tích, thiết kế, chuẩn bị | – | Project Proposal; Product Backlog trên Jira; chốt công nghệ; thiết kế CSDL và API ban đầu; repo và khung dự án |
+| 2 | Tuần 3–4 | 26/10 – 08/11 | Đăng nhập; chủ sân tạo sân và bảng giá | 1 | Đăng ký/đăng nhập; quản lý sân, khung giờ, bảng giá |
+| 3 | Tuần 5–6 | 09/11 – 22/11 | Tìm và đặt sân; ví và đặt cọc | 2, 3 | Tìm/lọc sân, đặt sân, khóa khung giờ; Admin cấp tiền; cọc từ ví |
+| 4 | Tuần 7–8 | 23/11 – 06/12 | Hủy và hoàn cọc; ghép đội | 3, 4 | Đủ luồng đặt – hủy – hoàn cọc vào ví; ghép đội |
+| 5 | Tuần 9 | 07/12 – 13/12 | Tiện ích, kiểm thử toàn hệ thống, triển khai | 5 (nếu kịp) | Đánh giá sân, dịch vụ đi kèm, bản đồ, dashboard; bản đã triển khai; báo cáo cuối kỳ |
 
 **Thứ tự cắt giảm khi trễ tiến độ:** chức năng 5 → chức năng 4 (làm bản đơn giản).
 
@@ -390,48 +413,86 @@ TODO - Hậu: bổ sung các mốc nộp giữa kỳ của giáo viên vào cu�
 
 #### 4.1 Phân tích yêu cầu
 
-- **Khi nào:** chủ yếu ở Sprint 0 (tuần 1–2); đầu mỗi sprint làm rõ thêm các chức năng của sprint đó trong Sprint Planning.
-- **Công việc:** đọc mô tả đề tài, viết user story, xác định quy định nghiệp vụ, sắp ưu tiên backlog.
-- **Thành phẩm:** Project Proposal; Product Backlog trên Jira; tài liệu phân tích yêu cầu.
+| Hoạt động | Thời điểm | Phụ trách | Thành phẩm |
+| --- | --- | --- | --- |
+| Phân tích đề tài, xác định phạm vi và 5 tính năng | Sprint 1 | Cả nhóm | Project Proposal |
+| Viết user story, tiêu chí chấp nhận, quy định nghiệp vụ | Sprint 1 | Hậu | Product Backlog trên Jira |
+| Làm rõ yêu cầu cho sprint kế tiếp | Backlog Refinement mỗi sprint | Cả nhóm | Backlog cập nhật; câu hỏi về yêu cầu đã được chốt |
+| Hoàn thiện tài liệu phân tích theo đợt nộp | Theo yêu cầu của giáo viên | Cả nhóm | Tài liệu phân tích yêu cầu |
 
 #### 4.2 Thiết kế phần mềm
 
-- **Khi nào:** thiết kế tổng thể ở Sprint 0; thiết kế chi tiết từng chức năng ngay trong sprint làm chức năng đó.
-- **Công việc:** chốt công nghệ; thiết kế CSDL (đặc biệt bảng ví và giao dịch); thiết kế danh sách API; thiết kế giao diện.
-- **Thành phẩm:** sơ đồ kiến trúc; lược đồ CSDL (Bảo); tài liệu API (Tuân, Toàn); bản thiết kế giao diện (Đăng).
+| Hoạt động | Thời điểm | Phụ trách | Thành phẩm |
+| --- | --- | --- | --- |
+| Thiết kế kiến trúc, chốt công nghệ | Sprint 1 | Tuân, Toàn | Sơ đồ kiến trúc; quyết định công nghệ |
+| Thiết kế CSDL, gồm ràng buộc về tiền và khung giờ | Sprint 1; bổ sung trong từng sprint | Bảo | Lược đồ CSDL (ERD) |
+| Thiết kế API | Sprint 1; bổ sung trong từng sprint | Tuân, Toàn | Tài liệu API |
+| Thiết kế giao diện | Sprint 1; chi tiết trong sprint làm chức năng | Đăng | Wireframe, bản thiết kế giao diện |
 
 #### 4.3 Cài đặt (implement) phần mềm
 
-- **Khi nào:** Sprint 1 – Sprint 4, theo lịch sprint ở trên.
-- **Cách làm:** mỗi task là một nhánh Git; xong thì tạo Pull Request để ít nhất 1 thành viên khác xem trước khi gộp vào nhánh chính. Thành viên rảnh việc hỗ trợ thành viên khác.
-- **Thành phẩm:** Increment chạy được sau mỗi sprint, demo ở Sprint Review.
+| Hoạt động | Thời điểm | Phụ trách | Thành phẩm |
+| --- | --- | --- | --- |
+| Lập trình chức năng theo Sprint Backlog | Sprint 2 – Sprint 5 | Tuân, Toàn (Backend); Bảo (CSDL); Đăng (Frontend) | Mã nguồn trên GitHub |
+| Review code qua Pull Request | Mỗi task | Ít nhất 1 thành viên khác | Pull Request đã được duyệt |
+| Tích hợp liên tục (CI) | Mỗi Pull Request vào `dev` | GitHub Actions | Kết quả CI trên Pull Request |
+| Demo Increment | Cuối mỗi sprint | Cả nhóm | Bản chạy được trên môi trường thử |
+
+**Quản lý mã nguồn**
+
+| Nhánh | Mục đích | Quy tắc |
+| --- | --- | --- |
+| `main` | Bản chính thức | Chỉ merge từ `dev` sau Sprint Review |
+| `dev` | Bản tích hợp, triển khai lên môi trường thử | Chỉ merge qua Pull Request: ít nhất 1 người review và CI thành công |
+| `feature/<mã task>`, `fix/<mã task>` | Làm từng task hoặc sửa lỗi | Tạo từ `dev`, xóa sau khi merge |
+
+**Tích hợp liên tục (CI)**
+
+| Mục | Nội dung |
+| --- | --- |
+| Công cụ | GitHub Actions, workflow lưu trong repository |
+| Kích hoạt | Mỗi Pull Request vào `dev` và mỗi lần `dev` được cập nhật |
+| Các bước | Cài đặt dependencies → kiểm tra code → chạy unit test và integration test → build |
+| Điều kiện merge | CI thành công và có ít nhất 1 người review; thiết lập bằng branch protection |
+| Thành phẩm | Workflow GitHub Actions; kết quả CI hiển thị trên từng Pull Request |
 
 #### 4.4 Kiểm thử phần mềm
 
-- **Khi nào:** trong từng sprint (kiểm thử từng chức năng khi xong) và tuần 9 (kiểm thử toàn hệ thống).
-- **Môi trường:** kiểm thử trên một bản thử (staging) tách riêng với bản chính thức, để dữ liệu test (nhất là số dư ví) không ảnh hưởng bản demo.
+| Hoạt động | Thời điểm | Phụ trách | Thành phẩm |
+| --- | --- | --- | --- |
+| Kiểm thử từng chức năng | Trong sprint, khi task chuyển sang trạng thái In Review | Hậu | Kết quả kiểm thử theo kịch bản |
+| Kiểm thử hồi quy | Trước mỗi Sprint Review | Hậu | Kết quả chạy lại Postman Collection |
+| Kiểm thử toàn hệ thống | Sprint 5 (tuần 9) | Hậu, cả nhóm | Báo cáo kết quả kiểm thử |
+
+- **Môi trường:** kiểm thử trên môi trường thử (staging) tách riêng với bản chính thức, để dữ liệu test (nhất là số dư ví) không ảnh hưởng bản demo.
 - **Các lớp kiểm thử:**
 
 | Lớp | Cách làm | Người phụ trách |
 | --- | --- | --- |
 | Unit test | Test tự động cho các hàm tính tiền: tổng tiền, cọc 30%, hoàn cọc 80% / 50% / 0%, số dư ví | Tuân, Toàn |
 | Kiểm thử API | Bộ request Postman cho từng chức năng; chạy lại toàn bộ trước mỗi Sprint Review | Hậu (dựa trên tài liệu API do Backend cung cấp) |
-| Kiểm thử chức năng | Kịch bản test viết từ user story và quy định QĐ1–QĐ7; bấm thử trên giao diện, ghi đạt/không đạt | Hậu |
+| Kiểm thử chức năng | Kịch bản test viết từ user story và quy định QĐ1–QĐ7; thao tác trên giao diện | Hậu |
+| Kiểm tra build | Chạy tự động qua CI | Thành viên phụ trách phần tương ứng |
 
 - Lỗi phát hiện được tạo thành task loại **Bug** trên Jira và giao lại cho người làm task đó.
 - **Định nghĩa "Xong" (Definition of Done)** – một task chỉ xong khi:
-  1. Code đã đẩy lên GitHub và được ít nhất 1 thành viên khác xem qua.
-  2. Chạy được trên bản thử, không chỉ trên máy người code.
-  3. Đã có request Postman hoặc kịch bản test cho chức năng đó.
-  4. Tester đã kiểm thử và đánh dấu đạt.
-  5. Đúng các quy định nghiệp vụ liên quan (nếu có).
-- **Thành phẩm:** bộ Postman Collection; danh sách kịch bản test và kết quả; danh sách lỗi trên Jira.
+  1. Code đã được đẩy lên GitHub và được ít nhất một thành viên khác review trước khi merge.
+  2. Các bước CI bắt buộc và các test tự động liên quan đã chạy thành công.
+  3. Chức năng đã được kiểm thử trên môi trường thử, không chỉ trên máy người code.
+  4. Các kịch bản kiểm thử chức năng liên quan đã được thực hiện và đạt.
+  5. Chức năng đáp ứng tiêu chí chấp nhận (Acceptance Criteria) và các quy định nghiệp vụ liên quan.
+- **Thành phẩm:** bộ Postman Collection; các test tự động; danh sách kịch bản và kết quả kiểm thử; danh sách lỗi trên Jira.
 
 #### 4.5 Triển khai, bảo trì
 
-- **Triển khai:** dựng bản thử từ Sprint 1 để kiểm thử liên tục; triển khai bản chính thức lên hosting của nhóm ở tuần 9 (TODO - Tuân, Toàn: ghi cách triển khai sau khi chốt framework).
-- **Bảo trì:** sửa lỗi phát hiện trong quá trình demo và chấm điểm.
-- **Thành phẩm:** hệ thống chạy trên máy chủ; hướng dẫn cài đặt và hướng dẫn sử dụng.
+| Hoạt động | Thời điểm | Phụ trách | Thành phẩm |
+| --- | --- | --- | --- |
+| Dựng môi trường thử (staging) | Sprint 1 | Cả nhóm | Môi trường thử truy cập được qua Internet |
+| Cập nhật môi trường thử | Sau mỗi lần merge vào `dev` | Hậu | Môi trường thử chạy bản mới nhất |
+| Triển khai bản chính thức (production) | Sprint 5 | Hậu | Hệ thống chạy trên hosting qua HTTPS; CSDL có bản sao lưu |
+| Viết hướng dẫn cài đặt và sử dụng | Sprint 5 | Đăng, Tuân | Tài liệu hướng dẫn |
+| Bảo trì: sửa lỗi phát sinh khi demo và chấm điểm | Sau khi triển khai đến khi kết thúc môn học | Cả nhóm | Bản sửa lỗi trên `main` |
+
 
 # 5 Kế hoạch nhân sự & chi phí
 
@@ -443,17 +504,15 @@ TODO - Hậu: bổ sung các mốc nộp giữa kỳ của giáo viên vào cu�
 | Bùi Đặng Khả Tuân | 24120236 | Backend | Xây dựng API, nghiệp vụ đặt sân, ví, unit test |
 | Dương Danh Toàn | 24120230 | Backend | Xây dựng API, nghiệp vụ đặt sân, ví, unit test |
 | Nguyễn Huỳnh Gia Bảo | 24120264 | Cơ sở dữ liệu | Thiết kế và quản lý CSDL, dữ liệu mẫu, truy vấn tìm kiếm sân |
-| Nguyễn Khánh Đăng | 24120278 | Frontend | Thiết kế và xây dựng giao diện web cho khách hàng, chủ sân, admin |
-
-Thành viên rảnh việc sẽ hỗ trợ các mảng khác.
+| Võ Văn Khánh Đăng | 24120278 | Frontend | Thiết kế và xây dựng giao diện web cho khách hàng, chủ sân, admin |
 
 **Rủi ro nhân sự và hướng xử lý**
 
-| Rủi ro | Hướng xử lý |
-| --- | --- |
-| Frontend chỉ có 1 người, khối lượng giao diện lớn (3 nhóm người dùng) | Thành viên backend rảnh việc hỗ trợ một phần giao diện (ví dụ trang Admin) |
-| Việc CSDL dồn ở đầu dự án, ít dần về sau | Từ Sprint 2, Bảo hỗ trợ dữ liệu mẫu, truy vấn và kiểm thử luồng tiền |
-| Trễ tiến độ do lịch học, thi | Cắt giảm theo thứ tự ở mục 4; giữ nguyên luồng chính |
+| Rủi ro | Mức độ | Dấu hiệu nhận biết | Phòng ngừa | Xử lý khi xảy ra | Người theo dõi |
+| --- | --- | --- | --- | --- | --- |
+| Khối lượng Frontend dồn vào 1 người (giao diện cho 3 nhóm người dùng) | Cao | Có hơn 2 subtask Frontend đang làm cùng lúc, hoặc trễ hạn quá 2 ngày | Giao trước một phần Frontend cho thành viên Backend và CSDL ngay từ Sprint Planning | Chuyển subtask Frontend chưa bắt đầu sang thành viên còn trống thời gian | Hậu |
+| Việc CSDL nhiều ở đầu dự án, ít dần về sau | TB | Từ Sprint 3, thành viên CSDL có ít thời gian làm việc hơn | Giao thêm dữ liệu mẫu, tối ưu truy vấn, một phần Frontend và hỗ trợ kiểm thử luồng tiền | Kéo việc của tính năng 5 vào sprint và giao cho thành viên CSDL | Hậu |
+| Trễ tiến độ do lịch học, thi | Cao | Ở họp giữa sprint, hơn một nửa công việc chưa chuyển sang In Review | Chỉ lên kế hoạch khoảng 70% thời gian rảnh của mỗi thành viên | Cắt giảm theo thứ tự ở mục 4, giữ nguyên luồng chính | Hậu |
 
 #### 5.2 Chi phí dự kiến
 
@@ -463,12 +522,12 @@ Thành viên rảnh việc sẽ hỗ trợ các mảng khác.
 | --- | --- | --- |
 | Nhân công | 5 sinh viên thực hiện trong khuôn khổ môn học | 0đ |
 | Quản lý dự án, mã nguồn, họp, kiểm thử | Jira Free, GitHub, Google Meet, Postman | 0đ |
-| Máy chủ / hosting | Hosting sẵn có của nhóm (TODO - Tuân, Toàn: cập nhật nếu đổi hosting sau khi chốt framework) | TODO - Hậu: xác nhận chi phí hosting |
-| Tên miền và chứng chỉ SSL | Tên miền phụ miễn phí; SSL miễn phí (Let's Encrypt) | 0đ |
+| Máy chủ / hosting | Tận dụng hosting/VPS hiện có của nhóm | 0đ |
+| Tên miền và chứng chỉ SSL | Tên miền phụ miễn phí; SSL miễn phí | 0đ |
 | Dịch vụ bản đồ | Trong hạn mức miễn phí | 0đ |
 | Gửi email (OTP, thông báo) | Dịch vụ email miễn phí | 0đ |
 | Dự phòng | Vượt hạn mức gói miễn phí | 200.000đ |
-| **Tổng** | | TODO - Hậu: tính lại sau khi có chi phí hosting |
+| **Tổng** | | 200.000đ |
 
 </script>
 
