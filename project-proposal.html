@@ -1,558 +1,1144 @@
 <!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="utf-8">
+<html lang="vi" data-theme="light"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Project Proposal – Hệ thống Quản lý và Đặt sân Thể thao</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
-<style>
-:root {
-  --paper: #ffffff;
-  --bg: #eef1f5;
-  --ink: #1c2530;
-  --muted: #5d6b7a;
-  --line: #dde3ea;
-  --soft: #f5f7fa;
-  --accent: #1f4e79;
-  --accent-2: #2e7d6b;
-  --accent-soft: #e8eff7;
-  --todo-bg: #fff3c4;
-  --todo-ink: #7a5300;
-  --hi-bg: #e3f3ec; --hi-ink: #1f6b4f;
-  --mid-bg: #e8eff7; --mid-ink: #1f4e79;
-  --lo-bg: #f1f2f4; --lo-ink: #5d6b7a;
-  color-scheme: light;
+<script>(function(){var t=null;try{t=localStorage.getItem('pp-theme')}catch(e){}if(t!=='dark'&&t!=='light'){t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-theme',t)})();</script>
+<style>:root{--bg:#f4f6f9;--paper:#fff;--ink:#18222e;--muted:#5a6776;--line:#dde2e9;--soft:#eef2f6;--accent:#1c5d8f;--accent-soft:#e4eef7;--code:#eef2f6;
+--hi:#1c5d8f;--hi-bg:#e1edf8;--lo:#566474;--lo-bg:#e9edf1;--rhi:#9a3412;--rhi-bg:#fde7da;--rmid:#7c5800;--rmid-bg:#fbefc9;--rlo:#2f6b46;--rlo-bg:#dff1e5;--shadow:0 1px 2px rgba(20,30,45,.06)}
+:root[data-theme="dark"]{--bg:#0e1319;--paper:#151b23;--ink:#e3e9f0;--muted:#98a6b5;--line:#27313c;--soft:#1b232d;--accent:#7ab6e6;--accent-soft:#1a2a3a;--code:#1b232d;
+--hi:#8cc4ee;--hi-bg:#1b3248;--lo:#a4b1bf;--lo-bg:#232d38;--rhi:#f4a47a;--rhi-bg:#43241a;--rmid:#e9c566;--rmid-bg:#3b2f12;--rlo:#7fd1a2;--rlo-bg:#173326;--shadow:none}
+@media (prefers-color-scheme:dark){:root:not([data-theme]){--bg:#0e1319;--paper:#151b23;--ink:#e3e9f0;--muted:#98a6b5;--line:#27313c;--soft:#1b232d;--accent:#7ab6e6;--accent-soft:#1a2a3a;--code:#1b232d}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 "Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;transition:background-color .2s,color .2s}
+.bar{position:sticky;top:0;z-index:30;height:56px;display:flex;align-items:center;gap:14px;padding:0 20px;background:var(--paper);border-bottom:1px solid var(--line)}
+.bar-title{display:flex;flex-direction:column;line-height:1.25;min-width:0;flex:1}
+.bar-title strong{font-size:15px}
+.bar-title span{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar button{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;transition:background-color .15s,border-color .15s}
+.bar button:hover{background:var(--soft);border-color:var(--accent)}
+.bar .menu{display:none}
+.theme .i-moon{display:none}
+:root[data-theme="dark"] .theme .i-sun{display:none}
+:root[data-theme="dark"] .theme .i-moon{display:block}
+.shell{display:grid;grid-template-columns:268px minmax(0,1fr);gap:32px;max-width:1280px;margin:0 auto;padding:28px 24px 72px}
+nav{position:sticky;top:84px;align-self:start;max-height:calc(100vh - 108px);overflow:auto;font-size:14px;padding-right:6px}
+.nav-h{margin:0 0 8px;font-size:13px;font-weight:700;color:var(--muted)}
+nav a{display:block;color:var(--muted);text-decoration:none;padding:4px 10px;border-left:2px solid transparent;line-height:1.45;border-radius:0 6px 6px 0}
+nav a.n1{color:var(--ink);font-weight:650;margin-top:10px}
+nav a.n4{padding-left:22px;font-size:13.5px}
+nav a:hover{background:var(--soft);color:var(--accent)}
+nav a.on{border-left-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.scrim{display:none}
+main{min-width:0;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:44px 56px 56px;box-shadow:var(--shadow);transition:background-color .2s,border-color .2s}
+.cover{padding-bottom:28px;margin-bottom:28px;border-bottom:1px solid var(--line)}
+.cover h3{margin:0;font-size:.95rem;font-weight:600;color:var(--muted);line-height:1.6}
+.cover .course{margin:22px 0 4px;font-weight:700;color:var(--accent);font-size:1.02rem}
+.cover h2{margin:0 0 22px;font-size:2.7rem;line-height:1.15;letter-spacing:-.02em}
+.fields{display:grid;gap:8px}
+.field{background:var(--soft);border-radius:10px;padding:10px 16px}
+.field .k{color:var(--muted);font-weight:600;margin-right:6px}
+.field .v{font-weight:600}
+.toc-card{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:18px 24px;margin-bottom:8px}
+.toc-title{margin:0 0 8px;font-weight:700}
+.toc-card ul{list-style:none;margin:0;padding-left:0}
+.toc-card ul ul{padding-left:20px}
+.toc-card li{margin:2px 0}
+.toc-card a{color:var(--accent);text-decoration:none}
+.toc-card a:hover{text-decoration:underline}
+.running{margin:28px 0 0;color:var(--muted);font-size:.9rem}
+h1{margin:48px 0 16px;padding-top:28px;border-top:1px solid var(--line);font-size:1.7rem;line-height:1.3;letter-spacing:-.01em;scroll-margin-top:80px}
+h1:first-of-type{margin-top:20px}
+h4{margin:34px 0 10px;padding-left:12px;border-left:3px solid var(--accent);font-size:1.12rem;line-height:1.4;scroll-margin-top:80px}
+p{margin:12px 0}
+ul,ol{margin:10px 0;padding-left:26px}
+li{margin:5px 0}
+li::marker{color:var(--muted)}
+a{color:var(--accent)}
+code{font-family:"Cascadia Mono","Consolas","DejaVu Sans Mono","Menlo","Liberation Mono",monospace;font-size:.88em;background:var(--code);padding:1px 6px;border-radius:5px;overflow-wrap:anywhere}
+pre{margin:16px 0;padding:18px 20px;background:var(--code);border:1px solid var(--line);border-radius:10px;overflow-x:auto;line-height:1.15}
+pre code{background:none;padding:0;font-size:.8rem;overflow-wrap:normal;white-space:pre}
+.tw{margin:18px 0;border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{padding:10px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th{background:var(--soft);font-weight:650;font-size:.88rem}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--soft)}
+.fc td:first-child,.fc th:first-child{white-space:nowrap;font-weight:650}
+.pill{display:inline-block;padding:0 10px;border-radius:999px;font-size:.85em;font-weight:650;line-height:1.7}
+.pill.hi{background:var(--hi-bg);color:var(--hi)}.pill.lo{background:var(--lo-bg);color:var(--lo)}
+.pill.rhi{background:var(--rhi-bg);color:var(--rhi)}.pill.rmid{background:var(--rmid-bg);color:var(--rmid)}.pill.rlo{background:var(--rlo-bg);color:var(--rlo)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:960px){
+.bar .menu{display:inline-grid}
+.shell{grid-template-columns:1fr;gap:0;padding:14px 12px 56px}
+nav{position:fixed;z-index:25;inset:0 auto 0 0;height:auto;width:290px;max-height:none;background:var(--paper);border-right:1px solid var(--line);padding:72px 16px 16px;transform:translateX(-100%);transition:transform .2s}
+nav.open{transform:none}
+.scrim.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20}
+main{padding:26px 18px 36px;border-radius:12px}
+.cover h2{font-size:2rem}
 }
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 24px; }
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--ink);
-  font: 15.5px/1.7 "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-.layout {
-  display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
-  gap: 32px;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 32px 20px 64px;
-}
-
-/* ---------- sidebar ---------- */
-.sidebar {
-  position: sticky; top: 24px; align-self: start;
-  max-height: calc(100vh - 48px); overflow: auto;
-  font-size: 13.5px;
-}
-.sidebar .brand { font-weight: 700; color: var(--accent); margin: 0 0 2px; }
-.sidebar .sub { color: var(--muted); font-size: 12.5px; margin: 0 0 16px; }
-.sidebar ol { list-style: none; margin: 0; padding: 0; }
-.sidebar li a {
-  display: block; padding: 5px 10px; border-left: 2px solid var(--line);
-  color: var(--muted); text-decoration: none;
-}
-.sidebar li.lv4 a { padding-left: 24px; font-size: 12.5px; }
-.sidebar li a:hover { color: var(--ink); }
-.sidebar li a.active { color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
-
-/* ---------- paper ---------- */
-.paper {
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  box-shadow: 0 1px 2px rgba(20, 30, 45, .04), 0 8px 24px rgba(20, 30, 45, .06);
-  padding: 56px 64px;
-  min-width: 0;
-}
-
-/* cover */
-.cover {
-  text-align: center;
-  padding: 24px 0 40px;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 32px;
-}
-.cover p { margin: 4px 0; }
-.cover p:nth-child(1) { font-size: 13px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
-.cover p:nth-child(2) { font-size: 40px; font-weight: 700; color: var(--accent); margin: 18px 0 6px; line-height: 1.2; }
-.cover p:nth-child(3) { font-size: 19px; font-weight: 500; }
-.cover p:nth-child(4) { color: var(--muted); margin-bottom: 28px; }
-.cover p:nth-child(n+5) { font-size: 13.5px; color: var(--muted); margin: 0; }
-.cover::after {
-  content: ""; display: block; width: 64px; height: 3px; margin: 28px auto 0;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 2px;
-}
-
-/* in-document toc card */
-.toc-card {
-  background: var(--soft); border: 1px solid var(--line); border-radius: 8px;
-  padding: 20px 28px; margin-bottom: 40px;
-}
-.toc-card p { margin: 4px 0; }
-.toc-card p:first-child { font-size: 12.5px; letter-spacing: .12em; color: var(--muted); margin-bottom: 10px; }
-.toc-card p:last-child:not(:first-child) { display: none; } /* trailing "Project Proposal" label */
-.toc-card a { color: var(--ink); text-decoration: none; }
-.toc-card a:hover { color: var(--accent); }
-
-/* headings */
-.content h1 {
-  font-size: 25px; color: var(--accent); margin: 48px 0 16px;
-  padding-top: 20px; border-top: 2px solid var(--accent-soft); line-height: 1.3;
-}
-.content h1:first-child { margin-top: 0; }
-.content h4 { font-size: 17.5px; color: var(--ink); margin: 32px 0 10px; }
-.content h1 + h4 { margin-top: 12px; }
-.content p { margin: 10px 0; }
-.content em { color: var(--muted); }
-.content strong { font-weight: 600; }
-.content ul, .content ol { padding-left: 22px; }
-.content li { margin: 4px 0; }
-.content a { color: var(--accent); }
-
-/* tables */
-.table-wrap { overflow-x: auto; margin: 14px 0 20px; border: 1px solid var(--line); border-radius: 8px; }
-.content table { border-collapse: collapse; width: 100%; font-size: 14px; }
-.content th {
-  background: var(--accent); color: #fff; text-align: left; font-weight: 600;
-  padding: 10px 12px; white-space: nowrap;
-}
-.content th strong { font-weight: 600; }
-.content td { padding: 9px 12px; border-top: 1px solid var(--line); vertical-align: top; }
-.content tbody tr:nth-child(even) td { background: var(--soft); }
-
-/* ascii diagram */
-.content pre {
-  background: var(--soft); border: 1px solid var(--line); border-radius: 8px;
-  padding: 18px; overflow-x: auto; line-height: 1.35; margin: 14px 0 20px;
-}
-.content code { font: 13px/1.35 "JetBrains Mono", ui-monospace, Consolas, monospace; }
-.content pre code { display: block; width: max-content; margin: 0 auto; color: var(--accent); }
-
-/* badges & todo */
-.badge {
-  display: inline-block; padding: 1px 10px; border-radius: 999px;
-  font-size: 12.5px; font-weight: 600; white-space: nowrap;
-}
-.badge.hi { background: var(--hi-bg); color: var(--hi-ink); }
-.badge.mid { background: var(--mid-bg); color: var(--mid-ink); }
-.badge.lo { background: var(--lo-bg); color: var(--lo-ink); }
-.todo {
-  background: var(--todo-bg); color: var(--todo-ink); font-weight: 600;
-  padding: 1px 6px; border-radius: 4px;
+@media print{
+:root,:root[data-theme="dark"]{--bg:#fff;--paper:#fff;--ink:#000;--muted:#444;--line:#bbb;--soft:#f2f2f2;--accent:#124a75;--accent-soft:#eee;--code:#f2f2f2}
+body{font-size:12px;background:#fff}
+.bar,nav,.scrim{display:none}
+.shell{display:block;padding:0}
+main{border:0;padding:0;box-shadow:none}
+.tw,pre,tr{break-inside:avoid}
+h1,h4{break-after:avoid}
+.pill{border:1px solid #888;background:none!important;color:#000!important}
 }
 
-/* offline fallback */
-.fallback { white-space: pre-wrap; font: 13px/1.6 ui-monospace, Consolas, monospace; }
+.cover{text-align:center}
+.cover h3{margin:0;font-size:1.3rem;font-weight:700;color:var(--ink);line-height:1.5;letter-spacing:.01em}
+.cover .course{margin:12px 0 0;font-size:1.3rem;font-weight:700;color:var(--accent);line-height:1.5;letter-spacing:.01em}
+.cover h2{margin:26px 0 24px}
+.fields{max-width:620px;margin:0 auto;text-align:center}
+@media (max-width:960px){.cover h3,.cover .course{font-size:1.1rem}}
 
-/* ---------- responsive ---------- */
-@media (max-width: 960px) {
-  .layout { grid-template-columns: 1fr; padding: 16px 16px 48px; }
-  .sidebar { display: none; }
-  .paper { padding: 32px 22px; }
-  .cover p:nth-child(2) { font-size: 30px; }
-}
+/* ===== Mục lục ===== */
+.tg{display:inline-grid;place-items:center;flex:none;width:26px;height:26px;padding:0;border:0;border-radius:6px;background:none;color:var(--muted);cursor:pointer;transition:background-color .15s,color .15s}
+.tg:hover{background:var(--soft);color:var(--accent)}
+.tg::before{content:"";width:7px;height:7px;margin-top:-3px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .18s,margin .18s}
+.tg[aria-expanded="false"]::before{transform:rotate(-45deg);margin-top:0}
+.tools{display:flex;gap:4px;flex:none}
+.tl{font:inherit;font-size:12.5px;line-height:1;padding:5px 9px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--muted);cursor:pointer;transition:background-color .15s,color .15s,border-color .15s}
+.tl:hover{background:var(--soft);color:var(--accent);border-color:var(--accent)}
+/* sidebar */
+.nav-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 6px}
+.nav-top .nav-h{margin:0}
+.ng{margin-top:8px}
+.nrow{display:flex;align-items:flex-start;gap:2px}
+.nrow>a.n1{flex:1;min-width:0;margin-top:0}
+.nrow .tg{margin-top:2px}
+.nsub{display:grid;grid-template-rows:1fr;transition:grid-template-rows .2s ease}
+.nsub>div{overflow:hidden;min-height:0;transition:visibility .2s}
+.ng.c .nsub{grid-template-rows:0fr}
+.ng.c .nsub>div{visibility:hidden}
+/* mục lục trong trang */
+.toc-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 8px}
+.toc-top .toc-title{margin:0}
+.toc-card li.has-sub>.trow{display:flex;align-items:center;gap:4px}
+.toc-card li.no-sub>a{margin-left:30px}
+.toc-card ul ul{padding-left:50px}
+.toc-card li.c>ul{display:none}
 
-/* ---------- print (A4) ---------- */
-@page { size: A4; margin: 18mm 16mm; }
-@media print {
-  body { background: #fff; font-size: 11pt; }
-  .layout { display: block; padding: 0; max-width: none; }
-  .sidebar { display: none; }
-  .paper { border: 0; box-shadow: none; padding: 0; }
-  .cover { min-height: 230mm; display: flex; flex-direction: column; justify-content: center; border: 0; }
-  .toc-card { break-after: page; }
-  .content h1 { break-before: page; border-top: 0; padding-top: 0; }
-  .content h1:first-child { break-before: auto; }
-  .content th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  tr, pre { break-inside: avoid; }
+/* ===== Highlight ===== */
+:root{--k-num-bg:#fde2e8;--k-num-fg:#9b1c3c;--k-ref-bg:#e1edf8;--k-ref-fg:#1c5d8f;--k-tech-bg:#dff1e5;--k-tech-fg:#1e6a42;--k-role-bg:#d8f0f3;--k-role-fg:#0e6572}
+:root[data-theme="dark"]{--k-num-bg:#4a2030;--k-num-fg:#f4a9bd;--k-ref-bg:#1b3248;--k-ref-fg:#8cc4ee;--k-tech-bg:#173326;--k-tech-fg:#7fd1a2;--k-role-bg:#11323a;--k-role-fg:#7fd2de}
+.hl,.sw{border-radius:4px;padding:0 3px;margin:0 -1px;font-weight:600;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.hl-num,.sw.hl-num{background:var(--k-num-bg);color:var(--k-num-fg);font-weight:700}
+.hl-ref,.sw.hl-ref{background:var(--k-ref-bg);color:var(--k-ref-fg);font-weight:700}
+.hl-tech,.sw.hl-tech{background:var(--k-tech-bg);color:var(--k-tech-fg)}
+.hl-role,.sw.hl-role{background:var(--k-role-bg);color:var(--k-role-fg)}
+.hl-off-num main .hl-num,.hl-off-ref main .hl-ref,.hl-off-tech main .hl-tech,.hl-off-role main .hl-role{background:none;color:inherit;font-weight:inherit;padding:0;margin:0}
+tbody tr:hover td .hl{box-shadow:0 0 0 1px var(--line)}
+/* bảng chú giải */
+.hl-btn[aria-expanded="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.hl-panel{position:absolute;top:62px;right:16px;width:300px;max-width:calc(100vw - 32px);padding:14px 16px;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(10,20,35,.18);font-size:14px;line-height:1.5}
+.hl-panel[hidden]{display:none}
+.hl-panel h5{margin:0 0 8px;font-size:14px}
+.hl-panel label{display:flex;align-items:flex-start;gap:10px;padding:6px 4px;border-radius:8px;cursor:pointer}
+.hl-panel label:hover{background:var(--soft)}
+.hl-panel input{margin:4px 0 0;accent-color:var(--accent);flex:none}
+.hl-panel .sw{display:inline-block;margin:0 0 2px;font-size:13px}
+.hl-panel .nm{display:block;font-weight:650}
+.hl-panel .ex{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:4px}
+.hl-panel .ex .sw{margin:0;font-size:12.5px}
+.hl-panel .all{border-bottom:1px solid var(--line);border-radius:8px 8px 0 0;margin-bottom:4px;padding-bottom:8px;font-weight:650}
+
+@media print{
+.tg,.tools,.hl-panel,.hl-btn{display:none!important}
+.toc-card li.c>ul{display:block!important}
+.hl{background:none!important;color:#000!important;font-weight:inherit;padding:0;margin:0;border-bottom:1px dotted #666;border-radius:0}
+.cover h3,.cover .course{font-size:15pt}
 }
-</style>
-</head>
+</style></head>
 <body>
-<div class="layout">
-  <aside class="sidebar">
-    <p class="brand">Project Proposal</p>
-    <p class="sub">Hệ thống Quản lý và Đặt sân Thể thao</p>
-    <ol id="side-toc"></ol>
-  </aside>
-  <main class="paper">
-    <section class="cover" id="cover"></section>
-    <section class="toc-card" id="toc"></section>
-    <article class="content" id="content"></article>
-  </main>
+<header class="bar"><button class="menu" id="menuBtn" type="button" aria-label="Mở mục lục" aria-expanded="false">
+<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+<div class="bar-title"><strong>Project Proposal</strong><span>Hệ thống Quản lý và Đặt sân Thể thao</span></div>
+<button class="hl-btn" id="hlBtn" type="button" aria-label="Chú giải và bộ lọc highlight" aria-expanded="false" aria-controls="hlPanel" title="Chú giải highlight"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 11l6 6M4 20l4.5-1 9.8-9.8a2.1 2.1 0 0 0 0-3L17 5a2.1 2.1 0 0 0-3 0L4.2 14.8 4 20z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M14 20h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button><div class="hl-panel" id="hlPanel" hidden role="dialog" aria-label="Highlight"></div><button class="theme" id="themeBtn" type="button" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối"><svg class="i-sun" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><svg class="i-moon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button></header>
+<div class="shell">
+<nav id="nav" aria-label="Mục lục"><p class="nav-h">Mục lục</p><a class="n1" href="#1-bảng-đánh-giá-thành-viên">1 Bảng đánh giá thành viên</a><a class="n1" href="#2-phát-biểu-bài-toán-sơ-lược">2 Phát biểu bài toán sơ lược</a><a class="n4" href="#thực-trạng">Thực trạng</a><a class="n4" href="#các-giải-pháp-hiện-có">Các giải pháp hiện có</a><a class="n4" href="#điểm-khác-biệt">Điểm khác biệt</a><a class="n4" href="#mô-tả-hệ-thống">Mô tả hệ thống</a><a class="n4" href="#môi-trường-hoạt-động">Môi trường hoạt động</a><a class="n4" href="#ràng-buộc-thiết-kế-và-triển-khai">Ràng buộc thiết kế và triển khai</a><a class="n1" href="#3-giải-pháp-đề-xuất">3 Giải pháp đề xuất</a><a class="n4" href="#31-phần-mềm">3.1 Phần mềm</a><a class="n4" href="#311-danh-sách-các-chức-năng-phần-mềm">3.1.1. Danh sách các chức năng phần mềm</a><a class="n4" href="#312-kiến-trúc-tổng-thể-phần-mềm">3.1.2. Kiến trúc tổng thể phần mềm</a><a class="n4" href="#313-các-phần-không-thực-hiện">3.1.3. Các phần không thực hiện</a><a class="n4" href="#32-phần-cứng">3.2 Phần cứng</a><a class="n1" href="#4-kế-hoạch-phát-triển">4 Kế hoạch phát triển</a><a class="n4" href="#41-phân-tích-yêu-cầu">4.1 Phân tích yêu cầu</a><a class="n4" href="#42-thiết-kế-phần-mềm">4.2 Thiết kế phần mềm</a><a class="n4" href="#43-cài-đặt-implement-phần-mềm">4.3 Cài đặt (implement) phần mềm</a><a class="n4" href="#44-kiểm-thử-phần-mềm">4.4 Kiểm thử phần mềm</a><a class="n4" href="#45-triển-khai-bảo-trì">4.5 Triển khai, bảo trì</a><a class="n1" href="#5-kế-hoạch-nhân-sự--chi-phí">5 Kế hoạch nhân sự &amp; chi phí</a><a class="n4" href="#51-nhân-sự">5.1 Nhân sự</a><a class="n4" href="#52-chi-phí-dự-kiến">5.2 Chi phí dự kiến</a></nav>
+<div class="scrim" id="scrim"></div>
+<main id="doc"><header class="cover"><h3 id="đại-học-khoa-học-tự-nhiên-tp-hcm">ĐẠI HỌC KHOA HỌC TỰ NHIÊN TP HCM</h3>
+<h3 id="khoa-công-nghệ-thông-tin">KHOA CÔNG NGHỆ THÔNG TIN</h3>
+<h3 id="bộ-môn-công-nghệ-phần-mềm">BỘ MÔN CÔNG NGHỆ PHẦN MỀM</h3>
+<p class="course">NHẬP MÔN CÔNG NGHỆ PHẦN MỀM</p>
+<h2 id="project-proposal">Project Proposal</h2>
+<div class="fields"><div class="field"><span class="k">Đề tài:</span> <span class="v">Hệ thống Quản lý và Đặt sân Thể thao</span></div>
+<div class="field"><span class="k">Nhóm:</span> <span class="v">6</span></div></div>
+</header><section class="toc-card" aria-label="MỤC LỤC"><p class="toc-title">MỤC LỤC</p><ul>
+<li><a href="#1-bảng-đánh-giá-thành-viên">1 Bảng đánh giá thành viên</a></li>
+<li><a href="#2-phát-biểu-bài-toán-sơ-lược">2 Phát biểu bài toán sơ lược</a><ul>
+<li><a href="#thực-trạng">Thực trạng</a></li>
+<li><a href="#các-giải-pháp-hiện-có">Các giải pháp hiện có</a></li>
+<li><a href="#điểm-khác-biệt">Điểm khác biệt</a></li>
+<li><a href="#mô-tả-hệ-thống">Mô tả hệ thống</a></li>
+<li><a href="#môi-trường-hoạt-động">Môi trường hoạt động</a></li>
+<li><a href="#ràng-buộc-thiết-kế-và-triển-khai">Ràng buộc thiết kế và triển khai</a></li>
+</ul>
+</li>
+<li><a href="#3-giải-pháp-đề-xuất">3 Giải pháp đề xuất</a><ul>
+<li><a href="#31-phần-mềm">3.1 Phần mềm</a></li>
+<li><a href="#311-danh-sách-các-chức-năng-phần-mềm">3.1.1 Danh sách các chức năng phần mềm</a></li>
+<li><a href="#312-kiến-trúc-tổng-thể-phần-mềm">3.1.2 Kiến trúc tổng thể phần mềm</a></li>
+<li><a href="#313-các-phần-không-thực-hiện">3.1.3 Các phần không thực hiện</a></li>
+<li><a href="#32-phần-cứng">3.2 Phần cứng</a></li>
+</ul>
+</li>
+<li><a href="#4-kế-hoạch-phát-triển">4 Kế hoạch phát triển</a><ul>
+<li><a href="#41-phân-tích-yêu-cầu">4.1 Phân tích yêu cầu</a></li>
+<li><a href="#42-thiết-kế-phần-mềm">4.2 Thiết kế phần mềm</a></li>
+<li><a href="#43-cài-đặt-implement-phần-mềm">4.3 Cài đặt (implement) phần mềm</a></li>
+<li><a href="#44-kiểm-thử-phần-mềm">4.4 Kiểm thử phần mềm</a></li>
+<li><a href="#45-triển-khai-bảo-trì">4.5 Triển khai, bảo trì</a></li>
+</ul>
+</li>
+<li><a href="#5-kế-hoạch-nhân-sự--chi-phí">5 Kế hoạch nhân sự &amp; chi phí</a><ul>
+<li><a href="#51-nhân-sự">5.1 Nhân sự</a></li>
+<li><a href="#52-chi-phí-dự-kiến">5.2 Chi phí dự kiến</a></li>
+</ul>
+</li>
+</ul></section><p class="running">Project Proposal</p>
+<h1 id="1-bảng-đánh-giá-thành-viên">1 Bảng đánh giá thành viên</h1>
+<div class="tw"><table>
+<thead>
+<tr>
+<th><strong>MSSV</strong></th>
+<th><strong>Họ Tên</strong></th>
+<th><strong>% đóng góp (tối đa 100%)</strong></th>
+<th><strong>Chữ ký</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>24120307</td>
+<td><span class="hl hl-role">Vòng Sau Hậu</span></td>
+<td>100%</td>
+<td></td>
+</tr>
+<tr>
+<td>24120264</td>
+<td><span class="hl hl-role">Nguyễn Huỳnh Gia Bảo</span></td>
+<td>100%</td>
+<td></td>
+</tr>
+<tr>
+<td>24120230</td>
+<td><span class="hl hl-role">Dương Danh Toàn</span></td>
+<td>100%</td>
+<td></td>
+</tr>
+<tr>
+<td>24120278</td>
+<td><span class="hl hl-role">Võ Văn Khánh Đăng</span></td>
+<td>100%</td>
+<td></td>
+</tr>
+<tr>
+<td>24120236</td>
+<td><span class="hl hl-role">Bùi Đặng Khả Tuân</span></td>
+<td>100%</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<h1 id="2-phát-biểu-bài-toán-sơ-lược">2 Phát biểu bài toán sơ lược</h1>
+<h4 id="thực-trạng">Thực trạng</h4>
+<p><span class="hl hl-role">Người chơi</span> cầu lông, pickleball, bóng đá mini hiện vẫn đặt sân chủ yếu qua điện thoại, <span class="hl hl-tech">Zalo</span> hoặc <span class="hl hl-tech">Facebook</span>. <span class="hl hl-role">Chủ sân</span> ghi lịch bằng sổ tay hoặc file <span class="hl hl-tech">Excel</span>, nhận cọc qua chuyển khoản và tự quyết định có hoàn cọc hay không khi khách hủy. Cách làm này gây ra ba vấn đề thường gặp:</p>
+<p><strong>Tình huống 1 – Trùng lịch.</strong> Một nhóm gọi điện đặt sân 19h tối thứ Sáu, chuyển khoản cọc rồi gửi ảnh qua <span class="hl hl-tech">Zalo</span>. Đến giờ chơi, sân đã có nhóm khác vì <span class="hl hl-role">chủ sân</span> nhận trùng hoặc quên ghi sổ. Khách không có bằng chứng rõ ràng ngoài tin nhắn, hai bên tranh cãi và cả hai nhóm đều mất buổi chơi.</p>
+<p><strong>Tình huống 2 – Hoàn cọc tùy <span class="hl hl-role">chủ sân</span>.</strong> Khách báo hủy trước một ngày vì trời mưa. Mỗi sân một kiểu: có sân hoàn đủ, có sân hoàn một nửa, có sân không hoàn. Khách phải nhắn qua lại nhiều lần, và vì không có quy định công bố trước nên khách thường chịu thiệt.</p>
+<p><strong>Tình huống 3 – Mức giá đặt sân khác nhau.</strong> Giá sân thay đổi theo khung giờ cao điểm, cuối tuần và ngày lễ. Khi khách đặt lịch, <span class="hl hl-role">chủ sân</span> hoặc nhân viên phải nhớ áp dụng bảng giá phức tạp (ví dụ: ngày thường khác cuối tuần, giờ vàng từ 17h–20h khác giờ thấp điểm). Việc tính toán nhẩm hoặc tra bảng giá thủ công rất dễ dẫn đến nhầm lẫn, tính thừa hoặc thiếu tiền của khách dẫn đến khách có thể cảm thấy không công bằng nếu họ nghi ngờ <span class="hl hl-role">chủ sân</span> áp dụng "giá tùy hứng".</p>
+<h4 id="các-giải-pháp-hiện-có">Các giải pháp hiện có</h4>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Sản phẩm</th>
+<th>Đối tượng</th>
+<th>Làm tốt</th>
+<th>Hạn chế so với bài toán</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Datsan247 (Việt Nam)</td>
+<td><span class="hl hl-role">Chủ sân</span> và <span class="hl hl-role">người chơi</span></td>
+<td>Nhiều môn, xem giờ trống, đặt và thanh toán</td>
+<td>Nhiều sân không có địa chỉ rõ ràng, chưa đề xuất được sân bãi lân cận</td>
+</tr>
+<tr>
+<td>ALOBO và ALOBooking (Việt Nam)</td>
+<td>ALOBO dành cho <span class="hl hl-role">chủ sân</span>, ALOBooking dành cho <span class="hl hl-role">người chơi</span></td>
+<td>Quản lý lịch sân, dịch vụ, công nợ, hóa đơn</td>
+<td><span class="hl hl-role">Người chơi</span> và <span class="hl hl-role">chủ sân</span> tách ra 2 nền tảng riêng biệt, vé vãng lai phụ thuộc vào việc chủ hội nhóm/ban tổ chức hôm đó có mở buổi giao lưu hay không</td>
+</tr>
+<tr>
+<td>Playtomic (quốc tế)</td>
+<td><span class="hl hl-role">Người chơi</span>, câu lạc bộ</td>
+<td>Ghép trận theo trình độ, tự hủy và hoàn tiền khi không đủ người</td>
+<td>Tập trung padel/tennis ở châu Âu, gần như chưa có ở Việt Nam</td>
+</tr>
+<tr>
+<td>CourtReserve (quốc tế)</td>
+<td>Câu lạc bộ</td>
+<td>Luật đặt sân tùy chỉnh, chống đặt trùng, thu tiền trước</td>
+<td>Giao diện di động bị đánh giá khó dùng; thu phí theo tháng</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="điểm-khác-biệt">Điểm khác biệt</h4>
+<ul>
+<li>Một hệ thống chung cho cả <span class="hl hl-role">chủ sân</span> và <span class="hl hl-role">người chơi</span>, thay vì tách thành app riêng cho mỗi bên.</li>
+<li>Chính sách cọc và hoàn cọc công khai, tính tự động qua ví nội bộ, hai bên không phải thương lượng.</li>
+<li>Hướng tới sân cầu lông, pickleball, bóng đá mini tại Việt Nam.</li>
+<li>Tìm và lọc sân theo khu vực, giúp khách thấy các sân lân cận còn trống.</li>
+<li>Bảng giá theo khung giờ được công khai, khách thấy tổng tiền trước khi đặt.</li>
+</ul>
+<h4 id="mô-tả-hệ-thống">Mô tả hệ thống</h4>
+<p>Hệ thống là ứng dụng web với ba nhóm người dùng. <span class="hl hl-role">Chủ sân</span> tạo sân, cấu hình khung giờ và bảng giá theo thời điểm. <span class="hl hl-role">Khách hàng</span> tìm sân trống, đặt sân và đặt cọc <span class="hl hl-num">30%</span> từ ví. <span class="hl hl-role">Admin</span> cấp tiền vào ví người dùng. <span class="hl hl-role">Chủ sân</span> cũng là một người dùng, chỉ có thêm quyền quản lý sân. Mọi dòng tiền (cọc, hoàn cọc, tiền cọc bị mất) đều đi qua ví nội bộ; nạp tiền và rút tiền thật không nằm trong phạm vi đồ án.</p>
+<h4 id="môi-trường-hoạt-động">Môi trường hoạt động</h4>
+<ul>
+<li>Client: trình duyệt web hỗ trợ <span class="hl hl-tech">HTML5/CSS3/JavaScript</span> trên máy tính và điện thoại.</li>
+<li>Server: Cấu hình máy chủ dự kiến với <span class="hl hl-num">1 vCPU</span>, <span class="hl hl-num">1 GB RAM</span>, <span class="hl hl-num">20 GB SSD</span>.</li>
+<li>Dịch vụ ngoài: dịch vụ email <span class="hl hl-tech">Brevo</span> để gửi <span class="hl hl-tech">OTP</span> và xác nhận đặt sân; bản đồ <span class="hl hl-tech">Leaflet</span> với dữ liệu <span class="hl hl-tech">OpenStreetMap</span>.</li>
+</ul>
+<h4 id="ràng-buộc-thiết-kế-và-triển-khai">Ràng buộc thiết kế và triển khai</h4>
+<ul>
+<li><span class="hl hl-role">Frontend</span> và <span class="hl hl-role">Backend</span> tách riêng, giao tiếp qua <span class="hl hl-tech">REST API</span>.</li>
+<li><span class="hl hl-role">Frontend</span>: <span class="hl hl-tech">React.js</span>.</li>
+<li><span class="hl hl-role">Backend</span>: <span class="hl hl-tech">Python</span> (<span class="hl hl-tech">FastAPI</span>).</li>
+<li>Cơ sở dữ liệu (<span class="hl hl-role">CSDL</span>) quan hệ: <span class="hl hl-tech">MySQL</span>.</li>
+<li>Mật khẩu mã hóa bằng <span class="hl hl-tech">Bcrypt</span>, giao tiếp qua <span class="hl hl-tech">HTTPS</span>, xác thực bằng <span class="hl hl-tech">JWT</span>.</li>
+<li>Mã nguồn quản lý bằng <span class="hl hl-tech">Git</span>/<span class="hl hl-tech">GitHub</span>.</li>
+</ul>
+<h1 id="3-giải-pháp-đề-xuất">3 Giải pháp đề xuất</h1>
+<h4 id="31-phần-mềm">3.1 Phần mềm</h4>
+<h4 id="311-danh-sách-các-chức-năng-phần-mềm">3.1.1. Danh sách các chức năng phần mềm</h4>
+<div class="tw"><table class="fc">
+<thead>
+<tr>
+<th>#</th>
+<th>Tính năng</th>
+<th>Câu chuyện người dùng</th>
+<th>Story cốt lõi</th>
+<th>Ưu tiên</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Quản lý sân và bảng giá</td>
+<td>Là <span class="hl hl-role">chủ sân</span>, tôi muốn đăng sân và đặt giá theo từng khung giờ để khách đặt được và tôi tối ưu doanh thu.</td>
+<td>Tạo cụm sân và sân con; cấu hình giờ mở cửa; bảng giá theo thời điểm</td>
+<td><span class="pill hi">Cao</span></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tìm và đặt sân</td>
+<td>Là <span class="hl hl-role">khách hàng</span>, tôi muốn tìm sân còn trống ở khu vực gần mình và đặt ngay, biết trước tổng tiền, để không phải gọi điện hỏi từng sân.</td>
+<td>Lọc sân theo khu vực; xem vị trí sân trên bản đồ; xem lịch trống theo ngày; đặt sân và tính tổng tiền; chống đặt trùng khung giờ</td>
+<td><span class="pill hi">Cao</span></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Cọc và hoàn cọc qua ví</td>
+<td>Là <span class="hl hl-role">khách hàng</span>, tôi muốn đặt cọc và được hoàn cọc theo quy định rõ ràng khi hủy, để không phải thương lượng với <span class="hl hl-role">chủ sân</span>.</td>
+<td>Đặt cọc <span class="hl hl-num">30%</span> từ ví; hủy sân và hoàn cọc tự động; <span class="hl hl-role">Admin</span> cấp tiền vào ví</td>
+<td><span class="pill hi">Cao</span></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Ghép đội</td>
+<td>Là <span class="hl hl-role">người chơi</span> thiếu người, tôi muốn đăng bài tìm đồng đội để đủ <span class="hl hl-role">người chơi</span>.</td>
+<td>Đăng bài tìm người; đăng ký tham gia</td>
+<td><span class="pill lo">Thấp</span></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Tiện ích</td>
+<td>Là người dùng, tôi muốn có thêm tiện ích như đánh giá sân, dịch vụ đi kèm, dashboard <span class="hl hl-role">Admin</span> để dùng hệ thống thuận tiện hơn.</td>
+<td>Đánh giá sân; dịch vụ đi kèm</td>
+<td><span class="pill lo">Thấp</span></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Quy định liên quan</strong></p>
+<div class="tw"><table class="fc">
+<thead>
+<tr>
+<th>Mã</th>
+<th>Nội dung</th>
+<th>Chức năng</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="hl hl-ref">QĐ1</span></td>
+<td>Giờ thường: giá cơ sở. Giờ cao điểm, cuối tuần, ngày lễ: tăng <span class="hl hl-num">20%–50%</span> so với giá cơ sở.</td>
+<td>1</td>
+</tr>
+<tr>
+<td><span class="hl hl-ref">QĐ2</span></td>
+<td>Tổng tiền = giá khung giờ × hệ số thời điểm + phí dịch vụ đi kèm (nếu có).</td>
+<td>2</td>
+</tr>
+<tr>
+<td><span class="hl hl-ref">QĐ3</span></td>
+<td>Khung giờ đã được đặt cọc sẽ bị khóa, không ai khác đặt được.</td>
+<td>2</td>
+</tr>
+<tr>
+<td><span class="hl hl-ref">QĐ4</span></td>
+<td>Tiền cọc = <span class="hl hl-num">30%</span> tổng tiền, trừ từ ví khách. Số tiền còn lại thanh toán tại sân hoặc chuyển khoản trước giờ chơi.</td>
+<td>3</td>
+</tr>
+<tr>
+<td><span class="hl hl-ref">QĐ5</span></td>
+<td>Hủy từ <span class="hl hl-num">24 giờ</span> trở lên trước giờ chơi: hoàn <span class="hl hl-num">80%</span> cọc. Từ <span class="hl hl-num">12</span> đến dưới <span class="hl hl-num">24 giờ</span>: hoàn <span class="hl hl-num">50%</span>. Dưới <span class="hl hl-num">12 giờ</span>: không hoàn. Tiền hoàn vào ví khách, phần không hoàn vào ví <span class="hl hl-role">chủ sân</span>.</td>
+<td>3</td>
+</tr>
+<tr>
+<td><span class="hl hl-ref">QĐ6</span></td>
+<td>Mọi dòng tiền đi qua ví và được ghi thành giao dịch. Số dư ví không được âm. Tiền vào ví do <span class="hl hl-role">Admin</span> cấp.</td>
+<td>3</td>
+</tr>
+<tr>
+<td><span class="hl hl-ref">QĐ7</span></td>
+<td>Trạng thái lịch đặt: Chờ đặt cọc → Đã đặt cọc → Đã thanh toán hoàn tất; hoặc Đã hủy.</td>
+<td>2, 3</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="312-kiến-trúc-tổng-thể-phần-mềm">3.1.2. Kiến trúc tổng thể phần mềm</h4>
+<p>Hệ thống theo kiến trúc ba tầng: giao diện, nghiệp vụ, dữ liệu. <span class="hl hl-role">Frontend</span> chỉ giao tiếp với <span class="hl hl-role">Backend</span> qua <span class="hl hl-tech">REST API</span>; mọi quy định về giá, cọc, hoàn cọc được xử lý ở <span class="hl hl-role">Backend</span>.</p>
+<pre><code class="language-text">┌──────────────────────────────────────────────────────────────────────┐
+│                     NGƯỜI DÙNG – TRÌNH DUYỆT WEB                     │
+│              Khách hàng          Chủ sân          Admin              │
+└───────────────────────────────────┬──────────────────────────────────┘
+                                    │ HTTPS
+┌───────────────────────────────────▼──────────────────────────────────┐
+│ FRONTEND – Ứng dụng web                                              │
+│ Tìm và đặt sân · Quản lý sân, bảng giá · Ví · Ghép đội · Quản trị    │
+└───────────────────────────────────┬──────────────────────────────────┘
+                                    │ REST API (JSON) · JWT
+┌───────────────────────────────────▼──────────────────────────────────┐
+│ BACKEND – Xử lý nghiệp vụ, áp dụng quy định QĐ1–QĐ7                  │
+│                                                                      │
+│   ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐   │
+│   │ Xác thực │ │  Sân và  │ │ Đặt sân  │ │  Ví và   │ │ Ghép đội │   │
+│   │phân quyền│ │ bảng giá │ │ khóa giờ │ │giao dịch │ │          │   │
+│   └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘   │
+└────────────────┬────────────────────────────────────┬────────────────┘
+                 │ SQL (transaction)                  │ API
+┌────────────────▼────────────────┐ ┌─────────────────▼────────────────┐
+│ CSDL QUAN HỆ                    │ │ DỊCH VỤ NGOÀI                    │
+│ Tài khoản · Sân · Lịch đặt      │ │ Email: OTP, xác nhận đặt sân     │
+│ Ví · Giao dịch ví               │ │ Bản đồ: vị trí sân               │
+└─────────────────────────────────┘ └──────────────────────────────────┘
+</code></pre>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Tầng</th>
+<th>Thành phần</th>
+<th>Nhiệm vụ chính</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Giao diện</td>
+<td>Ứng dụng web cho <span class="hl hl-role">khách hàng</span>, <span class="hl hl-role">chủ sân</span>, <span class="hl hl-role">Admin</span></td>
+<td>Hiển thị dữ liệu, nhận thao tác người dùng, gọi <span class="hl hl-tech">API</span></td>
+</tr>
+<tr>
+<td>Nghiệp vụ</td>
+<td><span class="hl hl-role">Backend</span> gồm 5 module: xác thực và phân quyền, sân và bảng giá, đặt sân, ví và giao dịch, ghép đội</td>
+<td>Áp dụng quy định <span class="hl hl-ref">QĐ1–QĐ7</span>; kiểm tra quyền; xử lý tiền trong transaction</td>
+</tr>
+<tr>
+<td>Dữ liệu</td>
+<td><span class="hl hl-role">CSDL</span> quan hệ</td>
+<td>Lưu trữ dữ liệu; ràng buộc số dư ví không âm và không trùng khung giờ</td>
+</tr>
+<tr>
+<td>Dịch vụ ngoài</td>
+<td>Dịch vụ email, dịch vụ bản đồ</td>
+<td>Gửi <span class="hl hl-tech">OTP</span>, xác nhận đặt sân; hiển thị vị trí sân</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="313-các-phần-không-thực-hiện">3.1.3. Các phần không thực hiện</h4>
+<ul>
+<li>Ứng dụng di động riêng (Android/iOS).</li>
+<li>Nạp tiền thật qua QR hoặc cổng thanh toán, rút tiền thật về ngân hàng; nếu kịp chỉ làm bản demo.</li>
+<li>Gửi <span class="hl hl-tech">OTP</span>, thông báo qua SMS.</li>
+<li>Chỉ đường trong ứng dụng (mở bằng <span class="hl hl-tech">Google Maps</span>).</li>
+<li><span class="hl hl-role">Chủ sân</span> đánh giá <span class="hl hl-role">người chơi</span>.</li>
+</ul>
+<h4 id="32-phần-cứng">3.2 Phần cứng</h4>
+<ul>
+<li>Máy chủ: Sử dụng hosting/VPS hiện có của nhóm với cấu hình dự kiến <span class="hl hl-num">1 vCPU</span>, <span class="hl hl-num">1 GB RAM</span> và <span class="hl hl-num">20 GB SSD</span>.</li>
+<li><span class="hl hl-role">CSDL</span>: <span class="hl hl-tech">MySQL</span> do bên hosting cung cấp, chạy riêng với máy chủ ứng dụng.</li>
+<li>Người dùng: máy tính hoặc điện thoại có trình duyệt và Internet.</li>
+</ul>
+<h1 id="4-kế-hoạch-phát-triển">4 Kế hoạch phát triển</h1>
+<p>Nhóm phát triển theo quy trình <strong>Scrum</strong>, chia thành 5 sprint. Mỗi sprint kết thúc bằng một bản chạy được (Increment). Các giai đoạn 4.1–4.5 không làm tuần tự một lần mà lặp lại trong từng sprint.</p>
+<p><strong>Vai trò Scrum</strong></p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Vai trò</th>
+<th>Thành viên</th>
+<th>Trách nhiệm</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Product Owner (PO), Scrum Master (SM)</td>
+<td><span class="hl hl-role">Vòng Sau Hậu</span></td>
+<td>Quản lý Product Backlog và thứ tự ưu tiên; tổ chức các buổi họp Scrum; gỡ vướng mắc cho nhóm</td>
+</tr>
+<tr>
+<td>Development Team</td>
+<td><span class="hl hl-role">Bùi Đặng Khả Tuân</span>, <span class="hl hl-role">Dương Danh Toàn</span>, <span class="hl hl-role">Nguyễn Huỳnh Gia Bảo</span>, <span class="hl hl-role">Võ Văn Khánh Đăng</span></td>
+<td>Ước lượng, nhận task và hoàn thành Increment mỗi sprint</td>
+</tr>
+</tbody>
+</table></div>
+<p>Đề tài do nhóm tự chọn nên không có <span class="hl hl-role">khách hàng</span> bên ngoài. <span class="hl hl-role">Hậu</span> kiêm PO và SM để cân bằng giữa nhu cầu sản phẩm và khả năng thực hiện của nhóm. Các quyết định về phạm vi và cắt giảm chức năng được thống nhất cùng cả nhóm tại Sprint Planning và Backlog Refinement.</p>
+<p><strong>Sự kiện Scrum</strong></p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Buổi họp</th>
+<th>Khi nào</th>
+<th>Nội dung</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Backlog Refinement</td>
+<td>Trước Sprint Planning; có thể gộp vào họp giữa sprint trước</td>
+<td>PO chuẩn bị bản nháp sprint (mục tiêu, backlog dự kiến, câu hỏi về yêu cầu kèm phương án đề xuất); nhóm làm rõ yêu cầu, thống nhất kỹ thuật; PO cập nhật lại backlog</td>
+</tr>
+<tr>
+<td>Sprint Planning</td>
+<td>Đầu sprint</td>
+<td>Chọn việc từ Product Backlog đã cập nhật, chia task, phân công trên <span class="hl hl-tech">Jira</span></td>
+</tr>
+<tr>
+<td>Họp giữa sprint</td>
+<td>Giữa sprint</td>
+<td>Kiểm tra tiến độ, gỡ vướng mắc, điều chỉnh task</td>
+</tr>
+<tr>
+<td>Sprint Review + Retrospective</td>
+<td>Cuối sprint</td>
+<td>Demo Increment, rút kinh nghiệm cho sprint sau</td>
+</tr>
+<tr>
+<td>Họp đột xuất</td>
+<td>Khi phát sinh task quan trọng</td>
+<td>Phân công lại</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Công cụ:</strong> <span class="hl hl-tech">Jira</span> (backlog, sprint, bảng task, theo dõi lỗi); <span class="hl hl-tech">GitHub</span> và <span class="hl hl-tech">GitHub Actions</span> (quản lý mã nguồn, Pull Request (<span class="hl hl-tech">PR</span>) và tích hợp liên tục (<span class="hl hl-tech">CI</span>)); <span class="hl hl-tech">Google Meet</span> (họp); <span class="hl hl-tech">Postman</span> (kiểm thử <span class="hl hl-tech">API</span>).</p>
+<p><strong>Lịch sprint dự kiến</strong></p>
+<div class="tw"><table class="fc">
+<thead>
+<tr>
+<th>Sprint</th>
+<th>Tuần</th>
+<th>Thời gian</th>
+<th>Mục tiêu</th>
+<th>Chức năng</th>
+<th>Thành phẩm</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Tuần 1–2</td>
+<td>12/10 – 25/10</td>
+<td>Phân tích, thiết kế, chuẩn bị</td>
+<td>–</td>
+<td>Project Proposal; Product Backlog trên <span class="hl hl-tech">Jira</span>; chốt công nghệ; thiết kế <span class="hl hl-role">CSDL</span> và <span class="hl hl-tech">API</span> ban đầu; repo và khung dự án</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tuần 3–4</td>
+<td>26/10 – 08/11</td>
+<td>Đăng nhập; <span class="hl hl-role">chủ sân</span> tạo sân và bảng giá</td>
+<td>1</td>
+<td>Đăng ký/đăng nhập; quản lý sân, khung giờ, bảng giá</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Tuần 5–6</td>
+<td>09/11 – 22/11</td>
+<td>Tìm và đặt sân; ví và đặt cọc</td>
+<td>2, 3</td>
+<td>Tìm/lọc sân, vị trí sân trên bản đồ, đặt sân, khóa khung giờ; <span class="hl hl-role">Admin</span> cấp tiền; cọc từ ví</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Tuần 7–8</td>
+<td>23/11 – 06/12</td>
+<td>Hủy và hoàn cọc; ghép đội</td>
+<td>3, 4</td>
+<td>Đủ luồng đặt – hủy – hoàn cọc vào ví; ghép đội</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Tuần 9</td>
+<td>07/12 – 13/12</td>
+<td>Tiện ích, kiểm thử toàn hệ thống, triển khai</td>
+<td>5 (nếu kịp)</td>
+<td>Đánh giá sân, dịch vụ đi kèm, dashboard; bản đã triển khai; báo cáo cuối kỳ</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Thứ tự cắt giảm khi trễ tiến độ:</strong> chức năng 5 → chức năng 4 (làm bản đơn giản).</p>
+<p><strong>Luồng chính</strong> <em>đăng nhập → tìm sân → đặt sân → cọc từ ví → hủy/hoàn cọc</em> <strong>không được cắt</strong>.</p>
+<h4 id="41-phân-tích-yêu-cầu">4.1 Phân tích yêu cầu</h4>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Hoạt động</th>
+<th>Thời điểm</th>
+<th>Phụ trách</th>
+<th>Thành phẩm</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Phân tích đề tài, xác định phạm vi và 5 tính năng</td>
+<td><span class="hl hl-ref">Sprint 1</span></td>
+<td>Cả nhóm</td>
+<td>Project Proposal</td>
+</tr>
+<tr>
+<td>Viết user story, tiêu chí chấp nhận (Acceptance Criteria), quy định nghiệp vụ</td>
+<td><span class="hl hl-ref">Sprint 1</span></td>
+<td><span class="hl hl-role">Hậu</span></td>
+<td>Product Backlog trên <span class="hl hl-tech">Jira</span></td>
+</tr>
+<tr>
+<td>Làm rõ yêu cầu cho sprint kế tiếp</td>
+<td>Backlog Refinement mỗi sprint</td>
+<td>Cả nhóm</td>
+<td>Backlog cập nhật; câu hỏi về yêu cầu đã được chốt</td>
+</tr>
+<tr>
+<td>Hoàn thiện tài liệu phân tích theo đợt nộp</td>
+<td>Theo yêu cầu của giáo viên</td>
+<td>Cả nhóm</td>
+<td>Tài liệu phân tích yêu cầu</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="42-thiết-kế-phần-mềm">4.2 Thiết kế phần mềm</h4>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Hoạt động</th>
+<th>Thời điểm</th>
+<th>Phụ trách</th>
+<th>Thành phẩm</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Thiết kế kiến trúc, chốt công nghệ</td>
+<td><span class="hl hl-ref">Sprint 1</span></td>
+<td><span class="hl hl-role">Tuân</span>, <span class="hl hl-role">Toàn</span></td>
+<td>Sơ đồ kiến trúc; quyết định công nghệ</td>
+</tr>
+<tr>
+<td>Thiết kế <span class="hl hl-role">CSDL</span>, gồm ràng buộc về tiền và khung giờ</td>
+<td><span class="hl hl-ref">Sprint 1</span>; bổ sung trong từng sprint</td>
+<td><span class="hl hl-role">Bảo</span></td>
+<td>Lược đồ <span class="hl hl-role">CSDL</span> (<span class="hl hl-tech">ERD</span>)</td>
+</tr>
+<tr>
+<td>Thiết kế <span class="hl hl-tech">API</span></td>
+<td><span class="hl hl-ref">Sprint 1</span>; bổ sung trong từng sprint</td>
+<td><span class="hl hl-role">Tuân</span>, <span class="hl hl-role">Toàn</span></td>
+<td>Tài liệu <span class="hl hl-tech">API</span></td>
+</tr>
+<tr>
+<td>Thiết kế giao diện</td>
+<td><span class="hl hl-ref">Sprint 1</span>; chi tiết trong sprint làm chức năng</td>
+<td><span class="hl hl-role">Đăng</span></td>
+<td>Wireframe, bản thiết kế giao diện</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="43-cài-đặt-implement-phần-mềm">4.3 Cài đặt (implement) phần mềm</h4>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Hoạt động</th>
+<th>Thời điểm</th>
+<th>Phụ trách</th>
+<th>Thành phẩm</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lập trình chức năng theo Sprint Backlog</td>
+<td><span class="hl hl-ref">Sprint 2 – Sprint 5</span></td>
+<td><span class="hl hl-role">Tuân</span>, <span class="hl hl-role">Toàn</span> (<span class="hl hl-role">Backend</span>); <span class="hl hl-role">Bảo</span> (<span class="hl hl-role">CSDL</span>); <span class="hl hl-role">Đăng</span> (<span class="hl hl-role">Frontend</span>)</td>
+<td>Mã nguồn trên <span class="hl hl-tech">GitHub</span></td>
+</tr>
+<tr>
+<td>Review code qua <span class="hl hl-tech">PR</span></td>
+<td>Mỗi task</td>
+<td>Ít nhất 1 thành viên khác</td>
+<td><span class="hl hl-tech">PR</span> đã được duyệt</td>
+</tr>
+<tr>
+<td>Chạy <span class="hl hl-tech">CI</span></td>
+<td>Mỗi <span class="hl hl-tech">PR</span> vào <code>dev</code></td>
+<td><span class="hl hl-tech">GitHub Actions</span></td>
+<td>Kết quả <span class="hl hl-tech">CI</span> trên <span class="hl hl-tech">PR</span></td>
+</tr>
+<tr>
+<td>Demo Increment</td>
+<td>Cuối mỗi sprint</td>
+<td>Cả nhóm</td>
+<td>Bản chạy được trên môi trường thử (staging)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Quản lý mã nguồn</strong></p>
+<div class="tw"><table class="fc">
+<thead>
+<tr>
+<th>Nhánh</th>
+<th>Mục đích</th>
+<th>Quy tắc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>main</code></td>
+<td>Bản chính thức</td>
+<td>Chỉ merge từ <code>dev</code> sau Sprint Review</td>
+</tr>
+<tr>
+<td><code>dev</code></td>
+<td>Bản tích hợp, triển khai lên môi trường thử</td>
+<td>Chỉ merge qua <span class="hl hl-tech">PR</span>: ít nhất 1 người review và <span class="hl hl-tech">CI</span> thành công</td>
+</tr>
+<tr>
+<td><code>feature/&lt;mã task&gt;</code>, <code>fix/&lt;mã task&gt;</code></td>
+<td>Làm từng task hoặc sửa lỗi</td>
+<td>Tạo từ <code>dev</code>, xóa sau khi merge</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong><span class="hl hl-tech">CI</span></strong></p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Mục</th>
+<th>Nội dung</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Công cụ</td>
+<td><span class="hl hl-tech">GitHub Actions</span>, workflow lưu trong repository</td>
+</tr>
+<tr>
+<td>Kích hoạt</td>
+<td>Mỗi <span class="hl hl-tech">PR</span> vào <code>dev</code> và mỗi lần <code>dev</code> được cập nhật</td>
+</tr>
+<tr>
+<td>Các bước</td>
+<td>Cài đặt dependencies → kiểm tra code → chạy <span class="hl hl-tech">unit test</span> → build</td>
+</tr>
+<tr>
+<td>Điều kiện merge</td>
+<td><span class="hl hl-tech">CI</span> thành công và có ít nhất 1 người review; thiết lập bằng branch protection</td>
+</tr>
+<tr>
+<td>Thành phẩm</td>
+<td>Workflow <span class="hl hl-tech">GitHub Actions</span>; kết quả <span class="hl hl-tech">CI</span> hiển thị trên từng <span class="hl hl-tech">PR</span></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="44-kiểm-thử-phần-mềm">4.4 Kiểm thử phần mềm</h4>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Hoạt động</th>
+<th>Thời điểm</th>
+<th>Phụ trách</th>
+<th>Thành phẩm</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Kiểm thử theo task</td>
+<td>Trước khi merge vào <code>dev</code>: cập nhật <code>dev</code> vào nhánh task rồi chạy kiểm thử cơ bản</td>
+<td><span class="hl hl-role">Hậu</span></td>
+<td>Kết quả kiểm thử theo kịch bản</td>
+</tr>
+<tr>
+<td>Kiểm thử tích hợp bằng <span class="hl hl-tech">Postman</span> và thao tác trên giao diện</td>
+<td>Sau khi merge vào <code>dev</code>, trên môi trường thử</td>
+<td><span class="hl hl-role">Hậu</span></td>
+<td>Lỗi phát sinh, trường hợp nghiệp vụ hoặc điều kiện tiên quyết còn sót được ghi thành Bug</td>
+</tr>
+<tr>
+<td>Kiểm thử hồi quy</td>
+<td>Trước mỗi Sprint Review</td>
+<td><span class="hl hl-role">Hậu</span></td>
+<td>Kết quả chạy lại <span class="hl hl-tech">Postman</span> Collection</td>
+</tr>
+<tr>
+<td>Kiểm thử toàn hệ thống</td>
+<td><span class="hl hl-ref">Sprint 5</span></td>
+<td><span class="hl hl-role">Hậu</span>, cả nhóm</td>
+<td>Báo cáo kết quả kiểm thử</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>Môi trường:</strong> kiểm thử theo task trên nhánh task đã cập nhật từ <code>dev</code>; kiểm thử tích hợp trên môi trường thử (chạy nhánh <code>dev</code>); khi chuyển thành bản chính thức, dữ liệu test (nhất là số dư ví) được xóa và thay bằng dữ liệu demo.</li>
+<li><strong>Các lớp kiểm thử:</strong></li>
+</ul>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Lớp</th>
+<th>Cách làm</th>
+<th>Người phụ trách</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="hl hl-tech">Unit test</span></td>
+<td>Test tự động cho các hàm tính tiền: tổng tiền, cọc <span class="hl hl-num">30%</span>, hoàn cọc <span class="hl hl-num">80%</span> / <span class="hl hl-num">50%</span> / <span class="hl hl-num">0%</span>, số dư ví; chạy qua <span class="hl hl-tech">CI</span></td>
+<td><span class="hl hl-role">Tuân</span>, <span class="hl hl-role">Toàn</span> viết; <span class="hl hl-role">Hậu</span> rà soát test case, có dùng AI hỗ trợ review</td>
+</tr>
+<tr>
+<td>Kiểm thử <span class="hl hl-tech">API</span></td>
+<td>Bộ request <span class="hl hl-tech">Postman</span> cho từng chức năng; chạy lại toàn bộ trước mỗi Sprint Review</td>
+<td><span class="hl hl-role">Hậu</span> (dựa trên tài liệu <span class="hl hl-tech">API</span> do <span class="hl hl-role">Backend</span> cung cấp)</td>
+</tr>
+<tr>
+<td>Kiểm thử chức năng</td>
+<td>Kịch bản test viết từ user story và quy định <span class="hl hl-ref">QĐ1–QĐ7</span>; thao tác trên giao diện</td>
+<td><span class="hl hl-role">Hậu</span></td>
+</tr>
+<tr>
+<td>Kiểm tra build</td>
+<td>Chạy tự động qua <span class="hl hl-tech">CI</span></td>
+<td>Thành viên phụ trách phần tương ứng</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>Lỗi phát hiện được tạo thành task loại <strong>Bug</strong> trên <span class="hl hl-tech">Jira</span> và giao lại cho người làm task đó.</li>
+<li><strong>Định nghĩa "Xong" (Definition of Done)</strong> – một task chỉ xong khi:<ol>
+<li>Code đã được đẩy lên <span class="hl hl-tech">GitHub</span> và được ít nhất một thành viên khác review trước khi merge.</li>
+<li>Các bước <span class="hl hl-tech">CI</span> bắt buộc và các test tự động liên quan đã chạy thành công.</li>
+<li>Chức năng đã được kiểm thử trên môi trường thử, không chỉ trên máy người code.</li>
+<li>Các kịch bản kiểm thử chức năng liên quan đã được thực hiện và đạt.</li>
+<li>Chức năng đáp ứng tiêu chí chấp nhận và các quy định nghiệp vụ liên quan.</li>
+</ol>
+</li>
+<li><strong>Thành phẩm:</strong> bộ <span class="hl hl-tech">Postman</span> Collection; các test tự động; danh sách kịch bản và kết quả kiểm thử; danh sách lỗi trên <span class="hl hl-tech">Jira</span>.</li>
+</ul>
+<h4 id="45-triển-khai-bảo-trì">4.5 Triển khai, bảo trì</h4>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Hoạt động</th>
+<th>Thời điểm</th>
+<th>Phụ trách</th>
+<th>Thành phẩm</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dựng môi trường thử</td>
+<td><span class="hl hl-ref">Sprint 1</span></td>
+<td>Cả nhóm</td>
+<td>Môi trường thử truy cập được qua Internet</td>
+</tr>
+<tr>
+<td>Cập nhật môi trường thử</td>
+<td>Sau mỗi lần merge vào <code>dev</code></td>
+<td><span class="hl hl-role">Hậu</span>, <span class="hl hl-role">Tuân</span>, <span class="hl hl-role">Toàn</span></td>
+<td>Môi trường thử chạy bản mới nhất</td>
+</tr>
+<tr>
+<td>Chuyển môi trường thử thành bản chính thức</td>
+<td><span class="hl hl-ref">Sprint 5</span></td>
+<td><span class="hl hl-role">Hậu</span>, <span class="hl hl-role">Tuân</span>, <span class="hl hl-role">Toàn</span></td>
+<td>Chuyển sang chạy nhánh <code>main</code>; xóa dữ liệu test, nạp dữ liệu demo; chạy qua <span class="hl hl-tech">HTTPS</span>; <span class="hl hl-role">CSDL</span> có bản sao lưu</td>
+</tr>
+<tr>
+<td>Viết hướng dẫn cài đặt và sử dụng</td>
+<td><span class="hl hl-ref">Sprint 5</span></td>
+<td>Cả nhóm</td>
+<td>Tài liệu hướng dẫn</td>
+</tr>
+<tr>
+<td>Bảo trì: sửa lỗi phát sinh khi demo và chấm điểm</td>
+<td>Sau khi triển khai đến khi kết thúc môn học</td>
+<td>Cả nhóm</td>
+<td>Bản sửa lỗi trên <code>main</code></td>
+</tr>
+</tbody>
+</table></div>
+<h1 id="5-kế-hoạch-nhân-sự--chi-phí">5 Kế hoạch nhân sự &amp; chi phí</h1>
+<h4 id="51-nhân-sự">5.1 Nhân sự</h4>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Thành viên</th>
+<th>MSSV</th>
+<th>Vai trò</th>
+<th>Công việc chính</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="hl hl-role">Vòng Sau Hậu</span></td>
+<td>24120307</td>
+<td>PO, SM, Kiểm thử</td>
+<td>Quản lý backlog và sprint trên <span class="hl hl-tech">Jira</span>, giao task, tổ chức họp, viết kịch bản test, kiểm thử <span class="hl hl-tech">API</span> và chức năng</td>
+</tr>
+<tr>
+<td><span class="hl hl-role">Bùi Đặng Khả Tuân</span></td>
+<td>24120236</td>
+<td><span class="hl hl-role">Backend</span></td>
+<td>Xây dựng <span class="hl hl-tech">API</span>, nghiệp vụ đặt sân, ví, <span class="hl hl-tech">unit test</span></td>
+</tr>
+<tr>
+<td><span class="hl hl-role">Dương Danh Toàn</span></td>
+<td>24120230</td>
+<td><span class="hl hl-role">Backend</span></td>
+<td>Xây dựng <span class="hl hl-tech">API</span>, nghiệp vụ đặt sân, ví, <span class="hl hl-tech">unit test</span></td>
+</tr>
+<tr>
+<td><span class="hl hl-role">Nguyễn Huỳnh Gia Bảo</span></td>
+<td>24120264</td>
+<td>Cơ sở dữ liệu</td>
+<td>Thiết kế và quản lý <span class="hl hl-role">CSDL</span>, dữ liệu mẫu, truy vấn tìm kiếm sân</td>
+</tr>
+<tr>
+<td><span class="hl hl-role">Võ Văn Khánh Đăng</span></td>
+<td>24120278</td>
+<td><span class="hl hl-role">Frontend</span></td>
+<td>Thiết kế và xây dựng giao diện web cho <span class="hl hl-role">khách hàng</span>, <span class="hl hl-role">chủ sân</span>, admin</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Rủi ro nhân sự và hướng xử lý</strong></p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Rủi ro</th>
+<th>Mức độ</th>
+<th>Dấu hiệu nhận biết</th>
+<th>Phòng ngừa</th>
+<th>Xử lý khi xảy ra</th>
+<th>Người theo dõi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Khối lượng <span class="hl hl-role">Frontend</span> dồn vào 1 người (giao diện cho 3 nhóm người dùng)</td>
+<td><span class="pill rhi">Cao</span></td>
+<td>Có hơn 2 subtask <span class="hl hl-role">Frontend</span> đang làm cùng lúc, hoặc trễ hạn quá 2 ngày</td>
+<td>Giao trước một phần <span class="hl hl-role">Frontend</span> cho thành viên <span class="hl hl-role">Backend</span> và <span class="hl hl-role">CSDL</span> ngay từ Sprint Planning</td>
+<td>Chuyển subtask <span class="hl hl-role">Frontend</span> chưa bắt đầu sang thành viên còn trống thời gian</td>
+<td><span class="hl hl-role">Hậu</span></td>
+</tr>
+<tr>
+<td>Việc <span class="hl hl-role">CSDL</span> nhiều ở đầu dự án, ít dần về sau</td>
+<td><span class="pill rmid">TB</span></td>
+<td>Từ <span class="hl hl-ref">Sprint 3</span>, thành viên <span class="hl hl-role">CSDL</span> có ít thời gian làm việc hơn</td>
+<td>Giao thêm dữ liệu mẫu, tối ưu truy vấn, một phần <span class="hl hl-role">Frontend</span> và hỗ trợ kiểm thử luồng tiền</td>
+<td>Kéo việc của tính năng 5 vào sprint và giao cho thành viên <span class="hl hl-role">CSDL</span></td>
+<td><span class="hl hl-role">Hậu</span></td>
+</tr>
+<tr>
+<td>Kiểm thử và quản lý dồn vào 1 người</td>
+<td><span class="pill rhi">Cao</span></td>
+<td>Có hơn 3 task chờ kiểm thử</td>
+<td>Phần lớn kiểm thử chạy tự động bằng <span class="hl hl-tech">unit test</span> và <span class="hl hl-tech">CI</span>; <span class="hl hl-role">Hậu</span> tập trung rà soát test case và kiểm thử sơ bộ; <span class="hl hl-role">Bảo</span> hỗ trợ kiểm thử từ <span class="hl hl-ref">Sprint 3</span></td>
+<td>Chia task kiểm thử còn tồn cho thành viên khác (không kiểm thử task của chính mình)</td>
+<td><span class="hl hl-role">Hậu</span></td>
+</tr>
+<tr>
+<td>Trễ tiến độ do lịch học, thi</td>
+<td><span class="pill rhi">Cao</span></td>
+<td>Ở họp giữa sprint, hơn một nửa công việc chưa chuyển sang In Review</td>
+<td>Chỉ lên kế hoạch khoảng <span class="hl hl-num">70%</span> thời gian rảnh của mỗi thành viên</td>
+<td>Cắt giảm theo thứ tự ở mục 4, giữ nguyên luồng chính</td>
+<td><span class="hl hl-role">Hậu</span></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="52-chi-phí-dự-kiến">5.2 Chi phí dự kiến</h4>
+<p>Đồ án ưu tiên dùng hạ tầng sẵn có và các dịch vụ miễn phí.</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Khoản mục</th>
+<th>Phương án</th>
+<th>Chi phí dự kiến</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nhân công</td>
+<td>5 sinh viên thực hiện trong khuôn khổ môn học</td>
+<td><span class="hl hl-num">0đ</span></td>
+</tr>
+<tr>
+<td>Quản lý dự án, mã nguồn, họp, kiểm thử</td>
+<td><span class="hl hl-tech">Jira</span> Free, <span class="hl hl-tech">GitHub</span>, <span class="hl hl-tech">Google Meet</span>, <span class="hl hl-tech">Postman</span></td>
+<td><span class="hl hl-num">0đ</span></td>
+</tr>
+<tr>
+<td>Máy chủ / hosting</td>
+<td>Tận dụng hosting/VPS hiện có của nhóm</td>
+<td><span class="hl hl-num">0đ</span></td>
+</tr>
+<tr>
+<td>Tên miền và chứng chỉ <span class="hl hl-tech">SSL</span></td>
+<td>Tên miền phụ miễn phí; <span class="hl hl-tech">SSL</span> miễn phí</td>
+<td><span class="hl hl-num">0đ</span></td>
+</tr>
+<tr>
+<td>Dịch vụ bản đồ</td>
+<td>Trong hạn mức miễn phí</td>
+<td><span class="hl hl-num">0đ</span></td>
+</tr>
+<tr>
+<td>Gửi email (<span class="hl hl-tech">OTP</span>, thông báo)</td>
+<td>Dịch vụ email miễn phí</td>
+<td><span class="hl hl-num">0đ</span></td>
+</tr>
+<tr>
+<td>Dự phòng</td>
+<td>Vượt hạn mức gói miễn phí</td>
+<td><span class="hl hl-num">200.000đ</span></td>
+</tr>
+<tr>
+<td><strong>Tổng</strong></td>
+<td></td>
+<td><span class="hl hl-num">200.000đ</span></td>
+</tr>
+</tbody>
+</table></div></main>
 </div>
-
-<!-- Nội dung được sinh tự động từ project-proposal.md bằng tools/build_html.py. Không sửa trực tiếp. -->
-<script type="text/markdown" id="md-source">
-**NHẬP MÔN CÔNG NGHỆ PHẦN MỀM**
-
-**Project Proposal**
-
-**Đề tài:** Hệ thống Quản lý và Đặt sân Thể thao
-
-**Nhóm:** TODO - Hậu: điền STT nhóm
-
-Bộ môn Công nghệ phần mềm
-
-Khoa Công nghệ thông tin
-
-Đại học Khoa học tự nhiên TP HCM
-
-**MỤC LỤC**
-
-[**Các nội dung chính**](#các-nội-dung-chính)
-
-[**1 Bảng đánh giá thành viên**](#1-bảng-đánh-giá-thành-viên)
-
-[**2 Phát biểu bài toán sơ lược**](#2-phát-biểu-bài-toán-sơ-lược)
-
-[**3 Giải pháp đề xuất**](#3-giải-pháp-đề-xuất)
-
-[**4 Kế hoạch phát triển**](#4-kế-hoạch-phát-triển)
-
-[**5 Kế hoạch nhân sự & chi phí**](#5-kế-hoạch-nhân-sự--chi-phí)
-
-**Project Proposal**
-
-# Các nội dung chính
-
-Tài liệu gồm các nội dung:
-
-- Phát biểu bài toán sơ lược
-- Giải pháp đề xuất
-- Kế hoạch phát triển
-- Kế hoạch nhân sự & chi phí
-
-# 1 Bảng đánh giá thành viên
-
-| **MSSV** | **Họ Tên** | **% đóng góp (tối đa 100%)** | **Chữ ký** |
-| --- | --- | --- | --- |
-| 24120307 | Vòng Sau Hậu | TODO - Hậu | |
-| 24120264 | Nguyễn Huỳnh Gia Bảo | TODO - Hậu | |
-| 24120230 | Dương Danh Toàn | TODO - Hậu | |
-| 24120278 | Nguyễn Khánh Đăng | TODO - Hậu | |
-| 24120236 | Bùi Đặng Khả Tuân | TODO - Hậu | |
-
-# 2 Phát biểu bài toán sơ lược
-
-#### Thực trạng
-
-Người chơi cầu lông, pickleball, bóng đá mini hiện vẫn đặt sân chủ yếu qua điện thoại, Zalo hoặc Facebook. Chủ sân ghi lịch bằng sổ tay hoặc file Excel, nhận cọc qua chuyển khoản và tự quyết định có hoàn cọc hay không khi khách hủy. Cách làm này gây ra hai vấn đề thường gặp:
-
-**Tình huống 1 – Trùng lịch.** Một nhóm gọi điện đặt sân 19h tối thứ Sáu, chuyển khoản cọc rồi gửi ảnh qua Zalo. Đến giờ chơi, sân đã có nhóm khác vì chủ sân nhận trùng hoặc quên ghi sổ. Khách không có bằng chứng rõ ràng ngoài tin nhắn, hai bên tranh cãi và cả hai nhóm đều mất buổi chơi.
-
-**Tình huống 2 – Hoàn cọc tùy chủ sân.** Khách báo hủy trước một ngày vì trời mưa. Mỗi sân một kiểu: có sân hoàn đủ, có sân hoàn một nửa, có sân không hoàn. Khách phải nhắn qua lại nhiều lần, và vì không có quy định công bố trước nên khách thường chịu thiệt.
-
-TODO - Toàn: xem xét lại 2 tình huống (bổ sung số liệu hoặc ví dụ thực tế nếu có).
-
-#### Các giải pháp hiện có
-
-| Sản phẩm | Đối tượng | Làm tốt | Hạn chế so với bài toán |
-| --- | --- | --- | --- |
-| Datsan247 (Việt Nam) | Người chơi | Nhiều môn, xem giờ trống, đặt và thanh toán | Chỉ là kênh đặt sân cho khách |
-| ALOBO (Việt Nam) | Chủ sân | Quản lý lịch, dịch vụ, công nợ, hóa đơn | Phần mềm cho chủ sân, khách không tìm sân ở đây |
-| Playtomic (quốc tế) | Người chơi, câu lạc bộ | Ghép trận theo trình độ, tự hủy và hoàn tiền khi không đủ người | Tập trung padel/tennis ở châu Âu, gần như chưa có ở Việt Nam |
-| CourtReserve (quốc tế) | Câu lạc bộ | Luật đặt sân tùy chỉnh, chống đặt trùng, thu tiền trước | Giao diện di động bị đánh giá khó dùng; thu phí theo tháng |
-
-TODO - Toàn: tải thử Datsan247, ALOBO để kiểm chứng bảng trên.
-
-#### Điểm khác biệt
-
-- Một hệ thống chung cho cả chủ sân và người chơi, thay vì tách thành app riêng cho mỗi bên.
-- Chính sách cọc và hoàn cọc công khai, tính tự động qua ví nội bộ, hai bên không phải thương lượng.
-- Hướng tới sân cầu lông, pickleball, bóng đá mini tại Việt Nam.
-
-TODO - Toàn: xem lại điểm khác biệt sau khi kiểm chứng đối thủ.
-
-#### Mô tả hệ thống
-
-Hệ thống là ứng dụng web với ba nhóm người dùng. Chủ sân tạo sân, cấu hình khung giờ và bảng giá theo thời điểm. Khách hàng tìm sân trống, đặt sân và đặt cọc 30% từ ví. Admin cấp tiền vào ví người dùng. Chủ sân cũng là một người dùng, chỉ có thêm quyền quản lý sân. Mọi dòng tiền (cọc, hoàn cọc, tiền cọc bị mất) đều đi qua ví nội bộ; nạp tiền và rút tiền thật không nằm trong phạm vi đồ án.
-
-#### Môi trường hoạt động
-
-- Client: trình duyệt web hỗ trợ HTML5/CSS3/JavaScript trên máy tính và điện thoại.
-- Server: TODO - Tuân, Toàn: ghi môi trường server sau khi chốt framework (hosting hiện tại hỗ trợ Node.js hoặc Python, 1 CPU, 1 GB RAM, 20 GB ổ đĩa).
-- Dịch vụ ngoài: dịch vụ email để gửi OTP và xác nhận đặt sân; dịch vụ bản đồ (TODO - Đăng: chọn dịch vụ).
-
-#### Ràng buộc thiết kế và triển khai
-
-- Frontend và Backend tách riêng, giao tiếp qua REST API.
-- Frontend: TODO - Đăng: chọn framework (ví dụ React.js).
-- Backend: TODO - Tuân, Toàn: chọn framework, ưu tiên nền Node.js hoặc Python vì hosting hiện tại chạy được.
-- CSDL quan hệ: TODO - Bảo: chọn hệ quản trị (ví dụ PostgreSQL, MySQL).
-- Mật khẩu mã hóa bằng Bcrypt, giao tiếp qua HTTPS, xác thực bằng JWT.
-- Mã nguồn quản lý bằng Git/GitHub.
-
-# 3 Giải pháp đề xuất
-
-#### 3.1 Phần mềm
-
-#### 3.1.1. Danh sách các chức năng phần mềm
-
-| # | Câu chuyện người dùng | Chức năng | Ưu tiên |
-| --- | --- | --- | --- |
-| 1 | Là chủ sân, tôi muốn đăng sân và đặt giá theo từng khung giờ để khách đặt được và tôi tối ưu doanh thu. | Quản lý sân, khung giờ, bảng giá theo thời điểm | Cao |
-| 2 | Là khách hàng, tôi muốn tìm sân còn trống và đặt ngay, biết trước tổng tiền, để không phải gọi điện hỏi từng sân. | Tìm, lọc sân trống; đặt sân; khóa khung giờ đã đặt | Cao |
-| 3 | Là khách hàng, tôi muốn đặt cọc và được hoàn cọc theo quy định rõ ràng khi hủy, để không phải thương lượng với chủ sân. | Đặt cọc từ ví; hủy sân và hoàn cọc tự động; Admin cấp tiền vào ví | Cao |
-| 4 | Là người chơi thiếu người, tôi muốn đăng bài tìm đồng đội để đủ người chơi. | Đăng bài ghép đội; đăng ký tham gia | Thấp |
-| 5 | Là người dùng, tôi muốn có thêm các tiện ích để dùng hệ thống thuận tiện hơn. | Đánh giá sân; dịch vụ đi kèm; xem vị trí sân trên bản đồ; dashboard Admin | Thấp |
-
-**Quy định liên quan**
-
-| Mã | Nội dung | Chức năng |
-| --- | --- | --- |
-| QĐ1 | Giờ thường: giá cơ sở. Giờ cao điểm, cuối tuần, ngày lễ: tăng 20%–50% so với giá cơ sở. | 1 |
-| QĐ2 | Tổng tiền = giá khung giờ × hệ số thời điểm + phí dịch vụ đi kèm (nếu có). | 2 |
-| QĐ3 | Khung giờ đã được đặt cọc sẽ bị khóa, không ai khác đặt được. | 2 |
-| QĐ4 | Tiền cọc = 30% tổng tiền, trừ từ ví khách. Số tiền còn lại thanh toán tại sân hoặc chuyển khoản trước giờ chơi. | 3 |
-| QĐ5 | Hủy trước 24 giờ: hoàn 80% cọc. Hủy 12–24 giờ: hoàn 50%. Hủy dưới 12 giờ: không hoàn. Tiền hoàn vào ví khách, phần không hoàn vào ví chủ sân. | 3 |
-| QĐ6 | Mọi dòng tiền đi qua ví và được ghi thành giao dịch. Số dư ví không được âm. Tiền vào ví do Admin cấp. | 3 |
-| QĐ7 | Trạng thái lịch đặt: Chờ đặt cọc → Đã đặt cọc → Đã thanh toán hoàn tất; hoặc Đã hủy. | 2, 3 |
-
-#### 3.1.2. Kiến trúc tổng thể phần mềm
-
-```text
-┌──────────────────────────────────────────────────────────┐
-│ CLIENT – Ứng dụng web                                    │
-│ Khách hàng  |  Chủ sân  |  Admin                         │
-└────────────────────────────┬─────────────────────────────┘
-                             │ HTTPS – REST API (JWT)
-                             ▼
-┌──────────────────────────────────────────────────────────┐
-│ BACKEND                                                  │
-│ Xác thực | Sân & bảng giá | Đặt sân | Ví | Ghép đội      │
-└──────────────┬──────────────────────────────┬────────────┘
-               ▼                              ▼
-┌───────────────────────────┐   ┌──────────────────────────┐
-│ CSDL quan hệ              │   │ Dịch vụ ngoài            │
-│ tài khoản, sân, lịch đặt, │   │ Email, bản đồ            │
-│ ví, giao dịch             │   │                          │
-└───────────────────────────┘   └──────────────────────────┘
-```
-
-#### 3.1.3. Các phần không thực hiện
-
-- Ứng dụng di động riêng (Android/iOS).
-- Nạp tiền thật qua QR hoặc cổng thanh toán, rút tiền thật về ngân hàng; nếu kịp chỉ làm bản demo.
-- Gửi OTP, thông báo qua SMS.
-- Chỉ đường trong ứng dụng (mở bằng Google Maps).
-- Chủ sân đánh giá người chơi.
-
-#### 3.2 Phần cứng
-
-- Máy chủ: TODO - Tuân, Toàn: cập nhật sau khi Backend và Frontend chốt framework (hosting hiện tại: 1 CPU, 1 GB RAM, 20 GB ổ đĩa).
-- Người dùng: máy tính hoặc điện thoại có trình duyệt và Internet.
-
-# 4 Kế hoạch phát triển
-
-Nhóm phát triển theo quy trình **Scrum**. Dự án kéo dài khoảng **9 tuần**, bắt đầu từ 12/10/2026 (TODO - Hậu: điền hạn cuối chính thức), chia thành 5 sprint. Mỗi sprint kết thúc bằng một bản chạy được (Increment). Các giai đoạn 4.1–4.5 không làm tuần tự một lần mà lặp lại trong từng sprint; mỗi mục ghi rõ giai đoạn đó diễn ra khi nào và tạo ra thành phẩm gì.
-
-**Vai trò Scrum**
-
-| Vai trò | Thành viên |
-| --- | --- |
-| Product Owner, Scrum Master | Vòng Sau Hậu |
-| Development Team | Bùi Đặng Khả Tuân, Dương Danh Toàn, Nguyễn Huỳnh Gia Bảo, Nguyễn Khánh Đăng |
-
-**Sự kiện Scrum** (họp online qua Google Meet)
-
-| Buổi họp | Khi nào | Nội dung |
-| --- | --- | --- |
-| Sprint Planning | Đầu sprint | Chọn việc từ Product Backlog, chia task trên Jira |
-| Họp giữa sprint | Giữa sprint | Kiểm tra tiến độ, gỡ vướng mắc, điều chỉnh task |
-| Sprint Review + Retrospective | Cuối sprint | Demo Increment, rút kinh nghiệm cho sprint sau |
-| Họp đột xuất | Khi phát sinh task quan trọng | Phân công lại |
-
-Những ngày không họp, mỗi thành viên tự cập nhật trạng thái task trên Jira và báo lên nhóm chat khi bị vướng.
-
-**Công cụ:** Jira (backlog, sprint, bảng task, theo dõi lỗi); GitHub (mã nguồn); Google Meet (họp); Postman (kiểm thử API).
-
-**Lịch sprint**
-
-| Sprint | Tuần | Thời gian | Mục tiêu | Chức năng | Thành phẩm |
-| --- | --- | --- | --- | --- | --- |
-| 0 | Tuần 1–2 | 12/10 – 25/10 | Phân tích, thiết kế, chuẩn bị | – | Project Proposal; Product Backlog trên Jira; chốt công nghệ; thiết kế CSDL và API ban đầu; repo và khung dự án |
-| 1 | Tuần 3–4 | 26/10 – 08/11 | Đăng nhập; chủ sân tạo sân và bảng giá | 1 | Đăng ký/đăng nhập; quản lý sân, khung giờ, bảng giá |
-| 2 | Tuần 5–6 | 09/11 – 22/11 | Tìm và đặt sân; ví và đặt cọc | 2, 3 | Tìm/lọc sân, đặt sân, khóa khung giờ; Admin cấp tiền; cọc từ ví |
-| 3 | Tuần 7–8 | 23/11 – 06/12 | Hủy và hoàn cọc; ghép đội | 3, 4 | Đủ luồng đặt – hủy – hoàn cọc vào ví; ghép đội |
-| 4 | Tuần 9 | 07/12 – 13/12 | Tiện ích, kiểm thử toàn hệ thống, triển khai | 5 (nếu kịp) | Đánh giá sân, dịch vụ đi kèm, bản đồ, dashboard; bản đã triển khai; báo cáo cuối kỳ |
-
-TODO - Hậu: bổ sung các mốc nộp giữa kỳ của giáo viên vào cuối sprint gần nhất.
-
-**Thứ tự cắt giảm khi trễ tiến độ:** chức năng 5 → chức năng 4 (làm bản đơn giản).
-
-**Luồng chính** *đăng nhập → tìm sân → đặt sân → cọc từ ví → hủy/hoàn cọc* **không được cắt**.
-
-#### 4.1 Phân tích yêu cầu
-
-- **Khi nào:** chủ yếu ở Sprint 0 (tuần 1–2); đầu mỗi sprint làm rõ thêm các chức năng của sprint đó trong Sprint Planning.
-- **Công việc:** đọc mô tả đề tài, viết user story, xác định quy định nghiệp vụ, sắp ưu tiên backlog.
-- **Thành phẩm:** Project Proposal; Product Backlog trên Jira; tài liệu phân tích yêu cầu.
-
-#### 4.2 Thiết kế phần mềm
-
-- **Khi nào:** thiết kế tổng thể ở Sprint 0; thiết kế chi tiết từng chức năng ngay trong sprint làm chức năng đó.
-- **Công việc:** chốt công nghệ; thiết kế CSDL (đặc biệt bảng ví và giao dịch); thiết kế danh sách API; thiết kế giao diện.
-- **Thành phẩm:** sơ đồ kiến trúc; lược đồ CSDL (Bảo); tài liệu API (Tuân, Toàn); bản thiết kế giao diện (Đăng).
-
-#### 4.3 Cài đặt (implement) phần mềm
-
-- **Khi nào:** Sprint 1 – Sprint 4, theo lịch sprint ở trên.
-- **Cách làm:** mỗi task là một nhánh Git; xong thì tạo Pull Request để ít nhất 1 thành viên khác xem trước khi gộp vào nhánh chính. Thành viên rảnh việc hỗ trợ thành viên khác.
-- **Thành phẩm:** Increment chạy được sau mỗi sprint, demo ở Sprint Review.
-
-#### 4.4 Kiểm thử phần mềm
-
-- **Khi nào:** trong từng sprint (kiểm thử từng chức năng khi xong) và tuần 9 (kiểm thử toàn hệ thống).
-- **Môi trường:** kiểm thử trên một bản thử (staging) tách riêng với bản chính thức, để dữ liệu test (nhất là số dư ví) không ảnh hưởng bản demo.
-- **Các lớp kiểm thử:**
-
-| Lớp | Cách làm | Người phụ trách |
-| --- | --- | --- |
-| Unit test | Test tự động cho các hàm tính tiền: tổng tiền, cọc 30%, hoàn cọc 80% / 50% / 0%, số dư ví | Tuân, Toàn |
-| Kiểm thử API | Bộ request Postman cho từng chức năng; chạy lại toàn bộ trước mỗi Sprint Review | Hậu (dựa trên tài liệu API do Backend cung cấp) |
-| Kiểm thử chức năng | Kịch bản test viết từ user story và quy định QĐ1–QĐ7; bấm thử trên giao diện, ghi đạt/không đạt | Hậu |
-
-- Lỗi phát hiện được tạo thành task loại **Bug** trên Jira và giao lại cho người làm task đó.
-- **Định nghĩa "Xong" (Definition of Done)** – một task chỉ xong khi:
-  1. Code đã đẩy lên GitHub và được ít nhất 1 thành viên khác xem qua.
-  2. Chạy được trên bản thử, không chỉ trên máy người code.
-  3. Đã có request Postman hoặc kịch bản test cho chức năng đó.
-  4. Tester đã kiểm thử và đánh dấu đạt.
-  5. Đúng các quy định nghiệp vụ liên quan (nếu có).
-- **Thành phẩm:** bộ Postman Collection; danh sách kịch bản test và kết quả; danh sách lỗi trên Jira.
-
-#### 4.5 Triển khai, bảo trì
-
-- **Triển khai:** dựng bản thử từ Sprint 1 để kiểm thử liên tục; triển khai bản chính thức lên hosting của nhóm ở tuần 9 (TODO - Tuân, Toàn: ghi cách triển khai sau khi chốt framework).
-- **Bảo trì:** sửa lỗi phát hiện trong quá trình demo và chấm điểm.
-- **Thành phẩm:** hệ thống chạy trên máy chủ; hướng dẫn cài đặt và hướng dẫn sử dụng.
-
-# 5 Kế hoạch nhân sự & chi phí
-
-#### 5.1 Nhân sự
-
-| Thành viên | MSSV | Vai trò | Công việc chính |
-| --- | --- | --- | --- |
-| Vòng Sau Hậu | 24120307 | Quản lý dự án, Product Owner, Scrum Master, Kiểm thử | Quản lý backlog và sprint trên Jira, giao task, tổ chức họp, viết kịch bản test, kiểm thử API và chức năng |
-| Bùi Đặng Khả Tuân | 24120236 | Backend | Xây dựng API, nghiệp vụ đặt sân, ví, unit test |
-| Dương Danh Toàn | 24120230 | Backend | Xây dựng API, nghiệp vụ đặt sân, ví, unit test |
-| Nguyễn Huỳnh Gia Bảo | 24120264 | Cơ sở dữ liệu | Thiết kế và quản lý CSDL, dữ liệu mẫu, truy vấn tìm kiếm sân |
-| Nguyễn Khánh Đăng | 24120278 | Frontend | Thiết kế và xây dựng giao diện web cho khách hàng, chủ sân, admin |
-
-Thành viên rảnh việc sẽ hỗ trợ các mảng khác.
-
-**Rủi ro nhân sự và hướng xử lý**
-
-| Rủi ro | Hướng xử lý |
-| --- | --- |
-| Frontend chỉ có 1 người, khối lượng giao diện lớn (3 nhóm người dùng) | Thành viên backend rảnh việc hỗ trợ một phần giao diện (ví dụ trang Admin) |
-| Việc CSDL dồn ở đầu dự án, ít dần về sau | Từ Sprint 2, Bảo hỗ trợ dữ liệu mẫu, truy vấn và kiểm thử luồng tiền |
-| Trễ tiến độ do lịch học, thi | Cắt giảm theo thứ tự ở mục 4; giữ nguyên luồng chính |
-
-#### 5.2 Chi phí dự kiến
-
-Đồ án ưu tiên dùng hạ tầng sẵn có và các dịch vụ miễn phí.
-
-| Khoản mục | Phương án | Chi phí dự kiến |
-| --- | --- | --- |
-| Nhân công | 5 sinh viên thực hiện trong khuôn khổ môn học | 0đ |
-| Quản lý dự án, mã nguồn, họp, kiểm thử | Jira Free, GitHub, Google Meet, Postman | 0đ |
-| Máy chủ / hosting | Hosting sẵn có của nhóm (TODO - Tuân, Toàn: cập nhật nếu đổi hosting sau khi chốt framework) | TODO - Hậu: xác nhận chi phí hosting |
-| Tên miền và chứng chỉ SSL | Tên miền phụ miễn phí; SSL miễn phí (Let's Encrypt) | 0đ |
-| Dịch vụ bản đồ | Trong hạn mức miễn phí | 0đ |
-| Gửi email (OTP, thông báo) | Dịch vụ email miễn phí | 0đ |
-| Dự phòng | Vượt hạn mức gói miễn phí | 200.000đ |
-| **Tổng** | | TODO - Hậu: tính lại sau khi có chi phí hosting |
-
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked-gfm-heading-id@3.1.3/lib/index.umd.js"></script>
 <script>
-(function () {
-  var md = document.getElementById('md-source').textContent.replace(/^\n/, '');
-  var content = document.getElementById('content');
-
-  if (typeof marked === 'undefined') {
-    // Mất mạng / không tải được thư viện: hiển thị nguyên văn markdown.
-    document.getElementById('cover').hidden = true;
-    document.getElementById('toc').hidden = true;
-    content.innerHTML = '<div class="fallback"></div>';
-    content.firstChild.textContent = md;
-    return;
-  }
-
-  if (typeof markedGfmHeadingId !== 'undefined') {
-    marked.use(markedGfmHeadingId.gfmHeadingId());
-  }
-  marked.use({ gfm: true });
-
-  // Tách: bìa (trước MỤC LỤC) | mục lục | nội dung (từ heading cấp 1 đầu tiên)
-  var tocStart = md.indexOf('**MỤC LỤC**');
-  var bodyStart = md.search(/^# /m);
-  if (tocStart < 0 || bodyStart < 0) { tocStart = bodyStart = 0; }
-
-  document.getElementById('cover').innerHTML = marked.parse(md.slice(0, tocStart));
-  document.getElementById('toc').innerHTML = marked.parse(md.slice(tocStart, bodyStart));
-  content.innerHTML = marked.parse(md.slice(bodyStart));
-
-  // Bọc bảng để cuộn ngang trên màn hình hẹp
-  content.querySelectorAll('table').forEach(function (t) {
-    var w = document.createElement('div');
-    w.className = 'table-wrap';
-    t.parentNode.insertBefore(w, t);
-    w.appendChild(t);
-  });
-
-  // Nhãn ưu tiên
-  var badge = { 'Cao': 'hi', 'TB': 'mid', 'Thấp': 'lo' };
-  content.querySelectorAll('td').forEach(function (td) {
-    var k = td.textContent.trim();
-    if (badge[k]) td.innerHTML = '<span class="badge ' + badge[k] + '">' + k + '</span>';
-  });
-
-  // Tô sáng TODO còn sót
-  var walker = document.createTreeWalker(document.querySelector('.paper'), NodeFilter.SHOW_TEXT);
-  var hits = [];
-  while (walker.nextNode()) if (/TODO - /.test(walker.currentNode.nodeValue)) hits.push(walker.currentNode);
-  hits.forEach(function (node) {
-    var span = document.createElement('span');
-    span.innerHTML = node.nodeValue
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/(TODO - [^:]+:?)/g, '<span class="todo">$1</span>');
-    node.parentNode.replaceChild(span, node);
-  });
-
-  // Mục lục bên trái + đánh dấu mục đang đọc
-  var side = document.getElementById('side-toc');
-  var heads = content.querySelectorAll('h1[id], h4[id]');
-  var links = [];
-  heads.forEach(function (h) {
-    var li = document.createElement('li');
-    li.className = h.tagName === 'H1' ? 'lv1' : 'lv4';
-    var a = document.createElement('a');
-    a.href = '#' + h.id;
-    a.textContent = h.textContent;
-    li.appendChild(a);
-    side.appendChild(li);
-    links.push(a);
-  });
-  if ('IntersectionObserver' in window) {
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (!e.isIntersecting) return;
-        links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id); });
-      });
-    }, { rootMargin: '0px 0px -75% 0px' });
-    heads.forEach(function (h) { io.observe(h); });
-  }
+/* ===== Mục lục ===== */
+(function(){
+function mk(cls,label,exp){var b=document.createElement('button');b.type='button';b.className=cls;if(label)b.setAttribute('aria-label',label);if(exp!==undefined)b.setAttribute('aria-expanded',exp?'true':'false');return b}
+function tools(onOpen,onClose){var s=document.createElement('span');s.className='tools';
+var a=mk('tl');a.textContent='Mở hết';a.addEventListener('click',onOpen);
+var c=mk('tl');c.textContent='Thu gọn';c.addEventListener('click',onClose);s.appendChild(a);s.appendChild(c);return s}
+/* sidebar */
+var nav=document.getElementById('nav'),groups=[];
+var h=nav.querySelector('.nav-h'),kids=[].slice.call(nav.children).filter(function(e){return e.tagName==='A'}),cur=null,list=[];
+kids.forEach(function(a){if(a.classList.contains('n1')){cur={head:a,subs:[]};list.push(cur)}else if(cur)cur.subs.push(a)});
+list.forEach(function(g){
+ var wrap=document.createElement('div');wrap.className='ng c';var row=document.createElement('div');row.className='nrow';
+ nav.insertBefore(wrap,g.head);wrap.appendChild(row);row.appendChild(g.head);
+ if(g.subs.length){
+  var sub=document.createElement('div');sub.className='nsub';var inner=document.createElement('div');sub.appendChild(inner);
+  g.subs.forEach(function(a){inner.appendChild(a)});wrap.appendChild(sub);
+  var b=mk('tg','Mở/thu gọn: '+g.head.textContent,false);row.appendChild(b);
+  var id='nsub-'+groups.length;sub.id=id;b.setAttribute('aria-controls',id);
+  b.addEventListener('click',function(){wrap.dataset.user='1';set(wrap,wrap.classList.contains('c'))});
+ }
+ groups.push(wrap)});
+function set(w,open){w.classList.toggle('c',!open);var b=w.querySelector('.tg');if(b)b.setAttribute('aria-expanded',open?'true':'false')}
+var top=document.createElement('div');top.className='nav-top';nav.insertBefore(top,h);top.appendChild(h);
+top.appendChild(tools(function(){groups.forEach(function(w){w.dataset.user='1';set(w,true)})},function(){groups.forEach(function(w){w.dataset.user='1';set(w,false)})}));
+var lastAuto=null;
+window.__navOpen=function(link){var w=link&&link.closest('.ng');if(!w)return;
+ if(lastAuto&&lastAuto!==w&&!lastAuto.dataset.user)set(lastAuto,false);
+ if(w.classList.contains('c')){set(w,true);lastAuto=w}else if(!w.dataset.user){lastAuto=w}};
+/* mục lục trong trang */
+var card=document.querySelector('.toc-card');
+if(card){
+ var title=card.querySelector('.toc-title'),root=card.querySelector(':scope > ul'),lis=[];
+ [].slice.call(root.children).forEach(function(li){
+  var a=li.querySelector(':scope > a'),u=li.querySelector(':scope > ul');
+  if(!u){li.classList.add('no-sub');return}
+  li.classList.add('has-sub');
+  var row=document.createElement('div');row.className='trow';li.insertBefore(row,li.firstChild);
+  var b=mk('tg','Mở/thu gọn: '+a.textContent,true);row.appendChild(b);row.appendChild(a);
+  b.addEventListener('click',function(){tset(li,li.classList.contains('c'))});lis.push(li)});
+ function tset(li,open){li.classList.toggle('c',!open);li.querySelector('.tg').setAttribute('aria-expanded',open?'true':'false')}
+ var tp=document.createElement('div');tp.className='toc-top';card.insertBefore(tp,title);tp.appendChild(title);
+ tp.appendChild(tools(function(){lis.forEach(function(l){tset(l,true)})},function(){lis.forEach(function(l){tset(l,false)})}));
+}
+})();
+/* ===== Highlight ===== */
+(function(){
+var root=document.documentElement,btn=document.getElementById('hlBtn'),panel=document.getElementById('hlPanel');
+var cats=[['num','Số liệu, tỷ lệ, mức tiền',['30%','200.000đ','24 giờ']],
+['ref','Mã quy định và sprint',['QĐ1–QĐ7','Sprint 2']],
+['tech','Công nghệ và công cụ',['React.js','FastAPI','Jira','CI']],
+['role','Vai trò và thành viên',['chủ sân','khách hàng','Backend','tên thành viên']]];
+var off={tech:true,role:true};try{var sv=localStorage.getItem('pp-hl2');if(sv)off=JSON.parse(sv)||off}catch(e){}
+function save(){try{localStorage.setItem('pp-hl2',JSON.stringify(off))}catch(e){}}
+function apply(){cats.forEach(function(c){root.classList.toggle('hl-off-'+c[0],!!off[c[0]])})}
+var h5=document.createElement('h5');h5.textContent='Chú giải highlight';panel.appendChild(h5);
+var all=document.createElement('label');all.className='all';var allIn=document.createElement('input');allIn.type='checkbox';all.appendChild(allIn);
+var allTx=document.createElement('span');allTx.textContent='Hiện tất cả';all.appendChild(allTx);panel.appendChild(all);
+var ins=[];
+cats.forEach(function(c){
+ var l=document.createElement('label'),i=document.createElement('input');i.type='checkbox';i.checked=!off[c[0]];
+ var d=document.createElement('span'),nm=document.createElement('span'),ex=document.createElement('span');
+ nm.className='nm';nm.textContent=c[1];ex.className='ex';
+ c[2].forEach(function(t){var sw=document.createElement('span');sw.className='sw hl-'+c[0];sw.textContent=t;ex.appendChild(sw)});
+ d.appendChild(nm);d.appendChild(ex);
+ l.appendChild(i);l.appendChild(d);panel.appendChild(l);ins.push([c[0],i]);
+ i.addEventListener('change',function(){off[c[0]]=!i.checked;save();apply();sync()})});
+function sync(){var n=ins.filter(function(x){return x[1].checked}).length;allIn.checked=n===ins.length;allIn.indeterminate=n>0&&n<ins.length}
+allIn.addEventListener('change',function(){var on=allIn.checked;ins.forEach(function(x){x[1].checked=on;off[x[0]]=!on});save();apply();sync()});
+apply();sync();
+function toggle(o){panel.hidden=!o;btn.setAttribute('aria-expanded',o?'true':'false')}
+btn.addEventListener('click',function(e){e.stopPropagation();toggle(panel.hidden)});
+document.addEventListener('click',function(e){if(!panel.hidden&&!panel.contains(e.target))toggle(false)});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!panel.hidden){toggle(false);btn.focus()}});
 })();
 </script>
-</body>
-</html>
+<script>(function(){
+var root=document.documentElement,btn=document.getElementById('themeBtn');
+function label(){var d=root.getAttribute('data-theme')==='dark';btn.setAttribute('aria-pressed',d?'true':'false');btn.title=d?'Chuyển sang giao diện sáng':'Chuyển sang giao diện tối';btn.setAttribute('aria-label',btn.title)}
+function save(t){try{localStorage.setItem('pp-theme',t)}catch(e){}}
+btn.addEventListener('click',function(){var t=root.getAttribute('data-theme')==='dark'?'light':'dark';root.setAttribute('data-theme',t);save(t);label()});
+if(window.matchMedia){var mq=matchMedia('(prefers-color-scheme: dark)');var fn=function(e){var s=null;try{s=localStorage.getItem('pp-theme')}catch(x){}if(s!=='dark'&&s!=='light'){root.setAttribute('data-theme',e.matches?'dark':'light');label()}};if(mq.addEventListener)mq.addEventListener('change',fn)}
+label();
+var nav=document.getElementById('nav'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');
+function setOpen(o){nav.classList.toggle('open',o);scrim.classList.toggle('show',o);menu.setAttribute('aria-expanded',o?'true':'false')}
+menu.addEventListener('click',function(){setOpen(!nav.classList.contains('open'))});
+scrim.addEventListener('click',function(){setOpen(false)});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')setOpen(false)});
+var links={};nav.querySelectorAll('a').forEach(function(a){links[a.getAttribute('href').slice(1)]=a;a.addEventListener('click',function(){setOpen(false)})});
+var heads=[].slice.call(document.querySelectorAll('main h1[id],main h4[id]')).filter(function(h){return links[h.id]});
+function spy(){var y=window.scrollY+100,cur=null;heads.forEach(function(h){if(h.getBoundingClientRect().top+window.scrollY<=y)cur=h});
+Object.keys(links).forEach(function(k){links[k].classList.remove('on')});
+if(cur){var a=links[cur.id];a.classList.add('on');if(spy.last!==cur.id){spy.last=cur.id;if(window.__navOpen)window.__navOpen(a)}if(getComputedStyle(nav).position==='sticky'){var t=a.offsetTop-nav.clientHeight/2;nav.scrollTop=t>0?t:0}}}
+window.addEventListener('scroll',spy,{passive:true});spy();
+})();
+</script>
+</body></html>
