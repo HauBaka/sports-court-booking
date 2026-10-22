@@ -1,7 +1,7 @@
 from typing import Optional
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
+from sqlalchemy import URL
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Sports Court Booking API"
