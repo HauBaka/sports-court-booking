@@ -196,10 +196,14 @@ CREATE TABLE bookings (
     PRIMARY KEY (id),
     -- Unique ghép để booking_slots có thể tham chiếu FK (id, court_id, play_date)
     UNIQUE KEY uq_bookings_id_court_date (id, court_id, play_date),
-    CONSTRAINT chk_bookings_play_date  CHECK (DATE(start_at) = play_date),
-    CONSTRAINT chk_bookings_cancelled  CHECK ((status = 'CANCELLED') = (cancelled_at IS NOT NULL)),
-    CONSTRAINT chk_bookings_total      CHECK (total_amount = subtotal + service_total),
-    CONSTRAINT chk_bookings_deposit    CHECK (deposit_amount = total_amount * deposit_percent DIV 100),
+    CONSTRAINT chk_bookings_subtotal    CHECK (subtotal >= 0),
+    CONSTRAINT chk_bookings_svc_total   CHECK (service_total >= 0),
+    CONSTRAINT chk_bookings_total_amt   CHECK (total_amount >= 0),
+    CONSTRAINT chk_bookings_deposit_amt CHECK (deposit_amount >= 0),
+    CONSTRAINT chk_bookings_play_date   CHECK (DATE(start_at) = play_date),
+    CONSTRAINT chk_bookings_cancelled   CHECK ((status = 'CANCELLED') = (cancelled_at IS NOT NULL)),
+    CONSTRAINT chk_bookings_total       CHECK (total_amount = subtotal + service_total),
+    CONSTRAINT chk_bookings_deposit     CHECK (deposit_amount = total_amount * deposit_percent DIV 100),
     CONSTRAINT chk_bookings_deposit_pct CHECK (deposit_percent BETWEEN 1 AND 100),
     FOREIGN KEY fk_booking_user (user_id) REFERENCES users(id) ON DELETE RESTRICT,
     FOREIGN KEY fk_booking_court (court_id) REFERENCES courts(id) ON DELETE RESTRICT
@@ -220,6 +224,8 @@ CREATE TABLE booking_slots (
     PRIMARY KEY (id),
     -- Chống đặt trùng khung giờ (QĐ3)
     UNIQUE KEY uq_no_double_booking (court_id, play_date, time_slot_id, active_key),
+    CONSTRAINT chk_bs_base_price  CHECK (base_price >= 0),
+    CONSTRAINT chk_bs_final_amt   CHECK (final_price >= 0),
     CONSTRAINT chk_bs_multiplier  CHECK (multiplier BETWEEN 1.00 AND 1.50),
     CONSTRAINT chk_bs_final_price CHECK (final_price = ROUND(base_price * multiplier, 0)),
     -- FK ghép chống lệch sân/ngày so với booking cha
@@ -289,7 +295,10 @@ CREATE TABLE booking_services (
     unit_price  BIGINT NOT NULL,
     total_price BIGINT NOT NULL,
     PRIMARY KEY (id),
-    CONSTRAINT chk_bsvc_qty CHECK (quantity >= 1),
+    CONSTRAINT chk_bsvc_qty        CHECK (quantity >= 1),
+    CONSTRAINT chk_bsvc_unit_price CHECK (unit_price >= 0),
+    CONSTRAINT chk_bsvc_total_price CHECK (total_price >= 0),
+    CONSTRAINT chk_bsvc_total_calc  CHECK (total_price = quantity * unit_price),
     FOREIGN KEY fk_bsvc_booking (booking_id) REFERENCES bookings(id) ON DELETE RESTRICT,
     FOREIGN KEY fk_bsvc_service (service_id) REFERENCES services(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

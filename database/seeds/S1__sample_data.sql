@@ -177,7 +177,8 @@ INSERT INTO pricing_rules
 VALUES
 ('Giờ vàng chiều tối (17h–21h)',  'PEAK_HOUR', 1.30, 1, '17:00:00', '21:00:00', NULL, NULL),
 ('Cuối tuần — Thứ Bảy',           'WEEKEND',   1.40, 1, NULL,        NULL,       6,    NULL),
-('Cuối tuần — Chủ Nhật',          'WEEKEND',   1.40, 1, NULL,        NULL,       7,    NULL);
+('Cuối tuần — Chủ Nhật',          'WEEKEND',   1.40, 1, NULL,        NULL,       7,    NULL),
+('Ngày lễ Tết Dương Lịch',        'HOLIDAY',   1.50, 1, NULL,        NULL,       NULL, 1);
 
 -- =============================================================
 -- 11. Ngày lễ mẫu
@@ -229,3 +230,8 @@ UPDATE bookings SET status = 'COMPLETED' WHERE id = 1;
 -- COMPLETED → DEPOSITED không hợp lệ (phải bị chặn)
 UPDATE bookings SET status = 'DEPOSITED' WHERE id = 1;
 */
+SELECT id, name, email,
+       LEFT(password_hash, 7) AS prefix,
+       LENGTH(password_hash)  AS hash_length
+FROM users
+WHERE is_system = false;
