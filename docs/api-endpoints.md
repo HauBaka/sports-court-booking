@@ -465,49 +465,53 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
 > 3. **Tạo lịch giữ chỗ tạm (`POST /bookings` - Luồng 1 CSDL):** Khóa khung giờ tạm thời trong 10 phút, tạo `bookings` với trạng thái `PENDING_DEPOSIT` và `hold_expires_at = MIN(now + 10m, start_at)`.
 > 4. **Thanh toán cọc (`POST /bookings/{id}/deposit` - Luồng 2 CSDL):** Khách xác nhận trừ tiền cọc từ ví, chuyển trạng thái `bookings` sang `DEPOSITED`, sinh giao dịch ví `DEPOSIT` (`related_booking_id = booking.id`).
 
-#### 3.1 Xem sơ đồ khung giờ trống theo ngày của sân con
+#### 3.1 Xem sơ đồ khung giờ trống theo ngày của sân con (Quy tắc lọc Hold quá hạn)
 * **Endpoint:** `GET /api/v1/courts/{court_id}/slots`
-* **Mô tả:** Lấy danh sách toàn bộ các khung giờ trong ngày chỉ định (`date=YYYY-MM-DD`). Trả về trạng thái khung giờ:
-  - `AVAILABLE`: Khung giờ trống, sẵn sàng cho đặt chỗ.
-  - `HOLDING`: Khung giờ đang được giữ chỗ tạm thời trong đơn đặt `PENDING_DEPOSIT` (`hold_expires_at > :now`).
-  - `BOOKED`: Khung giờ đã được đặt cọc thành công (`DEPOSITED` hoặc `COMPLETED` với `active_key = 1`).
+* **Mô tả:** Lấy danh sách toàn bộ các khung giờ trong ngày chỉ định (`date=YYYY-MM-DD`). 
+* **Quy tắc phân loại trạng thái khung giờ (Gắn kết thời gian thực `:now`):**
+  * **`BOOKED` (Đã đặt cọc):** Tồn tại `booking_slots.released_at IS NULL` VÀ `bookings.status = 'DEPOSITED'`.
+  * **`HOLDING` (Đang giữ chỗ chờ cọc):** Tồn tại `booking_slots.released_at IS NULL` VÀ `bookings.status = 'PENDING_DEPOSIT'` VÀ `bookings.hold_expires_at > :now`.
+  * **`AVAILABLE` (Trống):** 
+    - Chưa có bản ghi `booking_slots` nào, HOẶC
+    - `booking_slots.released_at IS NOT NULL` (đã nhả), HOẶC
+    - Thuộc đơn `PENDING_DEPOSIT` nhưng **`bookings.hold_expires_at <= :now`** (đã hết hạn giữ chỗ 10 phút, coi là trống ngay lập tức trên UI).
 * **Quyền truy cập:** Public.
 * **Query Params:** `date=YYYY-MM-DD` (bắt buộc).
 * **Database Transaction:** Không.
 * **Response (200 OK):**
-```json
-{
-  "success": true,
-  "message": "Lấy lịch khung giờ thành công.",
-  "data": {
-    "court_id": 101,
-    "date": "2026-11-10",
-    "slots": [
-      {
-        "time_slot_id": 1,
-        "start_time": "16:00:00",
-        "end_time": "17:00:00",
-        "base_price": 100000,
-        "status": "AVAILABLE"
-      },
-      {
-        "time_slot_id": 2,
-        "start_time": "17:00:00",
-        "end_time": "18:00:00",
-        "base_price": 100000,
-        "status": "HOLDING"
-      },
-      {
-        "time_slot_id": 3,
-        "start_time": "18:00:00",
-        "end_time": "19:00:00",
-        "base_price": 100000,
-        "status": "BOOKED"
-      }
-    ]
+  ```json
+  {
+    "success": true,
+    "message": "Lấy lịch khung giờ thành công.",
+    "data": {
+      "court_id": 101,
+      "date": "2026-11-10",
+      "slots": [
+        {
+          "time_slot_id": 1,
+          "start_time": "16:00:00",
+          "end_time": "17:00:00",
+          "base_price": 100000,
+          "status": "AVAILABLE"
+        },
+        {
+          "time_slot_id": 2,
+          "start_time": "17:00:00",
+          "end_time": "18:00:00",
+          "base_price": 100000,
+          "status": "HOLDING"
+        },
+        {
+          "time_slot_id": 3,
+          "start_time": "18:00:00",
+          "end_time": "19:00:00",
+          "base_price": 100000,
+          "status": "BOOKED"
+        }
+      ]
+    }
   }
-}
-```
+  ```
 
 #### 3.2 Xem trước tính tiền đặt sân và tiền cọc (Frontend Zero-Math)
 * **Endpoint:** `POST /api/v1/bookings/calculate-price`
@@ -576,52 +580,69 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
 }
 ```
 
-#### 3.3 Tạo lịch đặt sân và giữ chỗ tạm (Luồng 1 CSDL - `PENDING_DEPOSIT`)
+#### 3.3 Tạo lịch đặt sân và giữ chỗ tạm (Luồng 1 CSDL - `PENDING_DEPOSIT` & Lazy Release)
 * **Endpoint:** `POST /api/v1/bookings`
-* **Mô tả:** Khách hàng tiến hành tạo đơn đặt sân để giữ chỗ tạm trong 10 phút. Chưa trừ tiền ví.
+* **Mô tả:** Tạo đơn đặt sân tạm thời và khóa giữ chỗ trong 10 phút. Chưa trừ tiền ví, chưa ghi sổ cái `wallet_transactions`.
 * **Quyền truy cập:** Đã đăng nhập (`customer`).
-* **Database Transaction:** **BẮT BUỘC (ACID TRANSACTION VỚI ROW LOCKING)**
-  - **Bước 1:** Kiểm tra `time_slot_ids` hợp lệ với giờ mở cửa của sân con (`court_slots`).
-  - **Bước 2:** Khóa hàng (`SELECT ... FOR UPDATE`) các khung giờ trong `court_slots` và kiểm tra ràng buộc duy nhất trong `booking_slots` (`court_id`, `play_date`, `time_slot_id`, `active_key=1`). Nếu khung giờ đã có người đặt cọc hoặc đang được giữ chỗ -> Rollback báo `409 Conflict` (`SLOT_ALREADY_BOOKED`).
-  - **Bước 3:** Tính toán giá: `subtotal`, `service_total`, `total_amount`, `deposit_amount = total_amount * 30 DIV 100`.
-  - **Bước 4:** Thiết lập `hold_expires_at = MIN(:now + 10 phút, start_at)`.
-  - **Bước 5:** Tạo bản ghi `bookings` trạng thái `PENDING_DEPOSIT`, gán `user_id = current_user.id`.
-  - **Bước 6:** Tạo các bản ghi con `booking_slots` với `active_key = 1` và `booking_services` nếu có.
-  - **Bước 7:** Commit Transaction. (Lưu ý: Chưa ghi sổ cái `wallet_transactions` vì chưa thu tiền).
+* **Database Transaction:** **BẮT BUỘC (ACID TRANSACTION VỚI LAZY RELEASE VÀ ROW LOCKING)**
+  * **Bước 1 (Dọn dẹp lười giữ chỗ quá hạn - Opportunistic / Lazy Release):**
+    Trước khi kiểm tra xung đột, thực thi lệnh UPDATE để giải phóng ngay các đơn hold đã quá hạn trên chính các khung giờ đang đặt:
+    ```sql
+    UPDATE bookings b
+    JOIN booking_slots bs ON b.id = bs.booking_id
+    SET b.status = 'CANCELLED',
+        b.cancelled_at = :now,
+        bs.released_at = :now
+    WHERE bs.court_id = :court_id 
+      AND bs.play_date = :play_date 
+      AND bs.time_slot_id IN (:time_slot_ids)
+      AND b.status = 'PENDING_DEPOSIT' 
+      AND b.hold_expires_at <= :now
+      AND bs.released_at IS NULL;
+    ```
+    *(Bước này cập nhật `released_at = :now`, làm cột sinh `active_key` tự động về `NULL`, giải phóng hoàn toàn ràng buộc UNIQUE cho các slot quá hạn).*
+  * **Bước 2 (Kiểm tra xung đột bằng `SELECT ... FOR UPDATE`):**
+    Khóa và kiểm tra xem còn bản ghi nào trong `booking_slots` có `active_key = 1` trên các khung giờ này hay không. Nếu còn dòng ➔ Nghĩa là khung giờ đang bị giữ bởi đơn `DEPOSITED` hoặc đơn `PENDING_DEPOSIT` còn hạn. Rollback và báo lỗi `409 Conflict` (`SLOT_ALREADY_BOOKED`).
+  * **Bước 3 (Kiểm tra điều kiện mở cửa sân):**
+    Kiểm tra toàn bộ `time_slot_id` thuộc `court_slots` của sân và nằm trong khoảng `open_time` - `close_time`. Tính `start_at = play_date + MIN(start_time)`. Từ chối nếu `start_at <= :now` (mã lỗi `INVALID_BOOKING_TIME`).
+  * **Bước 4 (Tính tiền & Thiết lập thời hạn giữ chỗ):**
+    Tính toán chi phí, đặt `hold_expires_at = MIN(:now + 10 phút, start_at)`.
+  * **Bước 5 (Tạo đơn và chi tiết slot):**
+    INSERT bản ghi `bookings` với `status = 'PENDING_DEPOSIT'`.
+    INSERT các bản ghi `booking_slots` (kèm `multiplier`, `final_price`, `active_key = 1`) và `booking_services` (nếu có).
+  * **Bước 6:** Commit Transaction.
 * **Request Body:**
-```json
-{
-  "court_id": 101,
-  "play_date": "2026-11-10",
-  "time_slot_ids": [1, 3],
-  "services": [
-    {
-      "service_id": 1,
-      "quantity": 2
-    }
-  ],
-  "note": "Giao lưu thể thao"
-}
-```
-* **Response (201 Created):**
-```json
-{
-  "success": true,
-  "message": "Tạo lịch đặt và giữ chỗ thành công. Vui lòng thanh toán cọc trong vòng 10 phút.",
-  "data": {
-    "id": 105,
-    "booking_code": "BK-20261110-0105",
+  ```json
+  {
     "court_id": 101,
     "play_date": "2026-11-10",
-    "start_at": "2026-11-10T16:00:00+07:00",
-    "end_at": "2026-11-10T19:00:00+07:00",
-    "status": "PENDING_DEPOSIT",
-    "total_amount": 270000,
-    "deposit_amount_required": 81000,
-    "hold_expires_at": "2026-11-08T15:10:00+07:00"
+    "time_slot_ids": [1, 2],
+    "services": [
+      {
+        "service_id": 1,
+        "quantity": 2
+      }
+    ]
   }
-}
-```
+  ```
+* **Response (201 Created):**
+  ```json
+  {
+    "success": true,
+    "message": "Giữ chỗ tạm thời thành công. Vui lòng thanh toán cọc trong vòng 10 phút.",
+    "data": {
+      "booking_id": 105,
+      "court_id": 101,
+      "court_name": "Sân Cầu Lông 1 (Thảm Yonex)",
+      "play_date": "2026-11-10",
+      "start_at": "2026-11-10T16:00:00+07:00",
+      "status": "PENDING_DEPOSIT",
+      "total_amount": 270000,
+      "deposit_amount_required": 81000,
+      "hold_expires_at": "2026-11-10T14:40:00+07:00"
+    }
+  }
+  ```
 
 #### 3.4 Đặt cọc 30% cho lịch đặt đang giữ chỗ (Luồng 2 CSDL - `DEPOSIT`)
 * **Endpoint:** `POST /api/v1/bookings/{id}/deposit`
@@ -745,6 +766,38 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
   }
 }
 ```
+
+#### 3.7 Tác vụ tự động dọn dẹp và nhả giữ chỗ hết hạn (Luồng 3b CSDL & Endpoint Quản trị)
+* **Cơ chế chạy ngầm (Scheduled Background Worker):**
+  * Tiến trình nền (APScheduler / FastAPI BackgroundTasks / Cron) chạy định kỳ mỗi **60 giây**.
+  * Quét các đơn `PENDING_DEPOSIT` có `hold_expires_at <= :now`.
+  * Thực hiện cập nhật:
+    ```sql
+    UPDATE bookings 
+    SET status = 'CANCELLED', cancelled_at = :now 
+    WHERE status = 'PENDING_DEPOSIT' AND hold_expires_at <= :now;
+
+    UPDATE booking_slots 
+    SET released_at = :now 
+    WHERE booking_id IN (:expired_booking_ids) AND released_at IS NULL;
+    ```
+  * Cột sinh `active_key` tự động chuyển về `NULL`. Tuyệt đối không ghi giao dịch ví (chưa thu cọc).
+* **Endpoint Kích hoạt thủ công / Kiểm thử tự động:** `POST /api/v1/admin/bookings/expire-holds`
+* **Mô tả:** Cho phép quản trị viên hoặc kịch bản kiểm thử CI/CD kích hoạt dọn dẹp ngay lập tức mà không cần chờ chu kỳ Cron.
+* **Quyền truy cập:** `admin`.
+* **Database Transaction:** **BẮT BUỘC**.
+* **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Quét và dọn dẹp các lịch giữ chỗ hết hạn thành công.",
+    "data": {
+      "total_expired_bookings_cancelled": 2,
+      "total_slots_released": 4,
+      "executed_at": "2026-11-10T14:45:00+07:00"
+    }
+  }
+  ```
 
 ---
 
