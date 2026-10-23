@@ -142,36 +142,43 @@ Khi xảy ra lỗi (HTTP Status >= 400), response trả về luôn tuân theo m�
 }
 ```
 
-### 3.3. Bảng danh mục Business Error Codes
+### 3.3. Bảng danh mục Business Error Codes chuẩn hóa (Đồng bộ FE & BE)
 
-| Mã lỗi (`code`) | HTTP Status | Ý nghĩa & Tình huống xảy ra |
-| :--- | :---: | :--- |
-| **Chung (Common)** | | |
-| `INVALID_REQUEST` | 400 | Yêu cầu không hợp lệ. |
-| `VALIDATION_ERROR` | 422 | Sai định dạng hoặc thiếu các trường bắt buộc. |
-| `RESOURCE_NOT_FOUND` | 404 | Không tìm thấy tài nguyên yêu cầu. |
-| `INTERNAL_SERVER_ERROR` | 500 | Lỗi server nội bộ. |
-| **Xác thực & Phân quyền (Auth)** | | |
-| `AUTH_INVALID_CREDENTIALS` | 400 / 401 | Số điện thoại/Email hoặc mật khẩu không chính xác. |
-| `AUTH_TOKEN_EXPIRED` | 401 | Access token đã hết hạn, cần đăng nhập lại. |
-| `AUTH_TOKEN_INVALID` | 401 | Token không đúng định dạng hoặc chữ ký không hợp lệ. |
-| `AUTH_UNAUTHORIZED` | 401 | Chưa truyền header Authorization Bearer token. |
-| `AUTH_FORBIDDEN` | 403 | Không đủ quyền truy cập (ví dụ khách hàng gọi API admin). |
-| **Sân & Bảng giá (Courts & Pricing)** | | |
-| `COURT_NOT_FOUND` | 404 | Không tìm thấy sân yêu cầu. |
-| `COURT_INACTIVE` | 400 | Sân đang tạm dừng hoạt động hoặc bảo trì. |
-| `TIME_SLOT_INVALID` | 400 | Khung giờ nằm ngoài giờ mở cửa của sân. |
-| `PRICING_NOT_FOUND` | 404 | Chưa cấu hình bảng giá cho khung giờ này. |
-| **Đặt sân & Giữ chỗ (Bookings - QĐ1, QĐ2, QĐ3)** | | |
-| `BOOKING_NOT_FOUND` | 404 | Không tìm thấy đơn đặt sân. |
-| `SLOT_ALREADY_BOOKED` | 409 | Khung giờ đã được khách khác đặt cọc (khóa giờ theo QĐ3). |
-| `INVALID_BOOKING_TIME` | 400 | Giờ bắt đầu phải nhỏ hơn giờ kết thúc, tối thiểu 1 tiếng. |
-| `CANNOT_CANCEL_BOOKING` | 400 | Lịch đặt đã diễn ra hoặc đã hoàn tất, không thể hủy. |
-| **Ví & Tiền cọc (Wallet & Payment - QĐ4, QĐ5, QĐ6)** | | |
-| `WALLET_NOT_FOUND` | 404 | Không tìm thấy ví của người dùng. |
-| `WALLET_INSUFFICIENT_BALANCE` | 400 | Số dư ví không đủ 30% tiền cọc (QĐ4, QĐ6). |
-| `REFUND_NOT_ELIGIBLE` | 400 | Hủy dưới 12 giờ trước giờ chơi: không được hoàn cọc (QĐ5). |
-| `DEPOSIT_AMOUNT_INVALID` | 400 | Số tiền nạp cấp vào ví phải lớn hơn 0. |
+| Nhóm | Mã lỗi (`code`) | HTTP Status | Ý nghĩa & Tình huống phát sinh |
+| :--- | :--- | :---: | :--- |
+| **1. Chung (Common)** | `INVALID_REQUEST` | **400** | Yêu cầu không hợp lệ hoặc dữ liệu sai quy tắc logic nghiệp vụ. |
+| | `VALIDATION_ERROR` | **422** | Sai định dạng Schema (Pydantic validation). Trả về chi tiết mảng `details`. |
+| | `RESOURCE_NOT_FOUND` | **404** | Không tìm thấy tài nguyên yêu cầu trong hệ thống. |
+| | `INTERNAL_SERVER_ERROR` | **500** | Lỗi server nội bộ hoặc Database Exception ngoài ý muốn. |
+| **2. Xác thực & Phân quyền (Auth)** | `AUTH_INVALID_CREDENTIALS` | **401** | Email hoặc mật khẩu không chính xác khi đăng nhập. |
+| | `AUTH_TOKEN_EXPIRED` | **401** | Access token JWT đã hết hạn (`exp`), cần đăng nhập lại. |
+| | `AUTH_TOKEN_INVALID` | **401** | Token không đúng định dạng JWT hoặc chữ ký xác thực HMAC không hợp lệ. |
+| | `AUTH_UNAUTHORIZED` | **401** | Request yêu cầu đăng nhập nhưng thiếu Header `Authorization: Bearer <token>`. |
+| | `AUTH_FORBIDDEN` | **403** | Không đủ quyền truy cập (ví dụ khách hàng gọi API admin hoặc chủ sân khác). |
+| | `AUTH_EMAIL_EXISTS` | **409** | Email đã được đăng ký bởi tài khoản khác trong hệ thống. |
+| | `AUTH_PHONE_EXISTS` | **409** | Số điện thoại đã được đăng ký trong hệ thống. |
+| **3. Cơ sở & Sân con (Facilities & Courts)** | `FACILITY_NOT_FOUND` | **404** | Không tìm thấy cơ sở thể thao theo ID yêu cầu. |
+| | `COURT_NOT_FOUND` | **404** | Không tìm thấy sân con theo ID yêu cầu. |
+| | `COURT_INACTIVE` | **400** | Sân con đang tạm dừng hoạt động hoặc bảo trì (`is_active = false`). |
+| | `TIME_SLOT_INVALID` | **400** | Khung giờ nằm ngoài giờ mở cửa/đóng cửa của sân con (`court_slots`). |
+| | `PRICING_NOT_FOUND` | **404** | Chưa cấu hình bảng giá cơ sở hoặc bảng giá theo thời điểm cho khung giờ này. |
+| | `CANNOT_UPDATE_COURT_SCHEDULE_ACTIVE_BOOKINGS` | **400** | Không thể đổi giờ mở/đóng cửa vì đang có đơn đặt cọc hợp lệ trong tương lai. |
+| | `CANNOT_DEACTIVATE_COURT_ACTIVE_BOOKINGS` | **400** | Không thể tắt hoạt động sân (`is_active = false`) vì đang có đơn đặt cọc trong tương lai. |
+| **4. Đặt sân & Giữ chỗ (Bookings)** | `BOOKING_NOT_FOUND` | **404** | Không tìm thấy đơn đặt sân. |
+| | `SLOT_ALREADY_BOOKED` | **409** | Khung giờ đã có người đặt cọc (`DEPOSITED`) hoặc đang trong thời gian giữ chỗ hợp lệ (`PENDING_DEPOSIT`). |
+| | `INVALID_BOOKING_TIME` | **400** | Thời gian bắt đầu phải ở tương lai, không cho đặt khung giờ trong quá khứ. |
+| | `CANNOT_CANCEL_BOOKING` | **400** | Lịch đặt đã diễn ra (`:now >= start_at`) hoặc đã hoàn tất, không thể hủy. |
+| | `CANNOT_DEPOSIT_EXPIRED_BOOKING` | **400** | Đơn đặt sân đã quá hạn giữ chỗ 10 phút, không thể thanh toán cọc. |
+| | `CANNOT_SETTLE_BEFORE_START` | **400** | Buổi chơi chưa diễn ra (`:now < start_at`), không thể kết toán cọc cho chủ sân. |
+| **5. Ví & Tiền cọc (Wallets & Payments)** | `WALLET_NOT_FOUND` | **404** | Không tìm thấy ví nội bộ của người dùng trong hệ thống. |
+| | `WALLET_INSUFFICIENT_BALANCE` | **400** | Số dư ví hiện tại không đủ 30% tiền cọc (QĐ4, QĐ6, ánh xạ từ `chk_wallets_balance`). |
+| | `DEPOSIT_AMOUNT_INVALID` | **400** | Số tiền nạp cấp vào ví (`TOPUP`) hoặc tiền cọc phải lớn hơn 0 VNĐ. |
+| **6. Ghép đội (Matchmaking - Epic 6)** | `BOOKING_NOT_DEPOSITED` | **400** | Chỉ đơn đặt sân đã thanh toán cọc (`DEPOSITED`) mới được phép tạo bài đăng tìm đồng đội. |
+| | `TEAM_POST_CLOSED` | **400** | Bài đăng tìm đồng đội đã đủ người (`CLOSED`) hoặc đã bị hủy. |
+| | `CANNOT_APPLY_OWN_POST` | **400** | Không thể tự nộp đơn ứng tuyển vào chính bài đăng do mình tạo. |
+| | `APPLICATION_ALREADY_EXISTS` | **409** | Bạn đã nộp đơn ứng tuyển cho bài đăng này rồi, không thể nộp trùng lặp. |
+
+*(Lưu ý về quy định QĐ5: Trường hợp khách hủy đơn dưới 12 giờ trước giờ chơi, hệ thống vẫn xử lý hủy thành công 200 OK với tỉ lệ hoàn 0% và bồi thường 100% cho chủ sân; Backend không chặn lỗi 400).*
 
 ---
 
