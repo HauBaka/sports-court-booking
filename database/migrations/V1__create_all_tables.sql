@@ -5,7 +5,6 @@
 -- Yêu cầu: MySQL 8.0.16+, InnoDB, STRICT_TRANS_TABLES
 -- =============================================================
 
-SET FOREIGN_KEY_CHECKS = 0;
 SET sql_mode = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION';
 
 -- =============================================================
@@ -88,6 +87,7 @@ CREATE TABLE facilities (
     close_time TIME          NOT NULL,
     is_active  BOOLEAN       NOT NULL DEFAULT true,
     PRIMARY KEY (id),
+    CONSTRAINT chk_facilities_times CHECK (open_time < close_time),
     FOREIGN KEY fk_facility_owner (owner_id) REFERENCES users(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -196,6 +196,7 @@ CREATE TABLE bookings (
     PRIMARY KEY (id),
     -- Unique ghép để booking_slots có thể tham chiếu FK (id, court_id, play_date)
     UNIQUE KEY uq_bookings_id_court_date (id, court_id, play_date),
+    INDEX idx_bookings_expire (status, hold_expires_at),
     CONSTRAINT chk_bookings_subtotal    CHECK (subtotal >= 0),
     CONSTRAINT chk_bookings_svc_total   CHECK (service_total >= 0),
     CONSTRAINT chk_bookings_total_amt   CHECK (total_amount >= 0),
@@ -334,6 +335,7 @@ CREATE TABLE team_post_applications (
     status  ENUM('PENDING', 'ACCEPTED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
     message TEXT,
     PRIMARY KEY (id),
+    UNIQUE KEY uq_tpa_post_user (post_id, user_id),
     FOREIGN KEY fk_tpa_post (post_id) REFERENCES team_posts(id) ON DELETE RESTRICT,
     FOREIGN KEY fk_tpa_user (user_id) REFERENCES users(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -351,14 +353,11 @@ CREATE TRIGGER trg_bookings_status_check
 BEFORE UPDATE ON bookings
 FOR EACH ROW
 BEGIN
-    IF OLD.status = NEW.status THEN
-        -- Không đổi trạng thái: bỏ qua
-        SET @_dummy = 0;
-    ELSEIF OLD.status = 'PENDING_DEPOSIT' AND NEW.status IN ('DEPOSITED', 'CANCELLED') THEN
-        SET @_dummy = 0;
-    ELSEIF OLD.status = 'DEPOSITED' AND NEW.status IN ('COMPLETED', 'CANCELLED') THEN
-        SET @_dummy = 0;
-    ELSE
+    IF NOT (
+        OLD.status = NEW.status
+        OR (OLD.status = 'PENDING_DEPOSIT' AND NEW.status IN ('DEPOSITED', 'CANCELLED'))
+        OR (OLD.status = 'DEPOSITED'       AND NEW.status IN ('COMPLETED', 'CANCELLED'))
+    ) THEN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT = 'Chuyển trạng thái booking không hợp lệ';
     END IF;
@@ -399,50 +398,3 @@ BEGIN
 END//
 
 DELIMITER ;
-
-SET FOREIGN_KEY_CHECKS = 1;
-
-/*
-SHOW TABLES;
-
--- Tạo data tối thiểu để test
-INSERT INTO users (id, name, email, phone, password_hash)
-VALUES (1, 'Test', 'test@test.com', '0900000001', 'hash');
-INSERT INTO wallets (id, user_id, balance) VALUES (1, 1, 100000);
-
--- Thử set âm → phải lỗi
-UPDATE wallets SET balance = -1 WHERE id = 1;
-
--- Chuẩn bị data tối thiểu
-INSERT INTO sports (id, name) VALUES (1, 'Cầu lông');
-INSERT INTO users (id, name, email, phone, password_hash, is_system)
-VALUES (2, 'Owner', 'owner@test.com', '0900000002', 'hash', false);
-INSERT INTO facilities (id, owner_id, name, address, city, open_time, close_time)
-VALUES (1, 2, 'Sân Test', '123 Test', 'HCM', '06:00:00', '23:00:00');
-INSERT INTO courts (id, facility_id, sport_id, name, environment, open_time, close_time)
-VALUES (1, 1, 1, 'Sân 1', 'INDOOR', '06:00:00', '23:00:00');
-INSERT INTO time_slots (id, start_time, end_time, duration_minutes)
-VALUES (8, '13:00:00', '14:00:00', 60);
-INSERT INTO court_slots (court_id, time_slot_id, base_price)
-VALUES (1, 8, 100000);
-
--- Booking 1 hợp lệ
-INSERT INTO bookings (id, user_id, court_id, play_date, start_at, status,
-    subtotal, service_total, total_amount, deposit_amount, deposit_percent)
-VALUES (1, 1, 1, '2027-12-01', '2027-12-01 13:00:00', 'DEPOSITED',
-    100000, 0, 100000, 30000, 30);
-INSERT INTO booking_slots (booking_id, court_id, play_date, time_slot_id, base_price, final_price, multiplier)
-VALUES (1, 1, '2027-12-01', 8, 100000, 100000, 1.00);
-
--- Booking 2 trùng slot → phải lỗi
-INSERT INTO bookings (id, user_id, court_id, play_date, start_at, status,
-    subtotal, service_total, total_amount, deposit_amount, deposit_percent)
-VALUES (2, 1, 1, '2027-12-01', '2027-12-01 13:00:00', 'DEPOSITED',
-    100000, 0, 100000, 30000, 30);
-INSERT INTO booking_slots (booking_id, court_id, play_date, time_slot_id, base_price, final_price, multiplier)
-VALUES (2, 1, '2027-12-01', 8, 100000, 100000, 1.00);
-
-
-UPDATE bookings SET status = 'COMPLETED' WHERE id = 1; -- OK
-UPDATE bookings SET status = 'DEPOSITED' WHERE id = 1; -- phải lỗi
-*/

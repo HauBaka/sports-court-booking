@@ -14,8 +14,10 @@ Thư mục chứa migration và dữ liệu mẫu cho hệ thống Sports Court 
 database/
 ├── migrations/
 │   └── V1__create_all_tables.sql   # Tạo toàn bộ bảng, ràng buộc và trigger
-└── seeds/
-    └── S1__sample_data.sql         # Dữ liệu mẫu cho môi trường dev/test
+├── seeds/
+│   └── S1__sample_data.sql         # Dữ liệu mẫu cho môi trường dev/test
+└── tests/
+    └── T1__constraint_tests.sql    # Kiểm thử ràng buộc (chạy sau seed)
 ```
 
 ## Cách chạy

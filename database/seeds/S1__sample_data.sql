@@ -192,46 +192,6 @@ INSERT INTO holidays (name, holiday_date, recurring_yearly) VALUES
 ('Quốc Khánh',          '2027-09-02', true);
 
 SET FOREIGN_KEY_CHECKS = 1;
-/*
-các test case database.
 
 
-SELECT 'users'       AS bang, COUNT(*) AS so_ban_ghi FROM users
-UNION ALL SELECT 'wallets',      COUNT(*) FROM wallets
-UNION ALL SELECT 'facilities',   COUNT(*) FROM facilities
-UNION ALL SELECT 'courts',       COUNT(*) FROM courts
-UNION ALL SELECT 'time_slots',   COUNT(*) FROM time_slots
-UNION ALL SELECT 'court_slots',  COUNT(*) FROM court_slots
-UNION ALL SELECT 'pricing_rules',COUNT(*) FROM pricing_rules;
 
--- Tạo booking hợp lệ trước
-INSERT INTO bookings (id, user_id, court_id, play_date, start_at, status,
-    subtotal, service_total, total_amount, deposit_amount, deposit_percent)
-VALUES (1, 4, 1, '2027-12-01', '2027-12-01 13:00:00', 'DEPOSITED',
-    100000, 0, 100000, 30000, 30);
-
-INSERT INTO booking_slots
-    (booking_id, court_id, play_date, time_slot_id, base_price, final_price, multiplier)
-VALUES (1, 1, '2027-12-01', 8, 100000, 100000, 1.00);
-
--- Thử đặt trùng slot đó (booking khác, cùng sân + ngày + khung giờ)
-INSERT INTO bookings (id, user_id, court_id, play_date, start_at, status,
-    subtotal, service_total, total_amount, deposit_amount, deposit_percent)
-VALUES (2, 5, 1, '2027-12-01', '2027-12-01 13:00:00', 'DEPOSITED',
-    100000, 0, 100000, 30000, 30);
-
-INSERT INTO booking_slots
-    (booking_id, court_id, play_date, time_slot_id, base_price, final_price, multiplier)
-VALUES (2, 1, '2027-12-01', 8, 100000, 100000, 1.00);
-
--- DEPOSITED → COMPLETED hợp lệ (OK)
-UPDATE bookings SET status = 'COMPLETED' WHERE id = 1;
-
--- COMPLETED → DEPOSITED không hợp lệ (phải bị chặn)
-UPDATE bookings SET status = 'DEPOSITED' WHERE id = 1;
-*/
-SELECT id, name, email,
-       LEFT(password_hash, 7) AS prefix,
-       LENGTH(password_hash)  AS hash_length
-FROM users
-WHERE is_system = false;
