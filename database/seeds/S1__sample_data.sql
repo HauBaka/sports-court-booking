@@ -55,28 +55,28 @@ INSERT INTO sports (id, name, icon_url) VALUES
 -- 3a. Tài khoản hệ thống (ví giữ cọc trung gian — is_system = true)
 INSERT INTO users (id, name, email, phone, password_hash, is_active, is_system) VALUES
 (1, 'System Wallet', 'system@internal.scb', '0000000000',
- '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMUkDE.RrwBMqFGJhckHPrJvpG',
+ '$2b$12$PZwNny64znxkTGU6a9A7KuikgVfJiJsB1Uiruv439Xc6P0IdeBOH6',
  true, true);
 
 -- 3b. Admin
 INSERT INTO users (id, name, email, phone, password_hash, is_active, is_system) VALUES
 (2, 'Nguyễn Quản Trị', 'admin@scb.vn', '0900000001',
- '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMUkDE.RrwBMqFGJhckHPrJvpG',
+ '$2b$12$PZwNny64znxkTGU6a9A7KuikgVfJiJsB1Uiruv439Xc6P0IdeBOH6',
  true, false);
 
 -- 3c. Chủ sân
 INSERT INTO users (id, name, email, phone, password_hash, is_active, is_system) VALUES
 (3, 'Trần Văn Chủ', 'owner@scb.vn', '0900000002',
- '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMUkDE.RrwBMqFGJhckHPrJvpG',
+ '$2b$12$PZwNny64znxkTGU6a9A7KuikgVfJiJsB1Uiruv439Xc6P0IdeBOH6',
  true, false);
 
 -- 3d. Khách hàng
 INSERT INTO users (id, name, email, phone, password_hash, is_active, is_system) VALUES
 (4, 'Lê Khách Hàng A', 'customer.a@scb.vn', '0900000003',
- '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMUkDE.RrwBMqFGJhckHPrJvpG',
+ '$2b$12$PZwNny64znxkTGU6a9A7KuikgVfJiJsB1Uiruv439Xc6P0IdeBOH6',
  true, false),
 (5, 'Phạm Khách Hàng B', 'customer.b@scb.vn', '0900000004',
- '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMUkDE.RrwBMqFGJhckHPrJvpG',
+ '$2b$12$PZwNny64znxkTGU6a9A7KuikgVfJiJsB1Uiruv439Xc6P0IdeBOH6',
  true, false);
 
 -- =============================================================
