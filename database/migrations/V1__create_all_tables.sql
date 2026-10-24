@@ -1,9 +1,3 @@
--- =============================================================
--- V1__create_all_tables.sql
--- Sports Court Booking — Migration đầu tiên
--- Target: s4a022df8_prod
--- Yêu cầu: MySQL 8.0.16+, InnoDB, STRICT_TRANS_TABLES
--- =============================================================
 
 SET sql_mode = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION';
 
@@ -85,10 +79,18 @@ CREATE TABLE facilities (
     longitude  DECIMAL(10,7),
     open_time  TIME          NOT NULL,
     close_time TIME          NOT NULL,
-    is_active  BOOLEAN       NOT NULL DEFAULT true,
+    description TEXT,
+    is_active   BOOLEAN       NOT NULL DEFAULT true,
     PRIMARY KEY (id),
     CONSTRAINT chk_facilities_times CHECK (open_time < close_time),
     FOREIGN KEY fk_facility_owner (owner_id) REFERENCES users(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE facility_amenities (
+    facility_id  BIGINT      NOT NULL,
+    amenity_code VARCHAR(50) NOT NULL,
+    PRIMARY KEY (facility_id, amenity_code),
+    FOREIGN KEY fk_fa_facility (facility_id) REFERENCES facilities(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE courts (
@@ -105,6 +107,28 @@ CREATE TABLE courts (
     CONSTRAINT chk_courts_times CHECK (open_time < close_time),
     FOREIGN KEY fk_court_facility (facility_id) REFERENCES facilities(id) ON DELETE RESTRICT,
     FOREIGN KEY fk_court_sport (sport_id) REFERENCES sports(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE court_photos (
+    id         BIGINT       NOT NULL AUTO_INCREMENT,
+    court_id   BIGINT       NOT NULL,
+    url        VARCHAR(512) NOT NULL,
+    is_primary BOOLEAN      NOT NULL DEFAULT false,
+    sort_order INT          NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
+    FOREIGN KEY fk_cp_court (court_id) REFERENCES courts(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE court_schedules (
+    court_id    BIGINT  NOT NULL,
+    day_of_week TINYINT NOT NULL,
+    open_time   TIME    NOT NULL,
+    close_time  TIME    NOT NULL,
+    is_active   BOOLEAN NOT NULL DEFAULT true,
+    PRIMARY KEY (court_id, day_of_week),
+    CONSTRAINT chk_csch_dow   CHECK (day_of_week BETWEEN 1 AND 7),
+    CONSTRAINT chk_csch_times CHECK (open_time < close_time),
+    FOREIGN KEY fk_csch_court (court_id) REFERENCES courts(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================================
@@ -202,9 +226,9 @@ CREATE TABLE bookings (
     CONSTRAINT chk_bookings_total_amt   CHECK (total_amount >= 0),
     CONSTRAINT chk_bookings_deposit_amt CHECK (deposit_amount >= 0),
     CONSTRAINT chk_bookings_play_date   CHECK (DATE(start_at) = play_date),
-    CONSTRAINT chk_bookings_cancelled   CHECK ((status = 'CANCELLED') = (cancelled_at IS NOT NULL)),
-    CONSTRAINT chk_bookings_total       CHECK (total_amount = subtotal + service_total),
-    CONSTRAINT chk_bookings_deposit     CHECK (deposit_amount = total_amount * deposit_percent DIV 100),
+    CONSTRAINT chk_bookings_cancelled  CHECK ((status = 'CANCELLED') = (cancelled_at IS NOT NULL)),
+    CONSTRAINT chk_bookings_total      CHECK (total_amount = subtotal + service_total),
+    CONSTRAINT chk_bookings_deposit    CHECK (deposit_amount = total_amount * deposit_percent DIV 100),
     CONSTRAINT chk_bookings_deposit_pct CHECK (deposit_percent BETWEEN 1 AND 100),
     FOREIGN KEY fk_booking_user (user_id) REFERENCES users(id) ON DELETE RESTRICT,
     FOREIGN KEY fk_booking_court (court_id) REFERENCES courts(id) ON DELETE RESTRICT
@@ -247,6 +271,7 @@ CREATE TABLE wallet_transactions (
     to_wallet_id       BIGINT   NOT NULL,
     type               ENUM('TOPUP', 'DEPOSIT', 'REFUND', 'FORFEIT', 'SETTLE') NOT NULL,
     amount             BIGINT   NOT NULL,
+    balance_after      BIGINT   NOT NULL,
     related_booking_id BIGINT,
     created_by         BIGINT,
     created_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -296,10 +321,7 @@ CREATE TABLE booking_services (
     unit_price  BIGINT NOT NULL,
     total_price BIGINT NOT NULL,
     PRIMARY KEY (id),
-    CONSTRAINT chk_bsvc_qty        CHECK (quantity >= 1),
-    CONSTRAINT chk_bsvc_unit_price CHECK (unit_price >= 0),
-    CONSTRAINT chk_bsvc_total_price CHECK (total_price >= 0),
-    CONSTRAINT chk_bsvc_total_calc  CHECK (total_price = quantity * unit_price),
+    CONSTRAINT chk_bsvc_qty CHECK (quantity >= 1),
     FOREIGN KEY fk_bsvc_booking (booking_id) REFERENCES bookings(id) ON DELETE RESTRICT,
     FOREIGN KEY fk_bsvc_service (service_id) REFERENCES services(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -395,6 +417,18 @@ FOR EACH ROW
 BEGIN
     SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Không được phép sửa giao dịch ví';
+END//
+
+-- Trigger 6: Tự động tạo court_slots khi tạo sân mới
+CREATE TRIGGER trg_courts_after_insert
+AFTER INSERT ON courts
+FOR EACH ROW
+BEGIN
+    INSERT INTO court_slots (court_id, time_slot_id, base_price, is_active)
+    SELECT NEW.id, id, 0, true
+    FROM time_slots
+    WHERE start_time >= NEW.open_time
+      AND end_time   <= NEW.close_time;
 END//
 
 DELIMITER ;
