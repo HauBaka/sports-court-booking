@@ -56,3 +56,37 @@ UPDATE bookings SET status = 'COMPLETED' WHERE id = 1;
 -- 4b. COMPLETED → DEPOSITED: không hợp lệ → phải lỗi
 UPDATE bookings SET status = 'DEPOSITED' WHERE id = 1;
 -- Kỳ vọng: ERROR [45000] Chuyển trạng thái booking không hợp lệ
+
+-- -------------------------------------------------------------
+-- 5. Trigger chặn giờ sân con vượt giờ cụm sân (trg_courts_check_times_insert)
+-- -------------------------------------------------------------
+-- 5a. Tạo sân với giờ hợp lệ (nằm trong 06:00–23:00 của facility 1) → OK
+INSERT INTO courts (id, facility_id, sport_id, name, environment, open_time, close_time)
+VALUES (99, 1, 1, 'Sân test hợp lệ', 'INDOOR', '08:00:00', '20:00:00');
+-- Kỳ vọng: OK
+
+-- 5b. Tạo sân vượt giờ facility (close_time > 23:00) → phải lỗi
+INSERT INTO courts (id, facility_id, sport_id, name, environment, open_time, close_time)
+VALUES (100, 1, 1, 'Sân test vượt giờ', 'INDOOR', '06:00:00', '23:30:00');
+-- Kỳ vọng: ERROR [45000] Giờ sân con phải nằm trong giờ mở cửa của cụm sân
+
+-- Dọn dẹp
+DELETE FROM court_slots WHERE court_id = 99;
+DELETE FROM courts WHERE id = 99;
+
+-- -------------------------------------------------------------
+-- 6. CHECK chk_bsvc_total_calc (total_price = quantity * unit_price)
+-- -------------------------------------------------------------
+-- Cần booking hợp lệ và service tồn tại (dùng booking id=1 đã tạo ở test 3)
+-- Trước tiên thêm service mẫu
+INSERT INTO services (id, facility_id, name, unit_price, unit) VALUES (1, 1, 'Thuê vợt', 20000, 'cái');
+
+-- 6a. total_price đúng công thức → OK
+INSERT INTO booking_services (booking_id, service_id, quantity, unit_price, total_price)
+VALUES (1, 1, 3, 20000, 60000);
+-- Kỳ vọng: OK
+
+-- 6b. total_price sai công thức (3 * 20000 = 60000, nhưng ghi 99999) → phải lỗi
+INSERT INTO booking_services (booking_id, service_id, quantity, unit_price, total_price)
+VALUES (1, 1, 3, 20000, 99999);
+-- Kỳ vọng: ERROR [3819] Check constraint 'chk_bsvc_total_calc' is violated

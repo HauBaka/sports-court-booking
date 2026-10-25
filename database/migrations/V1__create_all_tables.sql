@@ -434,8 +434,8 @@ BEGIN
       AND end_time   <= NEW.close_time;
 END//
 
--- Trigger 7: Chặn giờ sân con vượt giờ cụm sân
-CREATE TRIGGER trg_courts_check_times
+-- Trigger 7: Chặn giờ sân con vượt giờ cụm sân (INSERT)
+CREATE TRIGGER trg_courts_check_times_insert
 BEFORE INSERT ON courts
 FOR EACH ROW
 BEGIN
@@ -448,4 +448,65 @@ BEGIN
             SET MESSAGE_TEXT = 'Giờ sân con phải nằm trong giờ mở cửa của cụm sân';
     END IF;
 END//
+
+-- Trigger 8: Chặn giờ sân con vượt giờ cụm sân (UPDATE)
+CREATE TRIGGER trg_courts_check_times_update
+BEFORE UPDATE ON courts
+FOR EACH ROW
+BEGIN
+    DECLARE f_open  TIME;
+    DECLARE f_close TIME;
+    SELECT open_time, close_time INTO f_open, f_close
+    FROM facilities WHERE id = NEW.facility_id;
+    IF NEW.open_time < f_open OR NEW.close_time > f_close THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Giờ sân con phải nằm trong giờ mở cửa của cụm sân';
+    END IF;
+END//
+
+-- Trigger 9: Chặn thu hẹp giờ cụm sân khi sân con còn vượt giờ mới
+CREATE TRIGGER trg_facilities_check_courts_update
+BEFORE UPDATE ON facilities
+FOR EACH ROW
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM courts
+        WHERE facility_id = NEW.id
+          AND (open_time < NEW.open_time OR close_time > NEW.close_time)
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Giờ cụm sân không được thu hẹp khi còn sân con vượt giờ';
+    END IF;
+END//
+
+-- Trigger 10: Chặn giờ lịch ngày vượt giờ sân con (INSERT)
+CREATE TRIGGER trg_court_schedules_check_insert
+BEFORE INSERT ON court_schedules
+FOR EACH ROW
+BEGIN
+    DECLARE c_open  TIME;
+    DECLARE c_close TIME;
+    SELECT open_time, close_time INTO c_open, c_close
+    FROM courts WHERE id = NEW.court_id;
+    IF NEW.open_time < c_open OR NEW.close_time > c_close THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Giờ lịch ngày phải nằm trong giờ mở cửa của sân';
+    END IF;
+END//
+
+-- Trigger 11: Chặn giờ lịch ngày vượt giờ sân con (UPDATE)
+CREATE TRIGGER trg_court_schedules_check_update
+BEFORE UPDATE ON court_schedules
+FOR EACH ROW
+BEGIN
+    DECLARE c_open  TIME;
+    DECLARE c_close TIME;
+    SELECT open_time, close_time INTO c_open, c_close
+    FROM courts WHERE id = NEW.court_id;
+    IF NEW.open_time < c_open OR NEW.close_time > c_close THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Giờ lịch ngày phải nằm trong giờ mở cửa của sân';
+    END IF;
+END//
+
 DELIMITER ;
