@@ -171,7 +171,7 @@ Khi xảy ra lỗi (HTTP Status >= 400), response trả về luôn tuân theo m�
 | | `CANNOT_DEPOSIT_EXPIRED_BOOKING` | **400** | Đơn đặt sân đã quá hạn giữ chỗ 10 phút, không thể thanh toán cọc. |
 | | `CANNOT_SETTLE_BEFORE_START` | **400** | Buổi chơi chưa diễn ra (`:now < start_at`), không thể kết toán cọc cho chủ sân. |
 | **5. Ví & Tiền cọc (Wallets & Payments)** | `WALLET_NOT_FOUND` | **404** | Không tìm thấy ví nội bộ của người dùng trong hệ thống. |
-| | `WALLET_INSUFFICIENT_BALANCE` | **400** | Số dư ví hiện tại không đủ 30% tiền cọc (QĐ4, QĐ6, ánh xạ từ `chk_wallets_balance`). |
+| | `WALLET_INSUFFICIENT_BALANCE` | **402** | Số dư ví hiện tại không đủ 30% tiền cọc (QĐ4, QĐ6, ánh xạ từ `chk_wallets_balance`). |
 | | `DEPOSIT_AMOUNT_INVALID` | **400** | Số tiền nạp cấp vào ví (`TOPUP`) hoặc tiền cọc phải lớn hơn 0 VNĐ. |
 | **6. Ghép đội (Matchmaking - Epic 6)** | `BOOKING_NOT_DEPOSITED` | **400** | Chỉ đơn đặt sân đã thanh toán cọc (`DEPOSITED`) mới được phép tạo bài đăng tìm đồng đội. |
 | | `TEAM_POST_CLOSED` | **400** | Bài đăng tìm đồng đội đã đủ người (`CLOSED`) hoặc đã bị hủy. |

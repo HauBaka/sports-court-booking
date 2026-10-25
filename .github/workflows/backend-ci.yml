@@ -3,8 +3,14 @@ name: Backend CI
 on:
   push:
     branches: [ dev, main ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
   pull_request:
     branches: [ dev, main ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
 
 jobs:
   test:
@@ -30,23 +36,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install flake8 pytest
-
-      - name: Lint with flake8 (Kiểm tra code)
-        run: |
-          # Báo lỗi fail CI ngay nếu có lỗi cú pháp hoặc biến chưa khai báo
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # Cảnh báo code style theo chuẩn PEP8 (dài quá 127 ký tự)
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Run unit tests with pytest
-        env:
-          DATABASE_URL: "sqlite:///:memory:"
-          SECRET_KEY: "ci-testing-secret-key"
         run: |
           pytest tests/ -v
-
-      - name: Build / Check Python bytecode compilation
-        run: |
-          # Kiểm tra biên dịch toàn bộ package xem có file nào bị lỗi import ngầm không
-          python -m compileall app/

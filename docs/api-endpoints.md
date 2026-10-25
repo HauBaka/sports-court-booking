@@ -9,7 +9,7 @@
   - **JSON Keys & Query Params:** snake_case (ví dụ: `facility_id`, `court_id`, `start_time`, `total_amount`).
 - **Quy ước Tiền tệ & Thời gian:**
   - **Tiền tệ:** Số nguyên (integer, đơn vị VNĐ), không dùng số thập phân.
-  - **Thời gian (Date & Time):** Chuẩn ISO 8601 UTC (`YYYY-MM-DDTHH:mm:ssZ`) hoặc ISO 8601 kèm múi giờ Việt Nam (`+07:00`). Tất cả các mốc giờ chơi và tính toán khoảng cách hủy cọc (`hours_until_start`) được quy đổi chính xác theo giờ Việt Nam (UTC+7) để đảm bảo không bị lệch múi giờ.
+  - **Thời gian (Date & Time):** Chuẩn **ISO 8601 UTC** (`YYYY-MM-DDTHH:mm:ssZ`) đồng bộ cho toàn bộ hệ thống API theo quy ước tại `docs/api-conventions.md`. Client (Frontend) chịu trách nhiệm parse và hiển thị theo múi giờ địa phương của người dùng (Việt Nam UTC+7). Các mốc thời gian logic nghiệp vụ (10 phút giữ chỗ, hủy trước 12h/24h) được tính toán trên mốc UTC đồng nhất.
 - **Cơ chế xác thực & Phân quyền:**
   - **Xác thực:** Bearer Token (JSON Web Token - JWT) HMAC-SHA256 truyền qua Header `Authorization: Bearer <access_token>`.
   - **Phân quyền người dùng (User Roles):** Ánh xạ từ bảng `roles` trong CSDL (`CUSTOMER`, `OWNER`, `ADMIN`) sang định dạng chữ thường trong Token JWT và API:
@@ -160,8 +160,11 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
 ### 🟢 EPIC 2: QUẢN LÝ CƠ SỞ THỂ THAO, SÂN CON & BẢNG GIÁ (FACILITIES, COURTS & PRICING - QĐ1)
 
 > **Lưu ý kiến trúc CSDL (`database-entities.md`):**
-> - Bảng `facilities`: `(id, owner_id, name, address, city, latitude, longitude, is_active)`. Không chứa cột `district`, `open_time`, `close_time`.
+> - Bảng `facilities`: `(id, owner_id, name, address, city, district, latitude, longitude, open_time, close_time, description, is_active)`.
+> - Bảng `facility_amenities`: danh mục tiện ích của cơ sở (wifi, bãi đỗ xe, căn tin...).
 > - Bảng `courts`: `(id, facility_id, sport_id, name, court_type, environment, open_time, close_time, is_active)`. Chứa giờ mở/đóng cửa và môi trường thi đấu (`INDOOR`, `OUTDOOR`).
+> - Bảng `court_photos`: lưu trữ URL hình ảnh sân con.
+> - Bảng `court_schedules`: cấu hình lịch hoạt động chi tiết theo thứ trong tuần (`day_of_week`).
 > - Bảng `court_slots`: `(id, court_id, time_slot_id, base_price, is_active)`. Lưu giá cơ sở theo từng khung giờ của sân.
 > - Bảng `pricing_rules`: `(id, name, rule_type, multiplier, applies_to_facility_id, start_time, end_time, day_of_week, holiday_id)`. Ràng buộc theo `rule_type`.
 
@@ -183,8 +186,11 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
       "owner_id": 3,
       "address": "238 Ba Tháng Hai, Phường 12, Quận 10",
       "city": "Hồ Chí Minh",
+      "district": "Quận 10",
       "latitude": 10.771921,
       "longitude": 106.671042,
+      "open_time": "06:00:00",
+      "close_time": "23:00:00",
       "is_active": true,
       "min_price": 80000,
       "max_price": 160000,
@@ -216,8 +222,12 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
     "owner_id": 3,
     "address": "238 Ba Tháng Hai, Phường 12, Quận 10",
     "city": "Hồ Chí Minh",
+    "district": "Quận 10",
     "latitude": 10.771921,
     "longitude": 106.671042,
+    "open_time": "06:00:00",
+    "close_time": "23:00:00",
+    "description": "Cơ sở thể thao hiện đại với thảm Yonex tiêu chuẩn thi đấu quốc tế.",
     "is_active": true,
     "courts": [
       {
@@ -256,8 +266,12 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
   "name": "Cơ Sở Cầu Lông Tân Bình",
   "address": "123 Hoàng Hoa Thám, Phường 13, Quận Tân Bình",
   "city": "Hồ Chí Minh",
+  "district": "Quận Tân Bình",
   "latitude": 10.7992,
-  "longitude": 106.6501
+  "longitude": 106.6501,
+  "open_time": "06:00:00",
+  "close_time": "23:00:00",
+  "description": "Cơ sở cầu lông mới thành lập tại Tân Bình."
 }
 ```
 * **Response (201 Created):**
@@ -271,8 +285,12 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
     "owner_id": 3,
     "address": "123 Hoàng Hoa Thám, Phường 13, Quận Tân Bình",
     "city": "Hồ Chí Minh",
+    "district": "Quận Tân Bình",
     "latitude": 10.7992,
     "longitude": 106.6501,
+    "open_time": "06:00:00",
+    "close_time": "23:00:00",
+    "description": "Cơ sở cầu lông mới thành lập tại Tân Bình.",
     "is_active": true
   }
 }
@@ -781,11 +799,11 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
       "court_id": 101,
       "court_name": "Sân Cầu Lông 1 (Thảm Yonex)",
       "play_date": "2026-11-10",
-      "start_at": "2026-11-10T16:00:00+07:00",
+      "start_at": "2026-11-10T09:00:00Z",
       "status": "PENDING_DEPOSIT",
       "total_amount": 270000,
       "deposit_amount_required": 81000,
-      "hold_expires_at": "2026-11-10T14:40:00+07:00"
+      "hold_expires_at": "2026-11-10T07:40:00Z"
     }
   }
   ```
@@ -803,7 +821,7 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
     WHERE id = :id AND status = 'PENDING_DEPOSIT' AND hold_expires_at > :now;
     ```
     Kiểm tra `rowcount = 1`. Nếu bằng 0 ➔ Đơn đã hết hạn 10 phút hoặc đã bị đổi trạng thái -> Rollback và báo lỗi `400 Bad Request` (`CANNOT_DEPOSIT_EXPIRED_BOOKING`).
-  * **Bước 3:** Kiểm tra số dư ví khách (`balance >= deposit_amount`). Nếu thiếu tiền ➔ Rollback và báo lỗi `400 Bad Request` (`WALLET_INSUFFICIENT_BALANCE`).
+  * **Bước 3:** Kiểm tra số dư ví khách (`balance >= deposit_amount`). Nếu thiếu tiền ➔ Rollback và báo lỗi `402 Payment Required` (`WALLET_INSUFFICIENT_BALANCE`, ánh xạ từ ràng buộc CSDL `chk_wallets_balance`).
   * **Bước 4:** Trừ tiền ví khách (`balance = balance - :deposit`) và cộng tiền vào ví hệ thống (`balance = balance + :deposit`).
   * **Bước 5:** **Ghi bản ghi vào sổ cái `wallet_transactions` với `type = 'DEPOSIT'`**:
     (`from_wallet_id = ví khách`, `to_wallet_id = ví hệ thống`, `related_booking_id = booking.id`, `amount = deposit_amount`, `created_by = NULL`).
@@ -843,11 +861,11 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
         "court_id": 101,
         "court_name": "Sân Cầu Lông 1 (Thảm Yonex)",
         "play_date": "2026-11-10",
-        "start_at": "2026-11-10T16:00:00+07:00",
+        "start_at": "2026-11-10T09:00:00Z",
         "total_amount": 270000,
         "deposit_amount": 81000,
         "status": "DEPOSITED",
-        "created_at": "2026-11-10T14:30:00+07:00"
+        "created_at": "2026-11-10T07:30:00Z"
       }
     ],
     "meta": {
@@ -876,7 +894,7 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
       "court_name": "Sân Cầu Lông 1 (Thảm Yonex)",
       "facility_name": "Cơ Sở Cầu Lông & Pickleball Kỳ Hòa",
       "play_date": "2026-11-10",
-      "start_at": "2026-11-10T16:00:00+07:00",
+      "start_at": "2026-11-10T09:00:00Z",
       "status": "DEPOSITED",
       "slots": [
         {
@@ -945,7 +963,7 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
     "data": {
       "total_expired_bookings_cancelled": 2,
       "total_slots_released": 4,
-      "executed_at": "2026-11-10T14:45:00+07:00"
+      "executed_at": "2026-11-10T07:45:00Z"
     }
   }
   ```
@@ -969,10 +987,10 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
       "deposit_amount_paid": 81000,
       "schedule_info": {
         "play_date": "2026-11-10",
-        "start_at": "2026-11-10T16:00:00+07:00"
+        "start_at": "2026-11-10T09:00:00Z"
       },
       "cancellation_evaluation": {
-        "evaluated_at": "2026-11-09T10:00:00+07:00",
+        "evaluated_at": "2026-11-09T03:00:00Z",
         "hours_until_start": 30.0,
         "rule_matched": "QĐ5.1 - Hủy từ 24 giờ trở lên trước giờ chơi (Hoàn 80% cọc)",
         "refund_percentage": 80,
@@ -1096,22 +1114,25 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
         "id": 501,
         "type": "REFUND",
         "amount": 64800,
+        "balance_after": 183800,
         "related_booking_id": 105,
-        "created_at": "2026-11-09T10:05:00+07:00"
+        "created_at": "2026-11-09T03:05:00Z"
       },
       {
         "id": 480,
         "type": "DEPOSIT",
         "amount": 81000,
+        "balance_after": 119000,
         "related_booking_id": 105,
-        "created_at": "2026-11-08T15:00:00+07:00"
+        "created_at": "2026-11-08T08:00:00Z"
       },
       {
         "id": 401,
         "type": "TOPUP",
         "amount": 200000,
+        "balance_after": 200000,
         "related_booking_id": null,
-        "created_at": "2026-11-01T09:00:00+07:00"
+        "created_at": "2026-11-01T02:00:00Z"
       }
     ],
     "meta": {
@@ -1173,7 +1194,7 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
         "title": "Cần tìm 2 bạn đánh đôi cầu lông trình độ trung bình khá",
         "players_needed": 2,
         "status": "OPEN",
-        "created_at": "2026-11-08T16:00:00+07:00"
+        "created_at": "2026-11-08T09:00:00Z"
       }
     ],
     "meta": {
@@ -1307,7 +1328,7 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
 | | `CANNOT_DEPOSIT_EXPIRED_BOOKING` | **400** | Đơn đặt sân đã quá hạn giữ chỗ 10 phút, không thể thanh toán cọc. |
 | | `CANNOT_SETTLE_BEFORE_START` | **400** | Buổi chơi chưa diễn ra (`:now < start_at`), không thể kết toán cọc cho chủ sân tại 4.3. |
 | **5. Ví & Tiền cọc** | `WALLET_NOT_FOUND` | **404** | Không tìm thấy ví nội bộ của người dùng trong hệ thống. |
-| | `WALLET_INSUFFICIENT_BALANCE` | **400** | Số dư ví hiện tại không đủ 30% tiền cọc (vi phạm ràng buộc số dư QĐ4, QĐ6). |
+| | `WALLET_INSUFFICIENT_BALANCE` | **402** | Số dư ví hiện tại không đủ 30% tiền cọc (vi phạm ràng buộc số dư QĐ4, QĐ6, ánh xạ từ `chk_wallets_balance`). |
 | | `DEPOSIT_AMOUNT_INVALID` | **400** | Số tiền nạp cấp vào ví (`TOPUP`) hoặc tiền cọc phải lớn hơn 0 VNĐ. |
 | **6. Ghép đội & Dịch vụ** | `BOOKING_NOT_DEPOSITED` | **400** | Đơn đặt sân chưa thanh toán cọc `DEPOSITED`, không thể tạo bài tìm đồng đội. |
 | | `CANNOT_APPLY_OWN_POST` | **400** | Người tạo bài không thể tự gửi yêu cầu ứng tuyển vào bài đăng của chính mình. |
