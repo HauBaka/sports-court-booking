@@ -1,5 +1,6 @@
 
 SET sql_mode = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION';
+SET time_zone = '+00:00';
 
 -- =============================================================
 -- NHÓM 1: Vai trò & Môn thể thao (không phụ thuộc bảng nào)

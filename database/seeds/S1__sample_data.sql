@@ -7,6 +7,7 @@
 -- =============================================================
 
 SET FOREIGN_KEY_CHECKS = 0;
+SET time_zone = '+00:00';
 
 -- Xóa dữ liệu cũ trước khi seed (TRUNCATE không kích hoạt trigger DELETE)
 TRUNCATE TABLE wallet_transactions;
