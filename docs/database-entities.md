@@ -78,7 +78,7 @@
 ### Nhóm 2 — Sân bãi & Bảng giá
 
 *   **`sports`**: `id` (INT PK), `name` (VARCHAR UNIQUE), `icon_url` (VARCHAR).
-*   **`facilities`**: `id` (BIGINT PK), `owner_id` (BIGINT FK), `name`, `address`, `city` (VARCHAR), `latitude`, `longitude` (DECIMAL), `is_active` (BOOLEAN).
+*   **`facilities`**: `id` (BIGINT PK), `owner_id` (BIGINT FK), `name`, `address`, `city`, `district` (VARCHAR), `latitude`, `longitude` (DECIMAL), `open_time`, `close_time` (TIME NOT NULL), `is_active` (BOOLEAN).
 *   **`courts`**: `id` (BIGINT PK), `facility_id` (BIGINT FK), `sport_id` (INT FK), `name` (VARCHAR), `court_type` (VARCHAR), `environment` (ENUM: `INDOOR`, `OUTDOOR`), `open_time`, `close_time` (TIME), `is_active` (BOOLEAN). *Ràng buộc:* `CHECK (open_time < close_time)`.
 *   **`time_slots`**: `id` (INT PK), `start_time` (TIME UNIQUE), `end_time` (TIME), `duration_minutes` (INT), `label` (VARCHAR). *Ràng buộc:* `CHECK (end_time > start_time)`.
 *   **`court_slots`**: `id` (BIGINT PK), `court_id` (BIGINT FK), `time_slot_id` (INT FK), `base_price` (BIGINT NOT NULL, CHECK base_price >= 0), `is_active` (BOOLEAN). *Ràng buộc:* `UNIQUE (court_id, time_slot_id)`.
