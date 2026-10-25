@@ -1,12 +1,10 @@
 $kind: http-request
 method: POST
-url: '{{server_control_url}}/api/client/servers/{{server_id}}/power'
+url: "{{server_control_url}}/api/client/servers/{{server_id}}/power"
 order: 1000
 headers:
-  - key: Content-Type
-    value: application/json
-  - key: Accept
-    value: '*/*'
+  Content-Type: application/json
+  Accept: "*/*"
 body:
   type: json
   content: |-
