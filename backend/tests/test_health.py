@@ -8,12 +8,12 @@ def test_root_endpoint(client: TestClient):
     data = response.json()
     assert "message" in data
     assert data["docs"] == "/docs"
-    assert data["health"] == "/health"
+    assert data["health"] == "/api/v1/health"
 
 
 def test_healthcheck_endpoint(client: TestClient):
     """Test that /health endpoint responds successfully."""
-    response = client.get("/health")
+    response = client.get("/api/v1/health")
     assert response.status_code == 200
     data = response.json()
     assert data["status"] in ["healthy", "degraded"]
@@ -41,7 +41,7 @@ def test_healthcheck_database_connected(client: TestClient, monkeypatch):
         lambda: {"status": "connected", "error": None},
     )
 
-    response = client.get("/health")
+    response = client.get("/api/v1/health")
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
@@ -60,7 +60,7 @@ def test_healthcheck_database_disconnected_strict(client: TestClient, monkeypatc
     )
 
     # When strict=True, it should return 503
-    response = client.get("/health?strict=true")
+    response = client.get("/api/v1/health?strict=true")
     assert response.status_code == 503
     data = response.json()
     assert data["status"] == "degraded"

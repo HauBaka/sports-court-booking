@@ -42,7 +42,7 @@ Hệ thống API Backend xây dựng trên **Python (FastAPI)** kết nối cơ 
 
 6. Kiểm tra:
    - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
-   - Healthcheck: [http://localhost:8000/health](http://localhost:8000/health)
+   - Healthcheck: [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
 
 ## Chạy Unit Test
 

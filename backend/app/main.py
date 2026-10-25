@@ -1,11 +1,12 @@
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import check_db_connection
 from app.api.v1.router import api_router
-from app.api.v1.endpoints.health import router as health_router
+from app.spa import mount_frontend
 
 logging.basicConfig(
     level=logging.INFO,
@@ -48,18 +49,20 @@ app.add_middleware(
 )
 
 # Root endpoint
-@app.get("/", tags=["Root"])
 def root():
     return {
         "message": f"Welcome to {settings.PROJECT_NAME}",
         "docs": "/docs",
-        "health": "/health",
+        "health": f"{settings.API_V1_STR}/health",
         "version": "1.0.0",
     }
 
 
-# Include root-level healthcheck for load balancers & monitoring tools
-app.include_router(health_router, tags=["Health"])
-
 # Include versioned API router
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# Phải đặt cuối cùng: route bắt tất cả của frontend không được che route API
+if settings.FRONTEND_DIST:
+    mount_frontend(app, Path(settings.FRONTEND_DIST))
+else:
+    app.get("/", tags=["Root"])(root)

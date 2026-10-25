@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     # Custom DATABASE_URL override if provided
     CUSTOM_DATABASE_URL: Optional[str] = None
 
+    # Thư mục bản build frontend. Có giá trị thì backend phục vụ luôn frontend ở "/"
+    FRONTEND_DIST: Optional[str] = None
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def DATABASE_URL(self) -> str:
