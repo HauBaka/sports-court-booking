@@ -1,0 +1,21 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/facilities'
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Cơ Sở Cầu Lông Tân Bình",
+      "address": "123 Hoàng Hoa Thám, Phường 13, Quận Tân Bình",
+      "city": "Hồ Chí Minh",
+      "district": "Quận Tân Bình",
+      "latitude": 10.7992,
+      "longitude": 106.6501,
+      "open_time": "06:00:00",
+      "close_time": "23:00:00",
+      "description": "Cơ sở cầu lông mới thành lập tại Tân Bình."
+    }

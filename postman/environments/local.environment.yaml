@@ -1,0 +1,34 @@
+name: local
+values:
+  - key: base_url
+    value: http://localhost:8000/api/v1
+    enabled: true
+  - key: user_email
+    value: ''
+    enabled: true
+  - key: user_password
+    value: ''
+    type: secret
+    enabled: true
+  - key: access_token
+    value: ''
+    type: secret
+    enabled: true
+  - key: facility_id
+    value: ''
+    enabled: true
+  - key: court_id
+    value: ''
+    enabled: true
+  - key: booking_id
+    value: ''
+    enabled: true
+  - key: service_id
+    value: ''
+    enabled: true
+  - key: team_post_id
+    value: ''
+    enabled: true
+  - key: application_id
+    value: ''
+    enabled: true

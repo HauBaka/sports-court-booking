@@ -1,0 +1,6 @@
+$kind: http-request
+method: GET
+url: '{{base_url}}/facilities?sport_id=&city=&search=&page=1&limit=10'
+order: 1000
+auth:
+  type: noauth
