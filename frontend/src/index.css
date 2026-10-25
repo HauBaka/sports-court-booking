@@ -1,0 +1,11 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; color: #222; }
+.navbar { display: flex; align-items: center; gap: 24px; padding: 12px 24px; background: #1f2937; color: #fff; }
+.navbar nav { display: flex; gap: 16px; flex: 1; }
+.navbar a { color: #cbd5e1; text-decoration: none; }
+.navbar a.active { color: #fff; font-weight: 600; }
+.content { padding: 24px; }
+pre { background: #f3f4f6; padding: 12px; border-radius: 6px; }
+.ok { color: #15803d; }
+.fail { color: #b91c1c; }
+button { padding: 6px 12px; cursor: pointer; }
