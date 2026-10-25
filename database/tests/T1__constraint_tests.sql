@@ -1,11 +1,3 @@
--- =============================================================
--- T1__constraint_tests.sql
--- Sports Court Booking — Kiểm thử ràng buộc DB
--- Yêu cầu: Chạy SAU V1__create_all_tables.sql + S1__sample_data.sql
--- Mỗi câu lệnh có chú thích kết quả mong đợi: OK hoặc ERROR
--- =============================================================
-
--- -------------------------------------------------------------
 -- 1. Kiểm tra dữ liệu seed đã nạp đúng
 -- -------------------------------------------------------------
 SELECT 'users'        AS bang, COUNT(*) AS so_ban_ghi FROM users
@@ -64,9 +56,3 @@ UPDATE bookings SET status = 'COMPLETED' WHERE id = 1;
 -- 4b. COMPLETED → DEPOSITED: không hợp lệ → phải lỗi
 UPDATE bookings SET status = 'DEPOSITED' WHERE id = 1;
 -- Kỳ vọng: ERROR [45000] Chuyển trạng thái booking không hợp lệ
-
--- -------------------------------------------------------------
--- 5. Dọn dẹp dữ liệu test (chạy thủ công nếu cần)
--- -------------------------------------------------------------
--- Không thể DELETE bookings/booking_slots vì trigger chặn.
--- Để reset: chạy lại S1__sample_data.sql (TRUNCATE toàn bộ).

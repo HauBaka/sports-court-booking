@@ -321,7 +321,10 @@ CREATE TABLE booking_services (
     unit_price  BIGINT NOT NULL,
     total_price BIGINT NOT NULL,
     PRIMARY KEY (id),
-    CONSTRAINT chk_bsvc_qty CHECK (quantity >= 1),
+    CONSTRAINT chk_bsvc_qty         CHECK (quantity >= 1),
+    CONSTRAINT chk_bsvc_unit_price  CHECK (unit_price >= 0),
+    CONSTRAINT chk_bsvc_total_price CHECK (total_price >= 0),
+    CONSTRAINT chk_bsvc_total_calc  CHECK (total_price = quantity * unit_price),
     FOREIGN KEY fk_bsvc_booking (booking_id) REFERENCES bookings(id) ON DELETE RESTRICT,
     FOREIGN KEY fk_bsvc_service (service_id) REFERENCES services(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -431,4 +434,18 @@ BEGIN
       AND end_time   <= NEW.close_time;
 END//
 
+-- Trigger 7: Chặn giờ sân con vượt giờ cụm sân
+CREATE TRIGGER trg_courts_check_times
+BEFORE INSERT ON courts
+FOR EACH ROW
+BEGIN
+    DECLARE f_open  TIME;
+    DECLARE f_close TIME;
+    SELECT open_time, close_time INTO f_open, f_close
+    FROM facilities WHERE id = NEW.facility_id;
+    IF NEW.open_time < f_open OR NEW.close_time > f_close THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Giờ sân con phải nằm trong giờ mở cửa của cụm sân';
+    END IF;
+END//
 DELIMITER ;
