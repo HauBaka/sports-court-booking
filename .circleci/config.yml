@@ -1,0 +1,98 @@
+# Code build và deploy lên hosting, không chỉnh sửa nếu không cần.
+# Workflow dừng ở job hold. Bấm Approve trên giao diện CircleCI thì mới build và deploy.
+version: 2.1
+
+jobs:
+  build-frontend:
+    docker:
+      - image: cimg/node:24.0
+    steps:
+      - checkout
+      - run:
+          name: Build frontend
+          working_directory: frontend
+          environment:
+            VITE_API_URL: /api/v1
+          command: |
+            npm ci
+            npm run build
+      - run:
+          name: Zip dist
+          working_directory: frontend/dist
+          command: |
+            if command -v zip >/dev/null; then
+              zip -r ../../dist.zip .
+            else
+              python3 -m zipfile -c ../../dist.zip ./*
+            fi
+      - persist_to_workspace:
+          root: .
+          paths:
+            - dist.zip
+
+  deploy:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Plan a deploy
+          command: |
+            circleci run release plan deploy \
+              --environment-name="prod" \
+              --component-name="sports-court-booking" \
+              --target-version="${CIRCLE_SHA1:0:7}"
+      - run:
+          name: Publish release dev-latest
+          command: |
+            API="https://api.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+            gh_api() {
+              curl -fsS -H "Authorization: Bearer $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" "$@"
+            }
+            old_id="$(gh_api "$API/releases/tags/dev-latest" 2>/dev/null | jq -r '.id // empty' || true)"
+            if [ -n "$old_id" ]; then
+              gh_api -X DELETE "$API/releases/$old_id"
+            fi
+            gh_api -X DELETE "$API/git/refs/tags/dev-latest" || true
+            release_id="$(gh_api -X POST "$API/releases" -d "$(jq -n \
+              --arg sha "$CIRCLE_SHA1" \
+              '{tag_name: "dev-latest", target_commitish: $sha, name: "dev-latest", prerelease: true,
+                body: ("Bản build frontend của nhánh dev, commit " + $sha + ".")}')" | jq -r '.id')"
+            gh_api -X POST \
+              -H "Content-Type: application/zip" \
+              --data-binary @dist.zip \
+              "https://uploads.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/releases/$release_id/assets?name=dist.zip" \
+              > /dev/null
+      - run:
+          name: Restart server
+          command: |
+            if [ -z "${SERVER_URL:-}" ] || [ -z "${SERVER_ID:-}" ] || [ -z "${SERVER_AUTH_TOKEN:-}" ]; then
+              echo "Thiếu SERVER_URL, SERVER_ID hoặc SERVER_AUTH_TOKEN, bỏ qua bước restart."
+              exit 0
+            fi
+            curl -fsS -X POST "$SERVER_URL/api/client/servers/$SERVER_ID/power" \
+              -H "Authorization: Bearer $SERVER_AUTH_TOKEN" \
+              -H "Accept: application/json" \
+              -H "Content-Type: application/json" \
+              -d '{"signal":"restart"}'
+      - run:
+          name: Update planned deploy to FAILED
+          command: circleci run release update deploy --status=FAILED
+          when: on_fail
+
+workflows:
+  deploy:
+    jobs:
+      - hold:
+          type: approval
+          filters: &only-deploy-branches
+            branches:
+              only: dev
+      - build-frontend:
+          requires: [hold]
+          filters: *only-deploy-branches
+      - deploy:
+          requires: [build-frontend]
+          filters: *only-deploy-branches
