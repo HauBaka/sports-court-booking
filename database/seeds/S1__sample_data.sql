@@ -103,9 +103,9 @@ INSERT INTO wallets (id, user_id, balance) VALUES
 
 -- Ghi nhật ký TOPUP cho khách A và B (admin thực hiện)
 INSERT INTO wallet_transactions
-    (from_wallet_id, to_wallet_id, type, amount, related_booking_id, created_by) VALUES
-(NULL, 4, 'TOPUP', 500000, NULL, 2),
-(NULL, 5, 'TOPUP', 200000, NULL, 2);
+    (from_wallet_id, to_wallet_id, type, amount, balance_after, related_booking_id, created_by) VALUES
+(NULL, 4, 'TOPUP', 500000, 500000, NULL, 2),
+(NULL, 5, 'TOPUP', 200000, 200000, NULL, 2);
 
 -- =============================================================
 -- 6. Cụm sân (facility)
@@ -193,6 +193,7 @@ INSERT INTO holidays (name, holiday_date, recurring_yearly) VALUES
 ('Quốc Khánh',          '2027-09-02', true);
 
 SET FOREIGN_KEY_CHECKS = 1;
+
 
 
 
