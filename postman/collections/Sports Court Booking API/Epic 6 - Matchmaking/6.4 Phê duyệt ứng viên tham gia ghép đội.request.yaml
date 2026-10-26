@@ -1,0 +1,14 @@
+$kind: http-request
+method: PATCH
+url: '{{base_url}}/team-posts/{{team_post_id}}/applications/{{application_id}}'
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+      {
+        "status": "ACCEPTED"
+      }
+      

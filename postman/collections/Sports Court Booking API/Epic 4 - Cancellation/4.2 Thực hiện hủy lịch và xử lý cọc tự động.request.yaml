@@ -1,0 +1,14 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/bookings/{{booking_id}}/cancel'
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+      {
+        "cancel_reason": "Bận việc gia đình đột xuất"
+      }
+      

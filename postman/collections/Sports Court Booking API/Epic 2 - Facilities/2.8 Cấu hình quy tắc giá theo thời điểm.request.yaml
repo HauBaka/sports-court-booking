@@ -1,0 +1,51 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/facilities/{{facility_id}}/pricing-rules'
+order: 8000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+      {
+        "rules": [
+          {
+            "name": "Giờ vàng 17h-21h các ngày trong tuần",
+            "rule_type": "PEAK_HOUR",
+            "multiplier": 1.30,
+            "start_time": "17:00:00",
+            "end_time": "21:00:00",
+            "day_of_week": null,
+            "holiday_id": null
+          },
+          {
+            "name": "Ngày Thứ Bảy",
+            "rule_type": "WEEKEND",
+            "multiplier": 1.40,
+            "start_time": null,
+            "end_time": null,
+            "day_of_week": 6,
+            "holiday_id": null
+          },
+          {
+            "name": "Ngày Chủ Nhật",
+            "rule_type": "WEEKEND",
+            "multiplier": 1.40,
+            "start_time": null,
+            "end_time": null,
+            "day_of_week": 7,
+            "holiday_id": null
+          },
+          {
+            "name": "Tết Dương Lịch",
+            "rule_type": "HOLIDAY",
+            "multiplier": 1.50,
+            "start_time": null,
+            "end_time": null,
+            "day_of_week": null,
+            "holiday_id": 1
+          }
+        ]
+      }
+      

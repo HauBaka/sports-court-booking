@@ -1,0 +1,6 @@
+$kind: http-request
+method: GET
+url: '{{base_url}}/holidays'
+order: 9000
+auth:
+  type: noauth

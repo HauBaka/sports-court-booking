@@ -1,0 +1,16 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/admin/wallet-topups'
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+      {
+        "user_id": 12,
+        "amount": 500000,
+        "reason": "Cấp số dư tài khoản trải nghiệm đồ án môn học"
+      }
+      

@@ -1,0 +1,16 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/team-posts'
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+      {
+        "booking_id": 105,
+        "title": "Cần tìm 2 bạn đánh đôi cầu lông trình độ trung bình khá",
+        "players_needed": 2
+      }
+      

@@ -1,0 +1,4 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/admin/bookings/expire-holds'
+order: 7000

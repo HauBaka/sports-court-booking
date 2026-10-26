@@ -1,0 +1,15 @@
+$kind: http-request
+method: PATCH
+url: '{{base_url}}/services/{{service_id}}'
+order: 13000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+      {
+        "unit_price": 35000,
+        "is_active": true
+      }
+      

@@ -1,0 +1,8 @@
+$kind: collection
+name: Sports Court Booking API
+description: Request theo Epic, lấy từ docs/api-endpoints.md. Đăng nhập (1.2) tự lưu access_token vào environment.
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{access_token}}'
