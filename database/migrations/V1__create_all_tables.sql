@@ -34,7 +34,6 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     is_active     BOOLEAN      NOT NULL DEFAULT true,
     is_system     BOOLEAN      NOT NULL DEFAULT false,
-    avatar_url    VARCHAR(512),
     -- Cột sinh để ép "đúng 1 bản ghi is_system = true" (UNIQUE cho phép nhiều NULL)
     system_key    TINYINT GENERATED ALWAYS AS (IF(is_system, 1, NULL)) STORED,
     PRIMARY KEY (id),
@@ -82,21 +81,10 @@ CREATE TABLE facilities (
     open_time  TIME          NOT NULL,
     close_time TIME          NOT NULL,
     description TEXT,
-    slot_duration_minutes INT NOT NULL DEFAULT 60,
     is_active   BOOLEAN       NOT NULL DEFAULT true,
     PRIMARY KEY (id),
     CONSTRAINT chk_facilities_times CHECK (open_time < close_time),
     FOREIGN KEY fk_facility_owner (owner_id) REFERENCES users(id) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE facility_photos (
-    id          BIGINT       NOT NULL AUTO_INCREMENT,
-    facility_id BIGINT       NOT NULL,
-    url         VARCHAR(512) NOT NULL,
-    is_primary  BOOLEAN      NOT NULL DEFAULT false,
-    sort_order  INT          NOT NULL DEFAULT 0,
-    PRIMARY KEY (id),
-    FOREIGN KEY fk_fp_facility (facility_id) REFERENCES facilities(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE facility_amenities (
@@ -104,18 +92,6 @@ CREATE TABLE facility_amenities (
     amenity_code VARCHAR(50) NOT NULL,
     PRIMARY KEY (facility_id, amenity_code),
     FOREIGN KEY fk_fa_facility (facility_id) REFERENCES facilities(id) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE facility_schedules (
-    facility_id  BIGINT  NOT NULL,
-    day_of_week  TINYINT NOT NULL,
-    open_time    TIME    NOT NULL,
-    close_time   TIME    NOT NULL,
-    is_active    BOOLEAN NOT NULL DEFAULT true,
-    PRIMARY KEY (facility_id, day_of_week),
-    CONSTRAINT chk_fsch_dow   CHECK (day_of_week BETWEEN 1 AND 7),
-    CONSTRAINT chk_fsch_times CHECK (open_time < close_time),
-    FOREIGN KEY fk_fsch_facility (facility_id) REFERENCES facilities(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE courts (
@@ -177,7 +153,6 @@ CREATE TABLE court_slots (
     time_slot_id INT     NOT NULL,
     base_price   BIGINT  NOT NULL,
     is_active    BOOLEAN NOT NULL DEFAULT true,
-    lock_reason  VARCHAR(255),
     PRIMARY KEY (id),
     UNIQUE KEY uq_court_slots (court_id, time_slot_id),
     CONSTRAINT chk_court_slots_price CHECK (base_price >= 0),
@@ -229,7 +204,6 @@ CREATE TABLE pricing_rules (
 
 CREATE TABLE bookings (
     id              BIGINT   NOT NULL AUTO_INCREMENT,
-    booking_code VARCHAR(20) NOT NULL UNIQUE,
     user_id         BIGINT   NOT NULL,
     court_id        BIGINT   NOT NULL,
     play_date       DATE     NOT NULL,
@@ -361,7 +335,6 @@ CREATE TABLE reviews (
     booking_id BIGINT  NOT NULL,
     rating     TINYINT NOT NULL,
     comment    TEXT,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uq_reviews_booking (booking_id),
     CONSTRAINT chk_reviews_rating CHECK (rating BETWEEN 1 AND 5),
@@ -375,7 +348,6 @@ CREATE TABLE team_posts (
     title          VARCHAR(500) NOT NULL,
     players_needed INT          NOT NULL,
     status         ENUM('OPEN', 'CLOSED', 'CANCELLED') NOT NULL DEFAULT 'OPEN',
-    created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     CONSTRAINT chk_tp_players CHECK (players_needed >= 1),
     FOREIGN KEY fk_tp_user    (user_id)    REFERENCES users(id) ON DELETE RESTRICT,
