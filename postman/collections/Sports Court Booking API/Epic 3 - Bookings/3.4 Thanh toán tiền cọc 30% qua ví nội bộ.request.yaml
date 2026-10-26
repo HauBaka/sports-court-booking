@@ -1,0 +1,4 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/bookings/{{booking_id}}/deposit'
+order: 4000

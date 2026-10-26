@@ -1,0 +1,19 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/facilities/{{facility_id}}/courts'
+order: 5000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Sân 1 - Thảm Tiêu Chuẩn",
+      "sport_id": 1,
+      "court_type": "Tiêu chuẩn thi đấu",
+      "environment": "INDOOR",
+      "open_time": "06:00:00",
+      "close_time": "23:00:00",
+      "default_base_price": 100000
+    }

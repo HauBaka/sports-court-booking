@@ -1,0 +1,9 @@
+$kind: collection
+name: Server Control
+description: Điều khiển server backend (khởi động lại, bật, tắt) để hỗ trợ CD.
+order: 1000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{server_token}}'

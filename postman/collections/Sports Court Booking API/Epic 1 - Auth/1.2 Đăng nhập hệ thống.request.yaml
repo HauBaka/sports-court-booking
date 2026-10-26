@@ -1,0 +1,23 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/auth/login'
+order: 2000
+auth:
+  type: noauth
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{user_email}}",
+      "password": "{{user_password}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      if (pm.response.code === 200) {
+        pm.environment.set("access_token", pm.response.json().data.access_token);
+      }

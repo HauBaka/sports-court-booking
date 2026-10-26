@@ -1,0 +1,4 @@
+$kind: http-request
+method: GET
+url: '{{base_url}}/bookings?status=&facility_id=&court_id=&from_date=&to_date=&page=1&limit=10'
+order: 5000

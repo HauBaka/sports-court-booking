@@ -1,0 +1,17 @@
+$kind: http-request
+method: PATCH
+url: '{{base_url}}/courts/{{court_id}}'
+order: 7000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+      {
+        "name": "Sân Cầu Lông 1 (Thảm Yonex Nâng Cấp)",
+        "open_time": "06:00:00",
+        "close_time": "23:30:00",
+        "is_active": true
+      }
+      

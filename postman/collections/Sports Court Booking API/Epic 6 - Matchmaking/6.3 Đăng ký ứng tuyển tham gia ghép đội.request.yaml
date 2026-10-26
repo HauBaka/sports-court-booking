@@ -1,0 +1,14 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/team-posts/{{team_post_id}}/applications'
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+      {
+        "message": "Mình đánh cầu lông 2 năm, xin tham gia giao lưu nhé!"
+      }
+      

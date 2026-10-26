@@ -1,0 +1,16 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/facilities/{{facility_id}}/services'
+order: 12000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+      {
+        "name": "Thuê giày thể thao",
+        "unit_price": 30000,
+        "unit": "đôi/buổi"
+      }
+      
