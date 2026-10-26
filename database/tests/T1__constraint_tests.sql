@@ -23,9 +23,9 @@ UPDATE wallets SET balance = 500000 WHERE id = 4;
 -- 3. Chống đặt trùng khung giờ (QĐ3)
 -- -------------------------------------------------------------
 -- 3a. Booking hợp lệ
-INSERT INTO bookings (id, user_id, court_id, play_date, start_at, status,
+INSERT INTO bookings (id, booking_code, user_id, court_id, play_date, start_at, status,
     subtotal, service_total, total_amount, deposit_amount, deposit_percent)
-VALUES (1, 4, 1, '2027-12-01', '2027-12-01 13:00:00', 'DEPOSITED',
+VALUES (1, 'SB2712-0001', 4, 1, '2027-12-01', '2027-12-01 13:00:00', 'DEPOSITED',
     100000, 0, 100000, 30000, 30);
 -- Kỳ vọng: OK
 
@@ -35,9 +35,9 @@ VALUES (1, 1, '2027-12-01', 8, 100000, 100000, 1.00);
 -- Kỳ vọng: OK
 
 -- 3b. Đặt trùng slot (cùng sân + ngày + khung giờ, booking khác) → phải lỗi
-INSERT INTO bookings (id, user_id, court_id, play_date, start_at, status,
+INSERT INTO bookings (id, booking_code, user_id, court_id, play_date, start_at, status,
     subtotal, service_total, total_amount, deposit_amount, deposit_percent)
-VALUES (2, 5, 1, '2027-12-01', '2027-12-01 13:00:00', 'DEPOSITED',
+VALUES (2, 'SB2712-0002', 5, 1, '2027-12-01', '2027-12-01 13:00:00', 'DEPOSITED',
     100000, 0, 100000, 30000, 30);
 -- Kỳ vọng: OK (booking chưa lỗi, lỗi xảy ra ở booking_slots)
 

@@ -11,7 +11,10 @@
 | 3 | `wallets` | Ví điện tử nội bộ. | 3 | QĐ6 | Chính thức |
 | 4 | `wallet_transactions` | Sổ cái giao dịch ví (TOPUP, DEPOSIT, REFUND, FORFEIT, SETTLE). | 3 | QĐ4, 5, 6 | Chính thức |
 | 5 | `sports` | Môn thể thao (Cầu lông, Pickleball, Bóng đá mini). | 1, 2 | – | Chính thức |
-| 6 | `facilities` | Cụm sân (Tên, địa chỉ, chủ sân). | 1 | – | Chính thức |
+| 6 | `facilities` | Cụm sân (Tên, địa chỉ, chủ sân, mô tả, thời lượng ca). | 1 | – | Chính thức |
+| 6a | `facility_photos` | Ảnh giới thiệu cụm sân (ảnh chính + ảnh phụ). | 1 | – | Chính thức |
+| 6b | `facility_amenities` | Tiện ích của cụm sân (mã code: PARKING, WATER…). | 1 | – | Chính thức |
+| 6c | `facility_schedules` | Giờ mở cửa của cụm sân theo từng ngày trong tuần. | 1 | – | Chính thức |
 | 7 | `courts` | Sân con (Số người, trong nhà/ngoài trời, giờ mở/đóng cửa). | 1, 2 | – | Chính thức |
 | 8 | `time_slots` | Danh mục khung giờ cố định. | 1, 2 | QĐ3 | Chính thức |
 | 9 | `court_slots` | Khung giờ hoạt động của sân con kèm giá cơ sở. | 1, 2 | QĐ1 | Chính thức |
@@ -32,6 +35,8 @@
 | `users` | `wallets` | `user_id` | 1-1 (Mỗi người đúng 1 ví) |
 | `users` | `roles` | `user_id`, `role_id` | N-N (qua bảng `user_roles`) |
 | `users` | `facilities` | `owner_id` | Chủ sở hữu cụm sân |
+| `facilities` | `facility_photos` | `facility_id` | |
+| `facilities` | `facility_schedules` | `facility_id` | |
 | `facilities` | `courts` | `facility_id` | |
 | `sports` | `courts` | `sport_id` | |
 | `courts` | `court_slots` | `court_id` | |
@@ -60,7 +65,7 @@
 
 ### Nhóm 1 — Người dùng & Ví tiền
 
-*   **`users`**: `id` (BIGINT PK), `name` (VARCHAR), `email` (VARCHAR UNIQUE), `phone` (VARCHAR UNIQUE), `password_hash` (VARCHAR), `is_active` (BOOLEAN DEFAULT true), `is_system` (BOOLEAN DEFAULT false).
+*   **`users`**: `id` (BIGINT PK), `name` (VARCHAR), `email` (VARCHAR UNIQUE), `phone` (VARCHAR UNIQUE), `password_hash` (VARCHAR), `is_active` (BOOLEAN DEFAULT true), `is_system` (BOOLEAN DEFAULT false), `avatar_url` (VARCHAR, nullable).
     > Tài khoản `is_system = true` có đúng **1 bản ghi**, tạo bằng seed script. Tìm bằng `WHERE is_system = true`; không hardcode ID trong `.env`. Để CSDL ép "đúng 1 bản ghi": cột sinh `IF(is_system, 1, NULL)` kèm `UNIQUE` (tương tự `active_key`).
 *   **`roles`**: `id` (INT PK), `name` (`CUSTOMER`, `OWNER`, `ADMIN`), `description` (VARCHAR).
 *   **`user_roles`**: `user_id` (BIGINT FK), `role_id` (INT FK), `granted_at` (DATETIME), PK `(user_id, role_id)`.
@@ -78,10 +83,13 @@
 ### Nhóm 2 — Sân bãi & Bảng giá
 
 *   **`sports`**: `id` (INT PK), `name` (VARCHAR UNIQUE), `icon_url` (VARCHAR).
-*   **`facilities`**: `id` (BIGINT PK), `owner_id` (BIGINT FK), `name`, `address`, `city`, `district` (VARCHAR), `latitude`, `longitude` (DECIMAL), `open_time`, `close_time` (TIME NOT NULL), `is_active` (BOOLEAN).
+*   **`facilities`**: `id` (BIGINT PK), `owner_id` (BIGINT FK), `name`, `address`, `city`, `district` (VARCHAR), `latitude`, `longitude` (DECIMAL), `open_time`, `close_time` (TIME NOT NULL), `description` (TEXT, nullable), `slot_duration_minutes` (INT DEFAULT 60), `is_active` (BOOLEAN).
+*   **`facility_photos`**: `id` (BIGINT PK), `facility_id` (BIGINT FK), `url` (VARCHAR NOT NULL), `is_primary` (BOOLEAN DEFAULT false), `sort_order` (INT DEFAULT 0).
+*   **`facility_amenities`**: `facility_id` (BIGINT FK), `amenity_code` (VARCHAR 50). PK `(facility_id, amenity_code)`.
+*   **`facility_schedules`**: `facility_id` (BIGINT FK), `day_of_week` (TINYINT, CHECK 1–7), `open_time`, `close_time` (TIME NOT NULL), `is_active` (BOOLEAN). PK `(facility_id, day_of_week)`. *Dùng khi giờ mở cửa khác nhau theo ngày; nếu tất cả ngày giống nhau thì dùng `facilities.open_time`/`close_time`.*
 *   **`courts`**: `id` (BIGINT PK), `facility_id` (BIGINT FK), `sport_id` (INT FK), `name` (VARCHAR), `court_type` (VARCHAR), `environment` (ENUM: `INDOOR`, `OUTDOOR`), `open_time`, `close_time` (TIME), `is_active` (BOOLEAN). *Ràng buộc:* `CHECK (open_time < close_time)`.
 *   **`time_slots`**: `id` (INT PK), `start_time` (TIME UNIQUE), `end_time` (TIME), `duration_minutes` (INT), `label` (VARCHAR). *Ràng buộc:* `CHECK (end_time > start_time)`.
-*   **`court_slots`**: `id` (BIGINT PK), `court_id` (BIGINT FK), `time_slot_id` (INT FK), `base_price` (BIGINT NOT NULL, CHECK base_price >= 0), `is_active` (BOOLEAN). *Ràng buộc:* `UNIQUE (court_id, time_slot_id)`.
+*   **`court_slots`**: `id` (BIGINT PK), `court_id` (BIGINT FK), `time_slot_id` (INT FK), `base_price` (BIGINT NOT NULL, CHECK base_price >= 0), `is_active` (BOOLEAN), `lock_reason` (VARCHAR, nullable — lý do khoá slot: bảo trì…). *Ràng buộc:* `UNIQUE (court_id, time_slot_id)`.
 *   **`holidays`**: `id` (INT PK), `name` (VARCHAR), `holiday_date` (DATE NOT NULL UNIQUE), `recurring_yearly` (BOOLEAN).
 *   **`pricing_rules`**: `id` (INT PK), `name` (VARCHAR), `rule_type` (ENUM: `PEAK_HOUR`, `WEEKEND`, `HOLIDAY`), `multiplier` (DECIMAL(4,2) NOT NULL, CHECK multiplier BETWEEN 1.20 AND 1.50), `applies_to_facility_id` (BIGINT FK, nullable), `start_time`, `end_time` (TIME, nullable), `day_of_week` (TINYINT, nullable), `holiday_id` (INT FK, nullable).
 
@@ -104,7 +112,7 @@
 
 ### Nhóm 3 — Lịch đặt
 
-*   **`bookings`**: `id` (BIGINT PK), `user_id` (BIGINT FK), `court_id` (BIGINT FK), `play_date` (DATE), `start_at` (DATETIME), `status` (ENUM: `PENDING_DEPOSIT`, `DEPOSITED`, `COMPLETED`, `CANCELLED`), `subtotal`, `service_total`, `total_amount`, `deposit_amount` (BIGINT), `deposit_percent` (TINYINT, CHECK BETWEEN 1 AND 100), `hold_expires_at` (DATETIME, nullable), `cancelled_at` (DATETIME, nullable), `cancel_reason` (TEXT).
+*   **`bookings`**: `id` (BIGINT PK), `booking_code` (VARCHAR(20) UNIQUE, nullable — sinh bởi BE theo định dạng `SB{YYMM}-{id}`), `user_id` (BIGINT FK), `court_id` (BIGINT FK), `play_date` (DATE), `start_at` (DATETIME), `status` (ENUM: `PENDING_DEPOSIT`, `DEPOSITED`, `COMPLETED`, `CANCELLED`), `subtotal`, `service_total`, `total_amount`, `deposit_amount` (BIGINT), `deposit_percent` (TINYINT, CHECK BETWEEN 1 AND 100), `hold_expires_at` (DATETIME, nullable), `cancelled_at` (DATETIME, nullable), `cancel_reason` (TEXT), `created_at` (DATETIME DEFAULT NOW()).
     *Ràng buộc:* `UNIQUE (id, court_id, play_date)`, `CHECK (DATE(start_at) = play_date)`, `CHECK ((status = 'CANCELLED') = (cancelled_at IS NOT NULL))`.
 *   **`booking_slots`**: `id` (BIGINT PK), `booking_id` (BIGINT), `court_id` (BIGINT), `play_date` (DATE), `time_slot_id` (INT), `base_price`, `final_price` (BIGINT), `multiplier` (DECIMAL(4,2), CHECK BETWEEN 1.00 AND 1.50), `released_at` (DATETIME, nullable), `active_key` (TINYINT GENERATED ALWAYS AS (`IF(released_at IS NULL, 1, NULL)`) STORED).
     *Ràng buộc:* Khóa ngoại ghép với `bookings(id, court_id, play_date)` và `court_slots(court_id, time_slot_id)`, `UNIQUE (court_id, play_date, time_slot_id, active_key)`. (Khóa ngoại ghép đã đảm bảo `court_id` và `play_date` khớp booking cha cả INSERT lẫn UPDATE — không cần trigger riêng.)
@@ -113,8 +121,8 @@
 
 *   **`services`**: `id` (INT PK), `facility_id` (BIGINT FK), `name` (VARCHAR), `unit_price` (BIGINT, CHECK >= 0), `unit` (VARCHAR), `is_active` (BOOLEAN).
 *   **`booking_services`**: `id` (BIGINT PK), `booking_id` (BIGINT FK), `service_id` (INT FK), `quantity` (INT, CHECK >= 1), `unit_price`, `total_price` (BIGINT).
-*   **`reviews`**: `id` (BIGINT PK), `booking_id` (BIGINT FK UNIQUE), `rating` (TINYINT, CHECK 1-5), `comment` (TEXT).
-*   **`team_posts`**: `id` (BIGINT PK), `user_id` (BIGINT FK), `booking_id` (BIGINT FK), `title` (VARCHAR), `players_needed` (INT, CHECK >= 1), `status` (ENUM: `OPEN`, `CLOSED`, `CANCELLED`).
+*   **`reviews`**: `id` (BIGINT PK), `booking_id` (BIGINT FK UNIQUE), `rating` (TINYINT, CHECK 1-5), `comment` (TEXT), `created_at` (DATETIME DEFAULT NOW()).
+*   **`team_posts`**: `id` (BIGINT PK), `user_id` (BIGINT FK), `booking_id` (BIGINT FK), `title` (VARCHAR), `players_needed` (INT, CHECK >= 1), `status` (ENUM: `OPEN`, `CLOSED`, `CANCELLED`), `created_at` (DATETIME DEFAULT NOW()).
 *   **`team_post_applications`**: `id` (BIGINT PK), `post_id` (BIGINT FK), `user_id` (BIGINT FK), `status` (ENUM: `PENDING`, `ACCEPTED`, `REJECTED`), `message` (TEXT).
 
 ---
