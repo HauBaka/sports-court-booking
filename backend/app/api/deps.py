@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import verify_token
 from app.models.user import User
+from app.models.facility import Facility, Court
 
 # HTTPBearer với auto_error=False để tự xử lý trả về mã lỗi 401 Unauthorized khi thiếu header
 security_bearer = HTTPBearer(auto_error=False)
@@ -113,3 +114,71 @@ def require_role(*roles: str):
 
     return role_checker
 
+
+def get_facility_for_owner(
+    facility_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Facility:
+    """
+    Dependency kiểm tra quyền chủ sở hữu đối với cơ sở thể thao (Facility).
+    Dùng chung cho SCB-83, 88, 93.
+    
+    Quy tắc:
+    - Cơ sở không tồn tại: Trả về HTTP 404 Not Found.
+    - Cơ sở thuộc chủ khác (facility.owner_id != current_user.id): Trả về HTTP 403 Forbidden.
+    - Hợp lệ: Trả về đối tượng Facility.
+    """
+    facility = db.query(Facility).filter(Facility.id == facility_id).first()
+    if not facility:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Cơ sở thể thao với ID {facility_id} không tồn tại.",
+        )
+
+    if facility.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn không có quyền quản lý cơ sở thể thao này.",
+        )
+
+    return facility
+
+
+def get_court_for_owner(
+    court_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Court:
+    """
+    Dependency kiểm tra quyền chủ sở hữu đối với sân con (Court).
+    Kiểm tra thông qua cơ sở cha (courts.facility_id -> facilities.owner_id).
+    Dùng chung cho SCB-83, 88, 93.
+    
+    Quy tắc:
+    - Sân con không tồn tại: Trả về HTTP 404 Not Found.
+    - Cơ sở chứa sân con thuộc chủ khác (court.facility.owner_id != current_user.id): Trả về HTTP 403 Forbidden.
+    - Hợp lệ: Trả về đối tượng Court.
+    """
+    court = db.query(Court).filter(Court.id == court_id).first()
+    if not court:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Sân con với ID {court_id} không tồn tại.",
+        )
+
+    # Lấy cơ sở cha qua relationship hoặc query
+    facility = court.facility or db.query(Facility).filter(Facility.id == court.facility_id).first()
+    if not facility:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Cơ sở thể thao của sân con này không tồn tại.",
+        )
+
+    if facility.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn không có quyền quản lý sân con này.",
+        )
+
+    return court
