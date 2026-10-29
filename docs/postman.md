@@ -28,7 +28,7 @@ Các biến `user_email`, `user_password`, `access_token`, `server_token` để 
 
 ## 4. Request theo kịch bản
 
-Request kịch bản đặt tên `<tên request> - <mã kịch bản>`, ví dụ `1.1 Đăng ký tài khoản mới - AUTH-02`, nằm cạnh request gốc cùng mục. Test script trong request dùng đúng mã kịch bản của `docs/test-scenarios.md`.
+Request kịch bản đặt tên `<tên request> - <mã kịch bản>`, ví dụ `1.1 Đăng ký tài khoản mới - AUTH-02`, nằm trong folder `Test` của từng Epic (ví dụ `Epic 1 - Auth/Test`), tách khỏi request gốc. Postman chỉ để thử tay và các ca đặc biệt; kịch bản chạy tự động ở CI. Test script trong request dùng đúng mã kịch bản của `docs/test-scenarios.md`.
 
 - Chạy trên CSDL vừa nạp seed. `user_email`, `user_password` điền tài khoản seed (xem `database/README.md`), `facility_id` = 1, `court_id` = 1 (SAN-08 dùng sân 2).
 - Đăng nhập (1.2) bằng đúng tài khoản trước khi chạy: AUTH-06 dùng Khách A, SAN-04, 05, 07, 08 dùng Chủ sân A, SAN-06 dùng Chủ sân B.
