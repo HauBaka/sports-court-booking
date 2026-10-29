@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     # Custom DATABASE_URL override if provided
     CUSTOM_DATABASE_URL: Optional[str] = None
 
+    # Security & Authentication settings
+    JWT_SECRET: str = "your_jwt_secret_key_change_in_production"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    BCRYPT_ROUNDS: int = 12
+
     # Thư mục bản build frontend. Có giá trị thì backend phục vụ luôn frontend ở "/"
     FRONTEND_DIST: Optional[str] = None
 
