@@ -24,7 +24,7 @@ Các biến `user_email`, `user_password`, `access_token`, `server_token` để 
 - Request: `<số epic>.<số mục> <Tên mục>`, ví dụ `3.4 Thanh toán tiền cọc 30% qua ví nội bộ`.
 - Địa chỉ luôn bắt đầu bằng `{{base_url}}`, không ghi cứng host.
 - Request thêm mới đặt đúng folder Epic, đánh số tiếp theo `docs/api-endpoints.md`.
-- Folder `Server Control` là công cụ khởi động lại server, không thuộc Epic nào.
+- Folder `Server Control` là công cụ khởi động lại server, không thuộc Epic nào. Request gọi API của panel hosting (không phải API của Backend), xác thực bằng Bearer `{{server_token}}` là API key tài khoản panel (xem `docs/deploy.md` mục 4), không dùng `access_token`.
 
 ## 4. Request theo kịch bản
 
