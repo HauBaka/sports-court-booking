@@ -1,0 +1,12 @@
+$kind: http-request
+method: GET
+url: '{{base_url}}/auth/me'
+order: 3100
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("AUTH-05: status 401", () => pm.response.to.have.status(401));
+      pm.test("AUTH-05: mã lỗi AUTH_UNAUTHORIZED", () => pm.expect(pm.response.json().error.code).to.eql("AUTH_UNAUTHORIZED"));

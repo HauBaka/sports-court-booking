@@ -1,0 +1,19 @@
+$kind: http-request
+method: PATCH
+url: '{{base_url}}/courts/{{court_id}}'
+order: 7200
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "close_time": "22:00:00"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("SAN-07: status 400", () => pm.response.to.have.status(400));
+      pm.test("SAN-07: mã lỗi CANNOT_UPDATE_COURT_SCHEDULE_ACTIVE_BOOKINGS", () => pm.expect(pm.response.json().error.code).to.eql("CANNOT_UPDATE_COURT_SCHEDULE_ACTIVE_BOOKINGS"));
