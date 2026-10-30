@@ -290,6 +290,24 @@ class TestSubtask1Facilities:
         assert fac1["max_price"] == 120000
         assert fac1["total_courts"] == 3  # Sân 1, 2, 3 active (sân 4 inactive bị loại)
 
+    def test_2_1_list_uses_constant_number_of_queries(self, client, setup_db):
+        """Số query không tăng theo số cơ sở trong trang (không N+1)."""
+        from sqlalchemy import event
+
+        statements = []
+
+        def count(conn, cursor, statement, *args):
+            statements.append(statement)
+
+        event.listen(test_engine, "before_cursor_execute", count)
+        try:
+            res = client.get("/api/v1/facilities?limit=50")
+        finally:
+            event.remove(test_engine, "before_cursor_execute", count)
+        assert res.status_code == 200
+        assert len(res.json()["data"]) >= 2
+        assert len(statements) <= 5
+
     def test_2_1_inactive_facilities_hidden(self, client, setup_db):
         """YÊU CẦU: Cơ sở is_active = false không hiện trong danh sách công khai."""
         res = client.get("/api/v1/facilities")
@@ -531,6 +549,38 @@ class TestSubtask2Courts:
         res = client.post("/api/v1/facilities/1/courts", json=body, headers=headers)
         assert res.status_code == 403
         assert res.json()["error"]["code"] == "AUTH_FORBIDDEN"
+
+    def test_2_5_create_court_unknown_sport_rejected(self, client, setup_db):
+        """sport_id không tồn tại trả 422 thay vì 500 do lỗi khóa ngoại."""
+        body = {
+            "name": "Sân Môn Lạ",
+            "sport_id": 9999,
+            "open_time": "06:00:00",
+            "close_time": "23:00:00",
+            "default_base_price": 100000,
+        }
+        res = client.post("/api/v1/facilities/1/courts", json=body, headers=get_token(user_id=3))
+        assert res.status_code == 422
+        assert res.json()["error"]["code"] == "VALIDATION_ERROR"
+
+    def test_2_5_create_court_without_matching_slots_rejected(self, client, setup_db):
+        """Giờ lẻ không chứa trọn khung giờ nào thì trả 400 TIME_SLOT_INVALID và không tạo sân."""
+        db = TestingSessionLocal()
+        before = db.query(Court).count()
+        db.close()
+        body = {
+            "name": "Sân Giờ Lẻ",
+            "sport_id": 1,
+            "open_time": "06:30:00",
+            "close_time": "07:20:00",
+            "default_base_price": 100000,
+        }
+        res = client.post("/api/v1/facilities/1/courts", json=body, headers=get_token(user_id=3))
+        assert res.status_code == 400
+        assert res.json()["error"]["code"] == "TIME_SLOT_INVALID"
+        db = TestingSessionLocal()
+        assert db.query(Court).count() == before
+        db.close()
 
     def test_2_5_rollback_on_error_no_orphan_court(self, client, setup_db, monkeypatch):
         """
@@ -792,3 +842,41 @@ class TestSubtask3CourtUpdate:
         court_after = db_check.query(Court).filter(Court.id == 1).first()
         assert court_after.name == orig_name
         db_check.close()
+
+
+class TestPlayDateUsesVietnamToday:
+    def test_future_check_uses_vietnam_date(self, client, setup_db, monkeypatch):
+        """Đơn DEPOSITED chỉ chặn tạm ngưng khi play_date >= hôm nay (theo giờ VN)."""
+        from app.api.v1.endpoints import courts as courts_module
+
+        # Chính hàm today_vn phải trả ngày theo UTC+7, không phải ngày của OS
+        assert courts_module.today_vn() == datetime.now(timezone(timedelta(hours=7))).date()
+
+        play_date = date(2030, 1, 1)
+        db = TestingSessionLocal()
+        booking = Booking(
+            user_id=4,
+            court_id=10,
+            play_date=play_date,
+            start_at=datetime.combine(play_date, time(10, 0)),
+            status="DEPOSITED",
+            total_amount=200000,
+            deposit_amount=60000,
+            deposit_percent=30,
+        )
+        db.add(booking)
+        db.commit()
+        db.close()
+
+        headers = get_token(user_id=6)  # Owner B sở hữu court 10
+
+        # Hôm nay (VN) = đúng ngày chơi -> vẫn là lịch trong tương lai -> bị chặn
+        monkeypatch.setattr(courts_module, "today_vn", lambda: play_date)
+        res = client.patch("/api/v1/courts/10", json={"is_active": False}, headers=headers)
+        assert res.status_code == 400
+        assert res.json()["error"]["code"] == "CANNOT_DEACTIVATE_COURT_ACTIVE_BOOKINGS"
+
+        # Hôm nay (VN) = ngày sau ngày chơi -> lịch đã qua -> không còn chặn
+        monkeypatch.setattr(courts_module, "today_vn", lambda: play_date + timedelta(days=1))
+        res = client.patch("/api/v1/courts/10", json={"is_active": False}, headers=headers)
+        assert res.status_code == 200

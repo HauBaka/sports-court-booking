@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db, get_facility_for_owner, require_role
 from app.core.exceptions import BusinessException
-from app.models.facility import Court, CourtSlot, Facility, TimeSlot
+from app.models.facility import Court, CourtSlot, Facility, Sport, TimeSlot
 from app.models.user import User
 from app.schemas.court import CourtCreate
 from app.schemas.facility import FacilityCreate
@@ -96,36 +96,47 @@ def list_facilities(
     offset = (page - 1) * limit
     facilities = query.order_by(Facility.id.asc()).offset(offset).limit(limit).all()
 
-    data = []
-    for f in facilities:
-        # Tính min_price, max_price và total_courts của các sân con đang active
-        pricing = (
+    # Gộp tính giá và số sân của cả trang bằng 2 query GROUP BY thay vì 2 query cho mỗi cơ sở
+    facility_ids = [f.id for f in facilities]
+    price_map = {}
+    count_map = {}
+    if facility_ids:
+        price_rows = (
             db.query(
-                func.min(CourtSlot.base_price).label("min_price"),
-                func.max(CourtSlot.base_price).label("max_price"),
+                Court.facility_id,
+                func.min(CourtSlot.base_price),
+                func.max(CourtSlot.base_price),
             )
-            .join(Court, Court.id == CourtSlot.court_id)
+            .join(CourtSlot, CourtSlot.court_id == Court.id)
             .filter(
-                Court.facility_id == f.id,
+                Court.facility_id.in_(facility_ids),
                 Court.is_active == True,
                 CourtSlot.is_active == True,
             )
-            .first()
+            .group_by(Court.facility_id)
+            .all()
         )
-        min_p = pricing.min_price if pricing and pricing.min_price is not None else 0
-        max_p = pricing.max_price if pricing and pricing.max_price is not None else 0
+        price_map = {row[0]: (row[1], row[2]) for row in price_rows}
 
-        total_c = (
-            db.query(func.count(Court.id))
-            .filter(
-                Court.facility_id == f.id,
-                Court.is_active == True,
+        count_rows = (
+            db.query(Court.facility_id, func.count(Court.id))
+            .filter(Court.facility_id.in_(facility_ids), Court.is_active == True)
+            .group_by(Court.facility_id)
+            .all()
+        )
+        count_map = {row[0]: row[1] for row in count_rows}
+
+    data = []
+    for f in facilities:
+        min_p, max_p = price_map.get(f.id, (0, 0))
+        data.append(
+            format_facility(
+                f,
+                min_price=int(min_p or 0),
+                max_price=int(max_p or 0),
+                total_courts=count_map.get(f.id, 0),
             )
-            .scalar()
-            or 0
         )
-
-        data.append(format_facility(f, min_price=min_p, max_price=max_p, total_courts=total_c))
 
     return {
         "success": True,
@@ -297,6 +308,14 @@ def create_court_for_facility(
             ],
         )
 
+    if not db.query(Sport.id).filter(Sport.id == body.sport_id).first():
+        raise BusinessException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            code="VALIDATION_ERROR",
+            message="Môn thể thao không tồn tại.",
+            details=[{"field": "sport_id", "issue": f"sport_id {body.sport_id} không tồn tại."}],
+        )
+
     try:
         court = Court(
             facility_id=facility.id,
@@ -321,6 +340,14 @@ def create_court_for_facility(
             .order_by(TimeSlot.start_time.asc())
             .all()
         )
+
+        # Không có khung giờ nào nằm trọn trong [open_time, close_time] thì sân không thể đặt được
+        if not matching_slots:
+            raise BusinessException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                code="TIME_SLOT_INVALID",
+                message="Giờ hoạt động không chứa khung giờ nào hợp lệ. Vui lòng chọn giờ khớp với các khung giờ của hệ thống.",
+            )
 
         for slot in matching_slots:
             court_slot = CourtSlot(

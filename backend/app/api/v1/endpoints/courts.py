@@ -1,6 +1,6 @@
 # Model khai báo bằng Column() kiểu cũ nên Pylance báo sai khi gán giá trị cho thuộc tính; runtime vẫn đúng.
 # pyright: reportAttributeAccessIssue=false
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from typing import cast
 from fastapi import APIRouter, Depends, status
 from sqlalchemy import or_
@@ -14,6 +14,13 @@ from app.models.user import User
 from app.schemas.court import CourtUpdate
 
 router = APIRouter()
+
+# play_date là ngày chơi theo giờ Việt Nam (start_at mới lưu UTC), nên "hôm nay" cũng phải tính theo UTC+7
+VN_TZ = timezone(timedelta(hours=7))
+
+
+def today_vn() -> date:
+    return datetime.now(VN_TZ).date()
 
 
 def format_time(t) -> str:
@@ -95,7 +102,7 @@ def update_court(
                     message="Giờ sân con phải nằm trong giờ mở cửa của cụm sân.",
                 )
 
-    today = date.today()
+    today = today_vn()
 
     try:
         # 1. Xử lý khi cập nhật giờ hoạt động
