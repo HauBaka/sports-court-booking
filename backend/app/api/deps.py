@@ -1,4 +1,4 @@
-from typing import Generator, List, Optional
+from typing import Generator, List, Optional, cast
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
@@ -79,7 +79,7 @@ def get_current_user(
         )
 
     # Kiểm tra trạng thái kích hoạt của tài khoản
-    if not user.is_active:
+    if not cast(bool, user.is_active):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Tài khoản đã bị vô hiệu hóa.",
@@ -144,7 +144,7 @@ def get_facility_for_owner(
             detail=f"Cơ sở thể thao với ID {target_id} không tồn tại.",
         )
 
-    if facility.owner_id != current_user.id:
+    if cast(int, facility.owner_id) != cast(int, current_user.id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Bạn không có quyền quản lý cơ sở thể thao này.",
@@ -191,7 +191,7 @@ def get_court_for_owner(
             detail="Cơ sở thể thao của sân con này không tồn tại.",
         )
 
-    if facility.owner_id != current_user.id:
+    if cast(int, facility.owner_id) != cast(int, current_user.id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Bạn không có quyền quản lý sân con này.",

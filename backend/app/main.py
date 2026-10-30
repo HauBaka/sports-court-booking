@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI
@@ -55,12 +56,13 @@ app.add_middleware(
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request, exc: StarletteHTTPException):
     status_code = exc.status_code
-    if isinstance(exc.detail, dict) and "code" in exc.detail:
-        code = exc.detail["code"]
-        message = exc.detail.get("message", "")
-        details = exc.detail.get("details", None)
+    detail: Any = exc.detail
+    if isinstance(detail, dict) and "code" in detail:
+        code = detail["code"]
+        message = detail.get("message", "")
+        details = detail.get("details", None)
     else:
-        message = str(exc.detail) if exc.detail else "Có lỗi xảy ra."
+        message = str(detail) if detail else "Có lỗi xảy ra."
         details = None
         lower_msg = message.lower()
         if status_code == 401:

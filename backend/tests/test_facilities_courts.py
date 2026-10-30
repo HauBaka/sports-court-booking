@@ -1,3 +1,5 @@
+# Model khai báo bằng Column() kiểu cũ nên Pylance báo sai kiểu khi so sánh/gán thuộc tính; runtime vẫn đúng.
+# pyright: reportGeneralTypeIssues=false, reportAttributeAccessIssue=false, reportOptionalMemberAccess=false
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Generator
 import pytest
@@ -433,6 +435,12 @@ class TestSubtask2Courts:
     def test_2_6_court_of_inactive_facility_hidden(self, client, setup_db):
         """Sân thuộc cơ sở đã ngưng hoạt động trả 404 COURT_NOT_FOUND."""
         res = client.get("/api/v1/courts/20")
+        assert res.status_code == 404
+        assert res.json()["error"]["code"] == "COURT_NOT_FOUND"
+
+    def test_2_6_inactive_court_hidden(self, client, setup_db):
+        """Sân is_active=false trả 404 COURT_NOT_FOUND trên endpoint công khai."""
+        res = client.get("/api/v1/courts/4")  # Sân đang sửa chữa
         assert res.status_code == 404
         assert res.json()["error"]["code"] == "COURT_NOT_FOUND"
 
