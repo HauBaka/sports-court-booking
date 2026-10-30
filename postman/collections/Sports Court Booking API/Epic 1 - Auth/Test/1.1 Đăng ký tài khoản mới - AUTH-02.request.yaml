@@ -1,0 +1,25 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/auth/register'
+order: 1200
+auth:
+  type: noauth
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Nguyễn Văn A",
+      "email": "{{user_email}}",
+      "phone": "0900000010",
+      "password": "{{user_password}}",
+      "role": "customer"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("AUTH-02: status 409", () => pm.response.to.have.status(409));
+      pm.test("AUTH-02: mã lỗi AUTH_EMAIL_EXISTS", () => pm.expect(pm.response.json().error.code).to.eql("AUTH_EMAIL_EXISTS"));

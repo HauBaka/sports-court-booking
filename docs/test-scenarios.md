@@ -1,6 +1,6 @@
-# Kịch bản kiểm thử phần tiền
+# Kịch bản kiểm thử
 
-Tài liệu liệt kê các tình huống cần kiểm thử của phần tiền: tính giá, giữ chỗ, đặt cọc, đặt trùng, hủy và hoàn cọc, kết toán, ví. Mỗi kịch bản nêu tình huống và kết quả đúng, chưa đi vào từng bước hay dữ liệu cụ thể. Khi API hoàn thành, mỗi mã kịch bản được triển khai thành test case (unit test, test CSDL hoặc request Postman) mang cùng mã.
+Tài liệu liệt kê các tình huống cần kiểm thử của phần xác thực và phân quyền (mục 4), quản lý sân và bảng giá (mục 5) và phần tiền: tính giá, giữ chỗ, đặt cọc, đặt trùng, hủy và hoàn cọc, kết toán, ví. Mỗi kịch bản nêu tình huống và kết quả đúng, chưa đi vào từng bước hay dữ liệu cụ thể. Khi API hoàn thành, mỗi mã kịch bản được triển khai thành test case (unit test, test CSDL hoặc request Postman) mang cùng mã.
 
 Quy định QĐ1 đến QĐ7 xem ở `docs/project-proposal.md`. Công thức tiền và luồng xử lý xem ở `docs/database-entities.md`.
 
@@ -10,7 +10,7 @@ Quy định QĐ1 đến QĐ7 xem ở `docs/project-proposal.md`. Công thức ti
 | --- | --- | --- | --- | --- | --- | --- |
 | `<NHÓM>-<số>` | Tên story | QĐ liên quan | Dữ liệu và trạng thái cần có | 1. Bước một<br>2. Bước hai | Kết quả cụ thể: số tiền, trạng thái, mã lỗi | Điền khi chạy test |
 
-Nhóm: `GIA` tính giá, `DAT` tạo đơn và giữ chỗ, `COC` đặt cọc, `TRUNG` đặt trùng, `HUY` hủy và hoàn cọc, `KT` kết toán, `VI` ví.
+Nhóm: `AUTH` xác thực và phân quyền, `SAN` quản lý sân và bảng giá, `GIA` tính giá, `DAT` tạo đơn và giữ chỗ, `COC` đặt cọc, `TRUNG` đặt trùng, `HUY` hủy và hoàn cọc, `KT` kết toán, `VI` ví.
 
 ## 2. Kịch bản mẫu có số tiền
 
@@ -116,3 +116,31 @@ Cột "Cấp" là nơi nên kiểm: Unit (hàm tính, không cần CSDL), DB (r�
 | VI-03 | Người không phải Admin cấp tiền | Bị từ chối 403 | QĐ6 | API |
 | VI-04 | Xem lịch sử giao dịch | Đủ giao dịch, đúng loại, chỉ thấy ví của mình | QĐ6 | API |
 | VI-05 | Sau cọc, hủy, kết toán | Tổng số dư các ví không đổi, số dư mỗi ví khớp tổng giao dịch của ví đó | QĐ6 | DB |
+
+## 4. Kịch bản xác thực và phân quyền (Epic SCB-67)
+
+Endpoint xem ở `docs/api-endpoints.md` mục 1.1 đến 1.4 và 2.3. Dữ liệu dùng chung lấy từ seed `database/seeds/S1__sample_data.sql`, tài khoản và mật khẩu xem ở `database/README.md`. Dùng Khách A (`customer.a@scb.vn`, số điện thoại `0900000003`, mật khẩu `TestPass123@`). Test chạy trên CSDL test đã nạp seed. Người đăng ký mới trong AUTH-01 dùng email `new.user@scb.vn` và số điện thoại `0900000010`, không có trong seed.
+
+| Mã | Story | QĐ | Điều kiện trước | Các bước | Kết quả mong đợi |
+| --- | --- | --- | --- | --- | --- |
+| AUTH-01 | Đăng ký tài khoản | QĐ6 | Seed đã nạp, chưa có `new.user@scb.vn` | 1. `POST /auth/register` với email `new.user@scb.vn`, phone `0900000010`, role `customer`<br>2. Đăng nhập rồi `GET /auth/me` | Bước 1: 201, `role` = `customer`, có `wallet_id`, `balance` = 0<br>Bước 2: `wallet.balance` = 0đ, không có giao dịch ví<br>Phản hồi không chứa mật khẩu |
+| AUTH-02 | Đăng ký trùng email | | Seed đã nạp | `POST /auth/register` với email `customer.a@scb.vn`, phone `0900000010` | 409 `AUTH_EMAIL_EXISTS`<br>Không tạo user, không tạo ví |
+| AUTH-03 | Đăng ký trùng số điện thoại | | Seed đã nạp | `POST /auth/register` với email `new.user@scb.vn`, phone `0900000003` | 409 `AUTH_PHONE_EXISTS`<br>Không tạo user, không tạo ví |
+| AUTH-04 | Đăng nhập sai mật khẩu | | Seed đã nạp | `POST /auth/login` với email `customer.a@scb.vn`, mật khẩu `SaiMatKhau123@` | 401 `AUTH_INVALID_CREDENTIALS`<br>Không có `access_token` |
+| AUTH-05 | Gọi API cần đăng nhập khi thiếu token | QĐ7 | Không gửi header `Authorization` | `GET /auth/me` | 401 `AUTH_UNAUTHORIZED` |
+| AUTH-06 | Khách gọi API của chủ sân | QĐ7 | Khách A đã đăng nhập, có `access_token` | `POST /facilities` với token của Khách A, body hợp lệ | 403 `AUTH_FORBIDDEN`<br>Không tạo cơ sở |
+
+## 5. Kịch bản quản lý sân và bảng giá (Epic SCB-2)
+
+Endpoint xem ở `docs/api-endpoints.md` mục 2.7, 2.8. Dữ liệu dùng chung lấy từ seed `database/seeds/S1__sample_data.sql`: cơ sở 1 của `owner@scb.vn` (Chủ sân A), sân 1 và sân 2 giá cơ sở 100.000đ/giờ, giờ mở 06:00 đến 23:00. Bảng giá seed của cơ sở 1: cao điểm 17:00 đến 21:00 hệ số 1,30, thứ Bảy và Chủ nhật hệ số 1,40, Tết Dương Lịch hệ số 1,50. Các kịch bản giá chỉ kiểm hệ số và việc lưu quy tắc, tính tiền đặt sân thuộc Sprint 3.
+
+| Mã | Story | QĐ | Điều kiện trước | Các bước | Kết quả mong đợi |
+| --- | --- | --- | --- | --- | --- |
+| SAN-01 | Hệ số giờ cao điểm | QĐ1 | Seed đã nạp. Ngày chơi là thứ Ba, không phải ngày lễ | Lấy hệ số của sân 1 khung 18:00 đến 19:00 | Hệ số 1,30<br>Giá khung 100.000 × 1,30 = 130.000đ |
+| SAN-02 | Nhiều quy tắc cùng khớp | QĐ1 | Seed đã nạp. Ngày chơi là thứ Bảy, không phải ngày lễ | Lấy hệ số của sân 1 khung 18:00 đến 19:00 | Khớp cao điểm 1,30 và cuối tuần 1,40, lấy hệ số lớn nhất 1,40, không cộng dồn<br>Giá khung 100.000 × 1,40 = 140.000đ |
+| SAN-03 | Ngoài mọi quy tắc | QĐ1 | Seed đã nạp. Ngày chơi là thứ Ba, không phải ngày lễ | Lấy hệ số của sân 1 khung 10:00 đến 11:00 | Hệ số 1,00<br>Giá khung 100.000đ |
+| SAN-04 | Hệ số dưới biên | QĐ1 | Chủ sân A đã đăng nhập | `POST /facilities/1/pricing-rules` với một quy tắc `PEAK_HOUR` hệ số 1,10 | 422 `VALIDATION_ERROR`<br>Không lưu, bảng giá cơ sở 1 vẫn 4 quy tắc như seed |
+| SAN-05 | Hệ số trên biên | QĐ1 | Chủ sân A đã đăng nhập | `POST /facilities/1/pricing-rules` với một quy tắc `PEAK_HOUR` hệ số 1,60 | 422 `VALIDATION_ERROR`<br>Không lưu, bảng giá cơ sở 1 vẫn 4 quy tắc như seed |
+| SAN-06 | Sửa sân của chủ khác | QĐ7 | Chủ sân B đã đăng ký (role `owner`), chưa có cơ sở nào, đã đăng nhập | `PATCH /courts/1` với token của Chủ sân B, đổi `name` | 403 `AUTH_FORBIDDEN`<br>Tên sân 1 không đổi |
+| SAN-07 | Đổi giờ khi còn lịch cọc | QĐ3, QĐ7 | Có đơn "Đã đặt cọc" của sân 1 ngày mai, khung 22:00 đến 23:00. Chủ sân A đã đăng nhập | `PATCH /courts/1` đổi `close_time` thành `22:00:00` | 400 `CANNOT_UPDATE_COURT_SCHEDULE_ACTIVE_BOOKINGS`<br>`close_time` sân 1 vẫn 23:00, `court_slots` không đổi |
+| SAN-08 | Đổi giờ khi không có lịch | QĐ3 | Sân 2 không có đơn đặt cọc nào. Chủ sân A đã đăng nhập | `PATCH /courts/2` đổi `close_time` thành `22:00:00` | 200<br>`close_time` sân 2 là 22:00<br>`court_slots` khung 22:00 đến 23:00 của sân 2 chuyển `is_active = false`, các khung từ 06:00 đến 22:00 vẫn `true` |

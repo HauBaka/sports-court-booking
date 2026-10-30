@@ -24,4 +24,14 @@ Các biến `user_email`, `user_password`, `access_token`, `server_token` để 
 - Request: `<số epic>.<số mục> <Tên mục>`, ví dụ `3.4 Thanh toán tiền cọc 30% qua ví nội bộ`.
 - Địa chỉ luôn bắt đầu bằng `{{base_url}}`, không ghi cứng host.
 - Request thêm mới đặt đúng folder Epic, đánh số tiếp theo `docs/api-endpoints.md`.
-- Folder `Server Control` là công cụ khởi động lại server, không thuộc Epic nào.
+- Folder `Server Control` là công cụ khởi động lại server, không thuộc Epic nào. Request gọi API của panel hosting (không phải API của Backend), xác thực bằng Bearer `{{server_token}}` là API key tài khoản panel (xem `docs/deploy.md` mục 4), không dùng `access_token`.
+
+## 4. Request theo kịch bản
+
+Request kịch bản đặt tên `<tên request> - <mã kịch bản>`, ví dụ `1.1 Đăng ký tài khoản mới - AUTH-02`, nằm trong folder `Test` của từng Epic (ví dụ `Epic 1 - Auth/Test`), tách khỏi request gốc. Postman chỉ để thử tay và các ca đặc biệt; kịch bản chạy tự động ở CI. Test script trong request dùng đúng mã kịch bản của `docs/test-scenarios.md`.
+
+- Chạy trên CSDL vừa nạp seed. `user_email`, `user_password` điền tài khoản seed (xem `database/README.md`), `facility_id` = 1, `court_id` = 1 (SAN-08 dùng sân 2).
+- Đăng nhập (1.2) bằng đúng tài khoản trước khi chạy: AUTH-06 dùng Khách A, SAN-04, 05, 07, 08 dùng Chủ sân A, SAN-06 dùng Chủ sân B.
+- AUTH-01 đăng ký `new.user@scb.vn`, chạy lại phải nạp lại seed.
+- SAN-07 cần đơn "Đã đặt cọc" của sân 1 khung 22:00 đến 23:00 ngày mai, tạo trước khi chạy.
+- SAN-01 đến 03 kiểm hàm hệ số bằng unit test, không có request Postman.
