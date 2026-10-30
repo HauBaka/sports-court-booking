@@ -244,12 +244,12 @@ def list_facility_courts(
     id: int,
     db: Session = Depends(get_db),
 ):
-    facility = db.query(Facility).filter(Facility.id == id).first()
+    facility = db.query(Facility).filter(Facility.id == id, Facility.is_active == True).first()
     if not facility:
         raise BusinessException(
             status_code=status.HTTP_404_NOT_FOUND,
             code="FACILITY_NOT_FOUND",
-            message=f"Cơ sở thể thao với ID {id} không tồn tại.",
+            message=f"Cơ sở thể thao với ID {id} không tồn tại hoặc đã ngưng hoạt động.",
         )
 
     courts = (

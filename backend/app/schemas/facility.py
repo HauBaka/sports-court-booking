@@ -54,6 +54,6 @@ class FacilityDetail(BaseModel):
     close_time: str
     description: Optional[str] = None
     is_active: bool
-    courts: List[CourtItem] = []
+    courts: List[CourtItem] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}

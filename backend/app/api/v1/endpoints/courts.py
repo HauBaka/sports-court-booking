@@ -45,7 +45,8 @@ def get_court_detail(
     db: Session = Depends(get_db),
 ):
     court = db.query(Court).filter(Court.id == court_id).first()
-    if not court:
+    # Sân thuộc cơ sở đã ngưng hoạt động thì không công khai
+    if not court or not (court.facility and court.facility.is_active):
         raise BusinessException(
             status_code=status.HTTP_404_NOT_FOUND,
             code="COURT_NOT_FOUND",

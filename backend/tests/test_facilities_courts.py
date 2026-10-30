@@ -238,7 +238,19 @@ def setup_db():
         close_time=time(22, 0),
         is_active=True,
     )
-    db.add(court_fac3)
+    # Sân thuộc Facility 2 (cơ sở đã ngưng hoạt động)
+    court_in_inactive_fac = Court(
+        id=20,
+        facility_id=2,
+        sport_id=1,
+        name="Sân Của Cơ Sở Đã Tắt",
+        court_type="STANDARD",
+        environment="INDOOR",
+        open_time=time(6, 0),
+        close_time=time(22, 0),
+        is_active=True,
+    )
+    db.add_all([court_fac3, court_in_inactive_fac])
     db.commit()
     for slot_id in range(2, 17):
         db.add(CourtSlot(court_id=10, time_slot_id=slot_id, base_price=200000, is_active=True))
@@ -411,6 +423,18 @@ class TestSubtask2Courts:
         res = client.get("/api/v1/facilities/9999/courts")
         assert res.status_code == 404
         assert res.json()["error"]["code"] == "FACILITY_NOT_FOUND"
+
+    def test_2_4_list_courts_of_inactive_facility_hidden(self, client, setup_db):
+        """Cơ sở is_active=false thì danh sách sân con cũng không công khai."""
+        res = client.get("/api/v1/facilities/2/courts")
+        assert res.status_code == 404
+        assert res.json()["error"]["code"] == "FACILITY_NOT_FOUND"
+
+    def test_2_6_court_of_inactive_facility_hidden(self, client, setup_db):
+        """Sân thuộc cơ sở đã ngưng hoạt động trả 404 COURT_NOT_FOUND."""
+        res = client.get("/api/v1/courts/20")
+        assert res.status_code == 404
+        assert res.json()["error"]["code"] == "COURT_NOT_FOUND"
 
     def test_2_6_get_court_detail(self, client, setup_db):
         """2.6 Lấy chi tiết sân con."""
