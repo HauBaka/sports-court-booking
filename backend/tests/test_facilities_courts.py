@@ -540,3 +540,223 @@ class TestSubtask2Courts:
         assert orphan is None
 
 
+# ==============================================================================
+# SUBTASK 3 TESTS: CẬP NHẬT SÂN CON, KIỂM XUNG ĐỘT, TẠM NGƯNG (2.7)
+# ==============================================================================
+class TestSubtask3CourtUpdate:
+    def test_2_7_other_owner_update_forbidden(self, client, setup_db):
+        """SAN-06: Chủ khác không sửa được sân con -> 403 AUTH_FORBIDDEN."""
+        headers = get_token(user_id=6)  # Owner B
+        res = client.patch("/api/v1/courts/1", json={"name": "Sân bị sửa trái phép"}, headers=headers)
+        assert res.status_code == 403
+        assert res.json()["error"]["code"] == "AUTH_FORBIDDEN"
+
+        # Tên không bị đổi
+        db = TestingSessionLocal()
+        court = db.query(Court).filter(Court.id == 1).first()
+        assert court.name == "Sân Cầu Lông 1 (Thảm Yonex)"
+        db.close()
+
+    def test_2_7_change_schedule_rejected_if_deposited_booking_in_cutoff_slot(self, client, setup_db):
+        """
+        SAN-07: Đổi giờ đóng cửa 23:00 -> 22:00 khi có đơn DEPOSITED ở slot 17 (22:00-23:00)
+        Bị từ chối bằng 400 CANNOT_UPDATE_COURT_SCHEDULE_ACTIVE_BOOKINGS.
+        """
+        db = TestingSessionLocal()
+        play_date = date.today() + timedelta(days=2)
+        start_at = datetime.combine(play_date, time(22, 0))
+
+        # Tạo đơn đặt DEPOSITED ở slot 17 (22:00 - 23:00)
+        booking = Booking(
+            user_id=4,
+            court_id=1,
+            play_date=play_date,
+            start_at=start_at,
+            status="DEPOSITED",
+            subtotal=100000,
+            service_total=0,
+            total_amount=100000,
+            deposit_amount=30000,
+            deposit_percent=30,
+        )
+        db.add(booking)
+        db.flush()
+
+        slot_item = BookingSlot(
+            booking_id=booking.id,
+            court_id=1,
+            play_date=play_date,
+            time_slot_id=17,  # Slot 22:00-23:00
+            base_price=100000,
+            final_price=100000,
+            multiplier=1.00,
+            released_at=None,
+        )
+        db.add(slot_item)
+        db.commit()
+        booking_id = booking.id
+        db.close()
+
+        # Gọi PATCH đổi giờ đóng cửa về 22:00:00 (cắt bỏ slot 17)
+        headers = get_token(user_id=3)
+        res = client.patch("/api/v1/courts/1", json={"close_time": "22:00:00"}, headers=headers)
+        assert res.status_code == 400
+        assert res.json()["error"]["code"] == "CANNOT_UPDATE_COURT_SCHEDULE_ACTIVE_BOOKINGS"
+
+        # Dọn dẹp đơn test
+        db_clean = TestingSessionLocal()
+        b_clean = db_clean.query(Booking).filter(Booking.id == booking_id).first()
+        b_clean.status = "CANCELLED"
+        b_clean.cancelled_at = datetime.now(timezone.utc)
+        for s in b_clean.slots:
+            s.released_at = datetime.now(timezone.utc)
+        db_clean.commit()
+        db_clean.close()
+
+    def test_2_7_change_schedule_sync_court_slots_success(self, client, setup_db):
+        """
+        SAN-08: Đổi giờ đóng cửa 23:00 thành 22:00 khi không có lịch xung đột.
+        Khung giờ sau 22:00 (slot 17) có is_active = false, các khung khác vẫn true.
+        """
+        headers = get_token(user_id=3)  # Owner A
+        res = client.patch("/api/v1/courts/2", json={"close_time": "22:00:00"}, headers=headers)
+        assert res.status_code == 200
+        data = res.json()["data"]
+        assert data["close_time"] == "22:00:00"
+
+        # Kiểm tra bảng court_slots của sân 2
+        db = TestingSessionLocal()
+        inactive_slots = (
+            db.query(CourtSlot.time_slot_id)
+            .filter(CourtSlot.court_id == 2, CourtSlot.is_active == False)
+            .all()
+        )
+        inactive_ids = [s[0] for s in inactive_slots]
+        assert inactive_ids == [17]  # Đúng khung 17 (22:00-23:00) chuyển thành false
+
+        active_count = (
+            db.query(CourtSlot)
+            .filter(CourtSlot.court_id == 2, CourtSlot.is_active == True)
+            .count()
+        )
+        assert active_count == 16  # 16 khung từ 06:00 đến 22:00 vẫn active
+        db.close()
+
+    def test_2_7_deactivate_court_rejected_if_deposited_booking(self, client, setup_db):
+        """
+        YÊU CẦU: Tạm ngưng sân: từ chối bằng 400 CANNOT_DEACTIVATE_COURT_ACTIVE_BOOKINGS
+        nếu có lịch DEPOSITED trong tương lai.
+        """
+        db = TestingSessionLocal()
+        play_date = date.today() + timedelta(days=3)
+        booking = Booking(
+            user_id=4,
+            court_id=1,
+            play_date=play_date,
+            start_at=datetime.combine(play_date, time(10, 0)),
+            status="DEPOSITED",
+            total_amount=100000,
+            deposit_amount=30000,
+            deposit_percent=30,
+        )
+        db.add(booking)
+        db.commit()
+        booking_id = booking.id
+        db.close()
+
+        headers = get_token(user_id=3)
+        res = client.patch("/api/v1/courts/1", json={"is_active": False}, headers=headers)
+        assert res.status_code == 400
+        assert res.json()["error"]["code"] == "CANNOT_DEACTIVATE_COURT_ACTIVE_BOOKINGS"
+
+        # Sân 1 vẫn active
+        db_check = TestingSessionLocal()
+        c1 = db_check.query(Court).filter(Court.id == 1).first()
+        assert c1.is_active is True
+
+        # Dọn dẹp
+        b_clean = db_check.query(Booking).filter(Booking.id == booking_id).first()
+        b_clean.status = "CANCELLED"
+        b_clean.cancelled_at = datetime.now(timezone.utc)
+        db_check.commit()
+        db_check.close()
+
+    def test_2_7_deactivate_court_cancels_pending_deposit_and_releases_slots(self, client, setup_db):
+        """
+        YÊU CẦU: Tạm ngưng: nếu không có lịch DEPOSITED, hủy các lịch PENDING_DEPOSIT
+        và nhả khung giờ trong cùng một transaction.
+        """
+        db = TestingSessionLocal()
+        play_date = date.today() + timedelta(days=1)
+        start_at = datetime.combine(play_date, time(14, 0))
+
+        # Đơn PENDING_DEPOSIT
+        pb = Booking(
+            user_id=4,
+            court_id=3,
+            play_date=play_date,
+            start_at=start_at,
+            status="PENDING_DEPOSIT",
+            total_amount=120000,
+            deposit_amount=36000,
+            deposit_percent=30,
+        )
+        db.add(pb)
+        db.flush()
+
+        bs = BookingSlot(
+            booking_id=pb.id,
+            court_id=3,
+            play_date=play_date,
+            time_slot_id=9,  # 14:00 - 15:00
+            base_price=120000,
+            final_price=120000,
+            multiplier=1.00,
+            released_at=None,
+        )
+        db.add(bs)
+        db.commit()
+        pb_id = pb.id
+        db.close()
+
+        # Gọi PATCH tạm ngưng sân 3
+        headers = get_token(user_id=3)
+        res = client.patch("/api/v1/courts/3", json={"is_active": False}, headers=headers)
+        assert res.status_code == 200
+        assert res.json()["data"]["is_active"] is False
+
+        # Kiểm tra đơn PENDING_DEPOSIT đã bị hủy và slot đã được nhả
+        db_check = TestingSessionLocal()
+        b_after = db_check.query(Booking).filter(Booking.id == pb_id).first()
+        assert b_after.status == "CANCELLED"
+        assert b_after.cancelled_at is not None
+        assert b_after.cancel_reason == "Sân tạm ngưng hoạt động"
+
+        slot_after = db_check.query(BookingSlot).filter(BookingSlot.booking_id == pb_id).first()
+        assert slot_after.released_at is not None
+        db_check.close()
+
+    def test_2_7_patch_rollback_on_error(self, client, setup_db, monkeypatch):
+        """
+        YÊU CẦU: Lỗi giữa chừng thì không thay đổi gì (Rollback).
+        """
+        db = TestingSessionLocal()
+        court_orig = db.query(Court).filter(Court.id == 1).first()
+        orig_name = court_orig.name
+        db.close()
+
+        # Giả lập lỗi khi commit
+        def faulty_commit(self):
+            raise RuntimeError("Mô phỏng lỗi DB commit giữa transaction!")
+
+        monkeypatch.setattr(Session, "commit", faulty_commit)
+
+        headers = get_token(user_id=3)
+        with pytest.raises(RuntimeError):
+            client.patch("/api/v1/courts/1", json={"name": "Tên Cần Rollback"}, headers=headers)
+
+        # Kiểm tra tên sân không bị thay đổi
+        db_check = TestingSessionLocal()
+        court_after = db_check.query(Court).filter(Court.id == 1).first()
+        assert court_after.name == orig_name
+        db_check.close()
