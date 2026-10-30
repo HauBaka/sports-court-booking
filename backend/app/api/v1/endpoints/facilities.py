@@ -1,0 +1,238 @@
+import math
+from datetime import time
+from typing import Any, Optional, cast
+from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy import and_, func, or_
+from sqlalchemy.orm import Session
+
+from app.api.deps import get_current_user, get_db, get_facility_for_owner, require_role
+from app.core.exceptions import BusinessException
+from app.models.facility import Court, CourtSlot, Facility, TimeSlot
+from app.models.user import User
+from app.schemas.court import CourtCreate
+from app.schemas.facility import FacilityCreate
+
+router = APIRouter()
+
+
+def to_float(value: Any) -> Optional[float]:
+    return float(value) if value is not None else None
+
+
+def format_time(t) -> str:
+    if isinstance(t, str):
+        return t
+    return t.strftime("%H:%M:%S")
+
+
+def format_court(court: Court) -> dict:
+    return {
+        "id": court.id,
+        "facility_id": court.facility_id,
+        "name": court.name,
+        "sport_id": court.sport_id,
+        "court_type": court.court_type,
+        "environment": court.environment,
+        "open_time": format_time(court.open_time),
+        "close_time": format_time(court.close_time),
+        "is_active": court.is_active,
+    }
+
+
+def format_facility(facility: Facility, min_price: Optional[int] = 0, max_price: Optional[int] = 0, total_courts: int = 0) -> dict:
+    return {
+        "id": facility.id,
+        "name": facility.name,
+        "owner_id": facility.owner_id,
+        "address": facility.address,
+        "city": facility.city,
+        "district": facility.district,
+        "latitude": to_float(facility.latitude),
+        "longitude": to_float(facility.longitude),
+        "open_time": format_time(facility.open_time),
+        "close_time": format_time(facility.close_time),
+        "is_active": facility.is_active,
+        "min_price": min_price,
+        "max_price": max_price,
+        "total_courts": total_courts,
+    }
+
+
+# ==============================================================================
+# 2.1 Tra cứu danh sách cơ sở thể thao (Public)
+# ==============================================================================
+@router.get("/facilities", summary="Tra cứu danh sách cơ sở thể thao")
+def list_facilities(
+    sport_id: Optional[int] = Query(None, description="Lọc theo ID môn thể thao"),
+    city: Optional[str] = Query(None, description="Lọc theo tỉnh/thành phố"),
+    search: Optional[str] = Query(None, description="Tìm kiếm theo tên cơ sở hoặc địa chỉ"),
+    page: int = Query(1, ge=1, description="Trang hiện tại (1-indexed)"),
+    limit: int = Query(10, ge=1, le=100, description="Số lượng trên một trang"),
+    db: Session = Depends(get_db),
+):
+    query = db.query(Facility).filter(Facility.is_active == True)
+
+    if sport_id is not None:
+        query = query.filter(
+            Facility.courts.any(
+                and_(Court.sport_id == sport_id, Court.is_active == True)
+            )
+        )
+
+    if city and city.strip():
+        query = query.filter(Facility.city.ilike(f"%{city.strip()}%"))
+
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        query = query.filter(
+            or_(
+                Facility.name.ilike(term),
+                Facility.address.ilike(term),
+            )
+        )
+
+    total = query.count()
+    total_pages = math.ceil(total / limit) if total > 0 else 0
+    offset = (page - 1) * limit
+    facilities = query.order_by(Facility.id.asc()).offset(offset).limit(limit).all()
+
+    data = []
+    for f in facilities:
+        # Tính min_price, max_price và total_courts của các sân con đang active
+        pricing = (
+            db.query(
+                func.min(CourtSlot.base_price).label("min_price"),
+                func.max(CourtSlot.base_price).label("max_price"),
+            )
+            .join(Court, Court.id == CourtSlot.court_id)
+            .filter(
+                Court.facility_id == f.id,
+                Court.is_active == True,
+                CourtSlot.is_active == True,
+            )
+            .first()
+        )
+        min_p = pricing.min_price if pricing and pricing.min_price is not None else 0
+        max_p = pricing.max_price if pricing and pricing.max_price is not None else 0
+
+        total_c = (
+            db.query(func.count(Court.id))
+            .filter(
+                Court.facility_id == f.id,
+                Court.is_active == True,
+            )
+            .scalar()
+            or 0
+        )
+
+        data.append(format_facility(f, min_price=min_p, max_price=max_p, total_courts=total_c))
+
+    return {
+        "success": True,
+        "message": "Lấy danh sách cơ sở thể thao thành công.",
+        "data": data,
+        "meta": {
+            "page": page,
+            "limit": limit,
+            "total": total,
+            "total_pages": total_pages,
+        },
+    }
+
+
+# ==============================================================================
+# 2.2 Xem chi tiết cơ sở thể thao và danh sách sân con (Public)
+# ==============================================================================
+@router.get("/facilities/{id}", summary="Xem chi tiết cơ sở thể thao và danh sách sân con")
+def get_facility_detail(
+    id: int,
+    db: Session = Depends(get_db),
+):
+    facility = db.query(Facility).filter(Facility.id == id, Facility.is_active == True).first()
+    if not facility:
+        raise BusinessException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="FACILITY_NOT_FOUND",
+            message=f"Cơ sở thể thao với ID {id} không tồn tại hoặc đã ngưng hoạt động.",
+        )
+
+    # Lấy danh sách sân con đang hoạt động
+    courts = (
+        db.query(Court)
+        .filter(Court.facility_id == facility.id, Court.is_active == True)
+        .order_by(Court.id.asc())
+        .all()
+    )
+
+    data = {
+        "id": facility.id,
+        "name": facility.name,
+        "owner_id": facility.owner_id,
+        "address": facility.address,
+        "city": facility.city,
+        "district": facility.district,
+        "latitude": to_float(facility.latitude),
+        "longitude": to_float(facility.longitude),
+        "open_time": format_time(facility.open_time),
+        "close_time": format_time(facility.close_time),
+        "description": facility.description,
+        "is_active": facility.is_active,
+        "courts": [format_court(c) for c in courts],
+    }
+
+    return {
+        "success": True,
+        "message": "Lấy chi tiết cơ sở thành công.",
+        "data": data,
+    }
+
+
+# ==============================================================================
+# 2.3 Tạo cơ sở thể thao mới (Chủ sân - Owner)
+# ==============================================================================
+@router.post("/facilities", status_code=status.HTTP_201_CREATED, summary="Tạo cơ sở thể thao mới")
+def create_facility(
+    body: FacilityCreate,
+    current_user: User = Depends(require_role("owner")),
+    db: Session = Depends(get_db),
+):
+    facility = Facility(
+        owner_id=current_user.id,
+        name=body.name,
+        address=body.address,
+        city=body.city,
+        district=body.district,
+        latitude=body.latitude,
+        longitude=body.longitude,
+        open_time=body.open_time,
+        close_time=body.close_time,
+        description=body.description,
+        is_active=True,
+    )
+
+    db.add(facility)
+    db.commit()
+    db.refresh(facility)
+
+    data = {
+        "id": facility.id,
+        "name": facility.name,
+        "owner_id": facility.owner_id,
+        "address": facility.address,
+        "city": facility.city,
+        "district": facility.district,
+        "latitude": to_float(facility.latitude),
+        "longitude": to_float(facility.longitude),
+        "open_time": format_time(facility.open_time),
+        "close_time": format_time(facility.close_time),
+        "description": facility.description,
+        "is_active": facility.is_active,
+    }
+
+    return {
+        "success": True,
+        "message": "Tạo cơ sở thể thao thành công.",
+        "data": data,
+    }
+
+

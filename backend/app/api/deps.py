@@ -116,7 +116,8 @@ def require_role(*roles: str):
 
 
 def get_facility_for_owner(
-    facility_id: int,
+    facility_id: Optional[int] = None,
+    id: Optional[int] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Facility:
@@ -129,11 +130,18 @@ def get_facility_for_owner(
     - Cơ sở thuộc chủ khác (facility.owner_id != current_user.id): Trả về HTTP 403 Forbidden.
     - Hợp lệ: Trả về đối tượng Facility.
     """
-    facility = db.query(Facility).filter(Facility.id == facility_id).first()
+    target_id = facility_id if facility_id is not None else id
+    if target_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Thiếu ID cơ sở thể thao.",
+        )
+
+    facility = db.query(Facility).filter(Facility.id == target_id).first()
     if not facility:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Cơ sở thể thao với ID {facility_id} không tồn tại.",
+            detail=f"Cơ sở thể thao với ID {target_id} không tồn tại.",
         )
 
     if facility.owner_id != current_user.id:
@@ -146,7 +154,8 @@ def get_facility_for_owner(
 
 
 def get_court_for_owner(
-    court_id: int,
+    court_id: Optional[int] = None,
+    id: Optional[int] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Court:
@@ -160,11 +169,18 @@ def get_court_for_owner(
     - Cơ sở chứa sân con thuộc chủ khác (court.facility.owner_id != current_user.id): Trả về HTTP 403 Forbidden.
     - Hợp lệ: Trả về đối tượng Court.
     """
-    court = db.query(Court).filter(Court.id == court_id).first()
+    target_id = court_id if court_id is not None else id
+    if target_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Thiếu ID sân con.",
+        )
+
+    court = db.query(Court).filter(Court.id == target_id).first()
     if not court:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Sân con với ID {court_id} không tồn tại.",
+            detail=f"Sân con với ID {target_id} không tồn tại.",
         )
 
     # Lấy cơ sở cha qua relationship hoặc query
