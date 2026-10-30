@@ -236,3 +236,109 @@ def create_facility(
     }
 
 
+# ==============================================================================
+# 2.4 Lấy danh sách sân con của một cơ sở (Public)
+# ==============================================================================
+@router.get("/facilities/{id}/courts", summary="Lấy danh sách sân con của một cơ sở")
+def list_facility_courts(
+    id: int,
+    db: Session = Depends(get_db),
+):
+    facility = db.query(Facility).filter(Facility.id == id).first()
+    if not facility:
+        raise BusinessException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="FACILITY_NOT_FOUND",
+            message=f"Cơ sở thể thao với ID {id} không tồn tại.",
+        )
+
+    courts = (
+        db.query(Court)
+        .filter(Court.facility_id == id, Court.is_active == True)
+        .order_by(Court.id.asc())
+        .all()
+    )
+
+    return {
+        "success": True,
+        "message": "Lấy danh sách sân con thành công.",
+        "data": [format_court(c) for c in courts],
+    }
+
+
+# ==============================================================================
+# 2.5 Tạo sân con mới thuộc cơ sở thể thao (Chủ sân - Owner)
+# ==============================================================================
+@router.post(
+    "/facilities/{id}/courts",
+    status_code=status.HTTP_201_CREATED,
+    summary="Tạo sân con mới thuộc cơ sở thể thao",
+)
+def create_court_for_facility(
+    id: int,
+    body: CourtCreate,
+    current_user: User = Depends(require_role("owner")),
+    facility: Facility = Depends(get_facility_for_owner),
+    db: Session = Depends(get_db),
+):
+    # Kiểm tra giờ hoạt động của sân con phải nằm trong giờ mở cửa của cơ sở
+    facility_open = cast(time, facility.open_time)
+    facility_close = cast(time, facility.close_time)
+    if body.open_time < facility_open or body.close_time > facility_close:
+        raise BusinessException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            code="VALIDATION_ERROR",
+            message="Giờ hoạt động của sân con phải nằm trong giờ mở cửa của cơ sở thể thao.",
+            details=[
+                {
+                    "field": "open_time",
+                    "issue": f"Giờ mở cửa và đóng cửa phải nằm trong khoảng {facility_open} - {facility_close}.",
+                }
+            ],
+        )
+
+    try:
+        court = Court(
+            facility_id=facility.id,
+            sport_id=body.sport_id,
+            name=body.name,
+            court_type=body.court_type,
+            environment=body.environment,
+            open_time=body.open_time,
+            close_time=body.close_time,
+            is_active=True,
+        )
+        db.add(court)
+        db.flush()  # Sinh court.id nhưng chưa commit
+
+        # Lấy tất cả khung giờ trong hệ thống nằm trong [open_time, close_time]
+        matching_slots = (
+            db.query(TimeSlot)
+            .filter(
+                TimeSlot.start_time >= court.open_time,
+                TimeSlot.end_time <= court.close_time,
+            )
+            .order_by(TimeSlot.start_time.asc())
+            .all()
+        )
+
+        for slot in matching_slots:
+            court_slot = CourtSlot(
+                court_id=court.id,
+                time_slot_id=slot.id,
+                base_price=body.default_base_price,
+                is_active=True,
+            )
+            db.add(court_slot)
+
+        db.commit()
+        db.refresh(court)
+
+        return {
+            "success": True,
+            "message": "Tạo sân con thành công.",
+            "data": format_court(court),
+        }
+    except Exception:
+        db.rollback()
+        raise
