@@ -1,4 +1,5 @@
 import re
+from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 
 # Regex kiểm tra định dạng email tiêu chuẩn
@@ -73,5 +74,43 @@ class UserRegisterResponseData(BaseModel):
     role: str = Field(..., description="Vai trò người dùng (dạng chữ thường)")
     wallet_id: int = Field(..., description="Mã định danh ví nội bộ")
     balance: int = Field(0, description="Số dư ban đầu của ví (VNĐ)")
+
+    model_config = {"from_attributes": True}
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(..., max_length=255, description="Địa chỉ email đăng nhập")
+    password: str = Field(..., min_length=1, description="Mật khẩu tài khoản")
+
+
+class UserBrief(BaseModel):
+    id: int = Field(..., description="Mã người dùng")
+    name: str = Field(..., description="Họ và tên")
+    email: str = Field(..., description="Địa chỉ email")
+    role: str = Field(..., description="Vai trò người dùng (dạng chữ thường)")
+
+    model_config = {"from_attributes": True}
+
+
+class LoginResponseData(BaseModel):
+    access_token: str = Field(..., description="Mã JWT Access Token xác thực")
+    token_type: str = Field("bearer", description="Loại token")
+    user: UserBrief = Field(..., description="Thông tin người dùng")
+
+
+class WalletBrief(BaseModel):
+    id: int = Field(..., description="Mã ví")
+    balance: int = Field(..., description="Số dư ví (VNĐ)")
+
+    model_config = {"from_attributes": True}
+
+
+class UserProfileResponseData(BaseModel):
+    id: int = Field(..., description="Mã người dùng")
+    name: str = Field(..., description="Họ và tên")
+    email: str = Field(..., description="Địa chỉ email")
+    phone: str = Field(..., description="Số điện thoại")
+    role: str = Field(..., description="Vai trò người dùng")
+    wallet: Optional[WalletBrief] = Field(None, description="Thông tin ví nội bộ")
 
     model_config = {"from_attributes": True}

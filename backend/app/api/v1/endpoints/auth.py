@@ -1,14 +1,23 @@
 import logging
+from typing import Optional
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_current_user, get_db
 from app.core.exceptions import BusinessException
-from app.core.security import hash_password
+from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import Role, User, UserRole
 from app.models.wallet import Wallet
-from app.schemas.auth import UserRegisterRequest, UserRegisterResponseData
+from app.schemas.auth import (
+    LoginRequest,
+    LoginResponseData,
+    UserBrief,
+    UserProfileResponseData,
+    UserRegisterRequest,
+    UserRegisterResponseData,
+    WalletBrief,
+)
 from app.schemas.common import SingleResponse
 
 logger = logging.getLogger(__name__)
@@ -132,4 +141,133 @@ def register(
             wallet_id=wallet.id,
             balance=wallet.balance,
         ),
+    )
+
+
+@router.post(
+    "/login",
+    status_code=status.HTTP_200_OK,
+    response_model=SingleResponse[LoginResponseData],
+    summary="Đăng nhập hệ thống",
+    description="Xác thực thông tin qua email/mật khẩu, cấp mã Access Token JWT chuẩn HMAC-SHA256.",
+)
+def login(
+    payload: LoginRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Quy trình đăng nhập:
+    - Tìm kiếm người dùng qua email chuẩn hóa (chữ thường).
+    - So sánh mật khẩu băm Bcrypt.
+    - Bảo mật: Nếu sai email hoặc mật khẩu, trả về cùng mã HTTP 401 Unauthorized
+      với cùng error code 'AUTH_INVALID_CREDENTIALS' và message 'Email hoặc mật khẩu không chính xác.'.
+    - Kiểm tra trạng thái tài khoản: Nếu is_active = False, từ chối với HTTP 400 Bad Request.
+    - Tạo JWT Access Token chứa sub=user.id và role.
+    """
+    normalized_email = payload.email.strip().lower()
+    user = db.query(User).filter(User.email == normalized_email).first()
+
+    # Chống enumeration: sai email hay sai mật khẩu đều trả cùng mã lỗi
+    if not user or not verify_password(payload.password, user.password_hash):
+        raise BusinessException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            code="AUTH_INVALID_CREDENTIALS",
+            message="Email hoặc mật khẩu không chính xác.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Kiểm tra trạng thái hoạt động của tài khoản
+    if not user.is_active:
+        raise BusinessException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="INVALID_REQUEST",
+            message="Tài khoản đã bị vô hiệu hóa.",
+        )
+
+    user_role = user.role_names[0] if user.role_names else "customer"
+
+    token_payload = {
+        "sub": str(user.id),
+        "user_id": user.id,
+        "email": user.email,
+        "role": user_role,
+        "roles": user.role_names,
+    }
+    access_token = create_access_token(data=token_payload)
+
+    return SingleResponse(
+        success=True,
+        message="Đăng nhập thành công.",
+        data=LoginResponseData(
+            access_token=access_token,
+            token_type="bearer",
+            user=UserBrief(
+                id=user.id,
+                name=user.name,
+                email=user.email,
+                role=user_role,
+            ),
+        ),
+    )
+
+
+@router.get(
+    "/me",
+    status_code=status.HTTP_200_OK,
+    response_model=SingleResponse[UserProfileResponseData],
+    summary="Lấy thông tin hồ sơ & Số dư ví hiện tại",
+    description="Trả về thông tin hồ sơ và số dư ví của tài khoản đang đăng nhập.",
+)
+def get_me(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Lấy thông tin tài khoản hiện tại:
+    - Yêu cầu xác thực qua header 'Authorization: Bearer <token>'.
+    - Lấy thông tin người dùng và ví nội bộ tương ứng.
+    """
+    wallet = current_user.wallet
+    if not wallet:
+        wallet = db.query(Wallet).filter(Wallet.user_id == current_user.id).first()
+
+    wallet_brief: Optional[WalletBrief] = None
+    if wallet:
+        wallet_brief = WalletBrief(id=wallet.id, balance=wallet.balance)
+
+    user_role = current_user.role_names[0] if current_user.role_names else "customer"
+
+    return SingleResponse(
+        success=True,
+        message="Lấy thông tin tài khoản thành công.",
+        data=UserProfileResponseData(
+            id=current_user.id,
+            name=current_user.name,
+            email=current_user.email,
+            phone=current_user.phone,
+            role=user_role,
+            wallet=wallet_brief,
+        ),
+    )
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_200_OK,
+    response_model=SingleResponse[None],
+    summary="Đăng xuất hệ thống",
+    description="Đăng xuất khỏi hệ thống, trả data: null theo mục 2.1.C của api-conventions.md.",
+)
+def logout(
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Đăng xuất:
+    - Yêu cầu Bearer token hợp lệ.
+    - Trả về data: null theo quy ước thao tác không trả dữ liệu.
+    """
+    return SingleResponse(
+        success=True,
+        message="Đăng xuất thành công.",
+        data=None,
     )
