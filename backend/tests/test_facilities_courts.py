@@ -14,7 +14,7 @@ from app.core.database import Base
 from app.core.security import create_access_token, hash_password
 from app.main import app
 from app.models.booking import Booking, BookingSlot
-from app.models.facility import Court, CourtSlot, Facility, Sport, TimeSlot
+from app.models.facility import Court, CourtSlot, Facility, Service, Sport, TimeSlot
 from app.models.user import Role, User, UserRole
 
 # SQLite chỉ autoincrement với INTEGER PRIMARY KEY nên biên dịch BigInteger thành INTEGER
@@ -256,6 +256,15 @@ def setup_db():
     db.commit()
     for slot_id in range(2, 17):
         db.add(CourtSlot(court_id=10, time_slot_id=slot_id, base_price=200000, is_active=True))
+    db.commit()
+
+    # 7. Services: cơ sở 1 có 2 dịch vụ đang bán + 1 dịch vụ đã tắt; cơ sở 3 (Owner B) có 1 dịch vụ
+    db.add_all([
+        Service(id=1, facility_id=1, name="Thuê vợt", unit_price=20000, unit="bộ/giờ", is_active=True),
+        Service(id=2, facility_id=1, name="Nước khoáng", unit_price=10000, unit="chai", is_active=True),
+        Service(id=3, facility_id=1, name="Dịch vụ đã tắt", unit_price=5000, unit="cái", is_active=False),
+        Service(id=4, facility_id=3, name="Bóng thi đấu", unit_price=50000, unit="quả", is_active=True),
+    ])
     db.commit()
 
     db.close()
@@ -880,3 +889,83 @@ class TestPlayDateUsesVietnamToday:
         monkeypatch.setattr(courts_module, "today_vn", lambda: play_date + timedelta(days=1))
         res = client.patch("/api/v1/courts/10", json={"is_active": False}, headers=headers)
         assert res.status_code == 200
+
+
+# ==============================================================================
+# SUBTASK 4 TESTS: DỊCH VỤ ĐI KÈM (2.11, 2.12, 2.13)
+# ==============================================================================
+class TestSubtask4Services:
+    def test_2_11_list_services_only_active(self, client, setup_db):
+        """2.11 Danh sách công khai chỉ hiện dịch vụ is_active = true."""
+        res = client.get("/api/v1/facilities/1/services")
+        assert res.status_code == 200
+        data = res.json()["data"]
+        assert [s["id"] for s in data] == [1, 2]
+        assert all(s["is_active"] and s["facility_id"] == 1 for s in data)
+
+    def test_2_11_list_services_inactive_or_missing_facility(self, client, setup_db):
+        """2.11 Cơ sở ngưng hoạt động / không tồn tại trả về 404 FACILITY_NOT_FOUND."""
+        for fid in (2, 9999):
+            res = client.get(f"/api/v1/facilities/{fid}/services")
+            assert res.status_code == 404
+            assert res.json()["error"]["code"] == "FACILITY_NOT_FOUND"
+
+    def test_2_12_create_service_success(self, client, setup_db):
+        """2.12 Chủ cơ sở tạo dịch vụ mới, mặc định is_active = true."""
+        body = {"name": "Thuê giày thể thao", "unit_price": 30000, "unit": "đôi/buổi"}
+        res = client.post("/api/v1/facilities/1/services", json=body, headers=get_token(3))
+        assert res.status_code == 201
+        data = res.json()["data"]
+        assert data["facility_id"] == 1
+        assert data["unit_price"] == 30000
+        assert data["is_active"] is True
+        # Dịch vụ mới xuất hiện trong danh sách công khai
+        listed = client.get("/api/v1/facilities/1/services").json()["data"]
+        assert data["id"] in [s["id"] for s in listed]
+
+    def test_2_12_create_service_negative_price_rejected(self, client, setup_db):
+        """2.12 unit_price âm bị từ chối 422 VALIDATION_ERROR."""
+        body = {"name": "Giá âm", "unit_price": -1, "unit": "cái"}
+        res = client.post("/api/v1/facilities/1/services", json=body, headers=get_token(3))
+        assert res.status_code == 422
+        assert res.json()["error"]["code"] == "VALIDATION_ERROR"
+
+    def test_2_12_create_service_other_owner_forbidden(self, client, setup_db):
+        """2.12 Chủ khác tạo dịch vụ cho cơ sở không phải của mình bị 403."""
+        body = {"name": "Xâm phạm", "unit_price": 1000, "unit": "cái"}
+        res = client.post("/api/v1/facilities/1/services", json=body, headers=get_token(6))
+        assert res.status_code == 403
+
+    def test_2_12_create_service_customer_forbidden(self, client, setup_db):
+        """2.12 Khách hàng không được tạo dịch vụ."""
+        body = {"name": "Khách tạo", "unit_price": 1000, "unit": "cái"}
+        res = client.post("/api/v1/facilities/1/services", json=body, headers=get_token(4))
+        assert res.status_code == 403
+
+    def test_2_13_update_service_success(self, client, setup_db):
+        """2.13 Chủ cơ sở cập nhật đơn giá và tắt dịch vụ; dịch vụ tắt biến mất khỏi danh sách công khai."""
+        res = client.patch("/api/v1/services/2", json={"unit_price": 12000, "is_active": False}, headers=get_token(3))
+        assert res.status_code == 200
+        data = res.json()["data"]
+        assert data["unit_price"] == 12000
+        assert data["is_active"] is False
+        listed = client.get("/api/v1/facilities/1/services").json()["data"]
+        assert 2 not in [s["id"] for s in listed]
+
+    def test_2_13_update_service_negative_price_rejected(self, client, setup_db):
+        """2.13 unit_price âm bị từ chối 422 và không đổi dữ liệu."""
+        res = client.patch("/api/v1/services/1", json={"unit_price": -5000}, headers=get_token(3))
+        assert res.status_code == 422
+        assert res.json()["error"]["code"] == "VALIDATION_ERROR"
+        listed = client.get("/api/v1/facilities/1/services").json()["data"]
+        assert next(s for s in listed if s["id"] == 1)["unit_price"] == 20000
+
+    def test_2_13_update_service_other_owner_forbidden(self, client, setup_db):
+        """2.13 Chủ khác sửa dịch vụ của cơ sở không phải của mình bị 403."""
+        res = client.patch("/api/v1/services/1", json={"unit_price": 1}, headers=get_token(6))
+        assert res.status_code == 403
+
+    def test_2_13_update_service_not_found(self, client, setup_db):
+        """2.13 Dịch vụ không tồn tại trả về 404."""
+        res = client.patch("/api/v1/services/9999", json={"unit_price": 1}, headers=get_token(3))
+        assert res.status_code == 404
