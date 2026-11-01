@@ -117,7 +117,7 @@ Cột "Cấp" là nơi nên kiểm: Unit (hàm tính, không cần CSDL), DB (r�
 | VI-04 | Xem lịch sử giao dịch | Đủ giao dịch, đúng loại, chỉ thấy ví của mình | QĐ6 | API |
 | VI-05 | Sau cọc, hủy, kết toán | Tổng số dư các ví không đổi, số dư mỗi ví khớp tổng giao dịch của ví đó | QĐ6 | DB |
 
-## 4. Kịch bản xác thực và phân quyền (Epic SCB-67)
+## 4. Kịch bản xác thực và phân quyền - Epic 1 (SCB-67)
 
 Endpoint xem ở `docs/api-endpoints.md` mục 1.1 đến 1.4 và 2.3. Dữ liệu dùng chung lấy từ seed `database/seeds/S1__sample_data.sql`, tài khoản và mật khẩu xem ở `database/README.md`. Dùng Khách A (`customer.a@scb.vn`, số điện thoại `0900000003`, mật khẩu `TestPass123@`). Test chạy trên CSDL test đã nạp seed. Người đăng ký mới trong AUTH-01 dùng email `new.user@scb.vn` và số điện thoại `0900000010`, không có trong seed.
 
@@ -130,7 +130,7 @@ Endpoint xem ở `docs/api-endpoints.md` mục 1.1 đến 1.4 và 2.3. Dữ li�
 | AUTH-05 | Gọi API cần đăng nhập khi thiếu token | QĐ7 | Không gửi header `Authorization` | `GET /auth/me` | 401 `AUTH_UNAUTHORIZED` |
 | AUTH-06 | Khách gọi API của chủ sân | QĐ7 | Khách A đã đăng nhập, có `access_token` | `POST /facilities` với token của Khách A, body hợp lệ | 403 `AUTH_FORBIDDEN`<br>Không tạo cơ sở |
 
-## 5. Kịch bản quản lý sân và bảng giá (Epic SCB-2)
+## 5. Kịch bản quản lý sân và bảng giá - Epic 2 (SCB-2)
 
 Endpoint xem ở `docs/api-endpoints.md` mục 2.7, 2.8. Dữ liệu dùng chung lấy từ seed `database/seeds/S1__sample_data.sql`: cơ sở 1 của `owner@scb.vn` (Chủ sân A), sân 1 và sân 2 giá cơ sở 100.000đ/giờ, giờ mở 06:00 đến 23:00. Bảng giá seed của cơ sở 1: cao điểm 17:00 đến 21:00 hệ số 1,30, thứ Bảy và Chủ nhật hệ số 1,40, Tết Dương Lịch hệ số 1,50. Các kịch bản giá chỉ kiểm hệ số và việc lưu quy tắc, tính tiền đặt sân thuộc Sprint 3.
 
