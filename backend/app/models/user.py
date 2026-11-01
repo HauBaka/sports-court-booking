@@ -39,6 +39,7 @@ class User(Base):
     avatar_url = Column(String(512), nullable=True)
 
     roles = relationship("Role", secondary="user_roles", back_populates="users", lazy="joined")
+    wallet = relationship("Wallet", back_populates="user", uselist=False)
 
     @property
     def role_names(self) -> List[str]:
