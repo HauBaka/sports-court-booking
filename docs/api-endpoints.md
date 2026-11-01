@@ -44,6 +44,17 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
 
 ## 2. DANH SÁCH ENDPOINTS CHI TIẾT THEO EPIC
 
+Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 3.1.1). Bảng ánh xạ:
+
+| Chức năng (proposal) | Epic Jira | Epic API |
+| --- | --- | --- |
+| Nền tảng đăng nhập | SCB-67 | Epic 1 |
+| 1 Quản lý sân và bảng giá | SCB-2 | Epic 2 |
+| 2 Tìm và đặt sân | SCB-3 | Epic 3 |
+| 3 Cọc và hoàn cọc qua ví | SCB-4 | Epic 4, Epic 5, mục 3.4 của Epic 3 |
+| 4 Ghép đội | SCB-5 | Epic 6 |
+| 5 Tiện ích | SCB-6 | Dịch vụ đi kèm (2.11 đến 2.13) nằm ở Epic 2, đánh giá và dashboard chưa có API |
+
 ---
 
 ### 🟢 EPIC 1: XÁC THỰC VÀ PHÂN QUYỀN (AUTH & USER MANAGEMENT)
