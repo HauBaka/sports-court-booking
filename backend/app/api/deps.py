@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import verify_token
 from app.models.user import User
-from app.models.facility import Facility, Court
+from app.models.facility import Facility, Court, Service
 
 # HTTPBearer với auto_error=False để tự xử lý trả về mã lỗi 401 Unauthorized khi thiếu header
 security_bearer = HTTPBearer(auto_error=False)
@@ -151,6 +151,35 @@ def get_facility_for_owner(
         )
 
     return facility
+
+
+def get_service_for_owner(
+    service_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Service:
+    """
+    Dependency kiểm tra quyền chủ sở hữu đối với dịch vụ (Service) qua cơ sở cha.
+
+    Quy tắc:
+    - Dịch vụ không tồn tại: HTTP 404 Not Found.
+    - Cơ sở chứa dịch vụ thuộc chủ khác: HTTP 403 Forbidden.
+    """
+    service = db.query(Service).filter(Service.id == service_id).first()
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Dịch vụ với ID {service_id} không tồn tại.",
+        )
+
+    facility = db.query(Facility).filter(Facility.id == service.facility_id).first()
+    if not facility or cast(int, facility.owner_id) != cast(int, current_user.id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn không có quyền quản lý dịch vụ này.",
+        )
+
+    return service
 
 
 def get_court_for_owner(
