@@ -1,6 +1,5 @@
-# Use this workspace to collaborate
-workspace:
-  id: dbb61ae8-d758-432a-beb4-7cbd352df479
+# Không khai báo workspace: bản Postman free không dùng chung workspace được,
+# khai báo id sẽ khiến Postman bắt người mở thư mục tham gia workspace đó.
 
 # All resources in the `postman/` folder are automatically registered in Local View.
 # Point to additional files outside the `postman/` folder to register them individually. Example:

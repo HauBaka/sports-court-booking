@@ -1,0 +1,44 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/auth/register'
+order: 1100
+auth:
+  type: noauth
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Nguyễn Văn A",
+      "email": "new.user@scb.vn",
+      "phone": "0900000010",
+      "password": "{{user_password}}",
+      "role": "customer"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const ID = "AUTH-01";
+      const body = pm.response.json();
+      pm.test(ID + ": 201, role customer, ví số dư 0", () => {
+        pm.response.to.have.status(201);
+        pm.expect(body.data.role).to.eql("customer");
+        pm.expect(body.data.wallet_id).to.exist;
+        pm.expect(body.data.balance).to.eql(0);
+      });
+      pm.test(ID + ": phản hồi không chứa mật khẩu", () => {
+        pm.expect(pm.response.text()).to.not.include("password");
+      });
+      const base = pm.environment.get("base_url");
+      pm.sendRequest({url: base + "/auth/login", method: "POST",
+        header: {"Content-Type": "application/json"},
+        body: {mode: "raw", raw: JSON.stringify({email: "new.user@scb.vn", password: pm.environment.get("user_password")})}
+      }, (e, login) => {
+        const token = login.json().data.access_token;
+        pm.sendRequest({url: base + "/auth/me", method: "GET", header: {Authorization: "Bearer " + token}}, (e2, me) => {
+          pm.test(ID + ": GET /auth/me có wallet.balance = 0", () => pm.expect(me.json().data.wallet.balance).to.eql(0));
+        });
+      });

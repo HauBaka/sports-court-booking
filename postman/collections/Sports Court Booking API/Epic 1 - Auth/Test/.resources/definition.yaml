@@ -1,0 +1,4 @@
+$kind: collection
+name: 'Test'
+description: 'Request theo mã kịch bản trong docs/test-scenarios.md, dùng để thử tay'
+order: 9000
