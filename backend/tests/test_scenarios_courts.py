@@ -7,7 +7,6 @@ from sqlalchemy import text
 
 from app.core.database import engine
 
-pytestmark = pytest.mark.skip(reason="Chờ API cơ sở, sân con, bảng giá (SCB-84, SCB-86, SCB-90). Bỏ dòng này khi API xong")
 
 API = "/api/v1"
 PASSWORD = "TestPass123@"

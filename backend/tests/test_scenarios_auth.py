@@ -1,7 +1,6 @@
 """Kịch bản AUTH-01..06 (docs/test-scenarios.md mục 4). Chạy trên CSDL test đã nạp seed."""
 import pytest
 
-pytestmark = pytest.mark.skip(reason="Chờ API đăng ký, đăng nhập, hồ sơ (SCB-80, SCB-81) và dependency phân quyền (SCB-76). Bỏ dòng này khi API xong")
 
 API = "/api/v1"
 PASSWORD = "TestPass123@"  # mật khẩu tài khoản seed, xem database/README.md
