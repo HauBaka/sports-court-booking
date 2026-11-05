@@ -32,22 +32,27 @@ def count_rules():
 
 @pytest.mark.parametrize("code, multiplier", [("san_04", 1.10), ("san_05", 1.60)])
 def test_san_04_05_he_so_ngoai_bien(client, code, multiplier):
+    rules_before = count_rules()
     res = client.post(f"{API}/facilities/1/pricing-rules", json=peak_rule(multiplier), headers=auth(client, "owner1@scb.vn"))
     assert res.status_code == 422
     assert res.json()["error"]["code"] == "VALIDATION_ERROR"
-    assert count_rules() == 4  # bảng giá seed không đổi
+    assert count_rules() == rules_before  # bảng giá seed không đổi
+
+
+def court_name(court_id):
+    with engine.connect() as conn:
+        return conn.execute(text("SELECT name FROM courts WHERE id = :id"), {"id": court_id}).scalar()
 
 
 def test_san_06_sua_san_cua_chu_khac(client):
+    name_before = court_name(1)
     client.post(f"{API}/auth/register", json={
         "name": "Chủ Sân B", "email": "owner.b@scb.vn", "phone": "0900000020", "password": PASSWORD, "role": "owner",
     })
     res = client.patch(f"{API}/courts/1", json={"name": "Sân bị đổi tên trái phép"}, headers=auth(client, "owner.b@scb.vn"))
     assert res.status_code == 403
     assert res.json()["error"]["code"] == "AUTH_FORBIDDEN"
-    with engine.connect() as conn:
-        name = conn.execute(text("SELECT name FROM courts WHERE id = 1")).scalar()
-    assert name == "Sân Cầu Lông 1 (Thảm Yonex)"
+    assert court_name(1) == name_before
 
 
 @pytest.fixture
