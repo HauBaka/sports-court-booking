@@ -1,11 +1,23 @@
 # Postman
 
-Workspace Postman dùng chung để thử API. Request nằm trong `postman/`, đồng bộ qua Git.
+Bản Postman free không dùng chung workspace được, nên request nằm trong `postman/` và đồng bộ qua Git. Mỗi người tự mở trên máy mình.
 
 ## 1. Truy cập
 
-- Workspace: mở `.postman/resources.yaml`, lấy `workspace.id`, hoặc xin lời mời từ PM.
-- Postman bản desktop: mở thư mục repo bằng Local View, chọn environment `local` hoặc `dev`.
+- Pull repo mới nhất.
+- Import 3 file trong `docs/postman-export/`: `Sports Court Booking API.postman_collection.json`, `local.postman_environment.json`, `dev.postman_environment.json`. Chọn environment `local` hoặc `dev`.
+- Không mở thư mục repo bằng Local View, vì Postman đòi tham gia workspace. Không tạo hay tham gia workspace chung.
+- Import lại các file JSON mỗi khi có người sửa collection.
+
+## 1.1. Cập nhật file JSON
+
+Nguồn chính vẫn là YAML trong `postman/`. Sau khi sửa request hoặc environment, tạo lại JSON rồi commit cùng nhau:
+
+```
+python3 docs/postman-export/build_json.py
+```
+
+Cần cài `pyyaml`. Không sửa tay các file JSON.
 
 ## 2. Environment
 
