@@ -1,14 +1,23 @@
 import logging
+from typing import Optional
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_current_user, get_db
 from app.core.exceptions import BusinessException
-from app.core.security import hash_password
+from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import Role, User, UserRole
 from app.models.wallet import Wallet
-from app.schemas.auth import UserRegisterRequest, UserRegisterResponseData
+from app.schemas.auth import (
+    LoginRequest,
+    LoginResponseData,
+    UserBrief,
+    UserProfileResponseData,
+    UserRegisterRequest,
+    UserRegisterResponseData,
+    WalletBrief,
+)
 from app.schemas.common import SingleResponse
 
 logger = logging.getLogger(__name__)
