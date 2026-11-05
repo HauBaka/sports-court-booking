@@ -164,6 +164,7 @@ Khi xảy ra lỗi (HTTP Status >= 400), response trả về luôn tuân theo m�
 | | `PRICING_NOT_FOUND` | **404** | Chưa cấu hình bảng giá cơ sở hoặc bảng giá theo thời điểm cho khung giờ này. |
 | | `CANNOT_UPDATE_COURT_SCHEDULE_ACTIVE_BOOKINGS` | **400** | Không thể đổi giờ mở/đóng cửa vì đang có đơn đặt cọc hợp lệ trong tương lai. |
 | | `CANNOT_DEACTIVATE_COURT_ACTIVE_BOOKINGS` | **400** | Không thể tắt hoạt động sân (`is_active = false`) vì đang có đơn đặt cọc trong tương lai. |
+| | `HOLIDAY_DATE_EXISTS` | **409** | Ngày lễ (`holiday_date`) đã có trong danh sách, không được tạo trùng (ánh xạ từ `uq_holidays_date`). |
 | **4. Đặt sân & Giữ chỗ (Bookings)** | `BOOKING_NOT_FOUND` | **404** | Không tìm thấy đơn đặt sân. |
 | | `SLOT_ALREADY_BOOKED` | **409** | Khung giờ đã có người đặt cọc (`DEPOSITED`) hoặc đang trong thời gian giữ chỗ hợp lệ (`PENDING_DEPOSIT`). |
 | | `INVALID_BOOKING_TIME` | **400** | Thời gian bắt đầu phải ở tương lai, không cho đặt khung giờ trong quá khứ. |

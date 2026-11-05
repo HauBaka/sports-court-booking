@@ -72,6 +72,22 @@ class Court(Base):
         return f"<Court id={self.id} name={self.name} facility_id={self.facility_id}>"
 
 
+class Service(Base):
+    __tablename__ = "services"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    facility_id = Column(BigInteger, ForeignKey("facilities.id"), nullable=False)
+    name = Column(String(255), nullable=False)
+    unit_price = Column(BigInteger, nullable=False, default=0)
+    unit = Column(String(50), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+
+    facility = relationship("Facility")
+
+    def __repr__(self) -> str:
+        return f"<Service id={self.id} name={self.name} facility_id={self.facility_id}>"
+
+
 class TimeSlot(Base):
     __tablename__ = "time_slots"
 

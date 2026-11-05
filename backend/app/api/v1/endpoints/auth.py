@@ -118,7 +118,11 @@ def register(
     except Exception as exc:
         db.rollback()
         logger.error(f"Error during user registration transaction: {exc}", exc_info=True)
-        raise
+        raise BusinessException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code="INTERNAL_SERVER_ERROR",
+            message="Đăng ký tài khoản thất bại do lỗi hệ thống.",
+        ) from exc
 
     return SingleResponse(
         success=True,

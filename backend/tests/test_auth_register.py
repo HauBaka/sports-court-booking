@@ -280,6 +280,47 @@ def test_register_duplicate_phone_returns_409(client: TestClient):
     assert res_data["error"]["code"] == "AUTH_PHONE_EXISTS"
 
 
+def test_register_phone_normalization_and_duplicate(client: TestClient):
+    """
+    Test chuẩn hóa số điện thoại:
+    - Nhập số dạng quốc tế '+84901234567' được tự động chuẩn hóa về '0901234567'.
+    - Khi tài khoản 1 đăng ký với '0901234567', tài khoản 2 đăng ký với '+84901234567'
+      sẽ bị bắt trùng và trả về HTTP 409 AUTH_PHONE_EXISTS.
+    """
+    # 1. Đăng ký tài khoản với số điện thoại dạng +84
+    payload1 = {
+        "name": "Người Dùng VN",
+        "email": "user_vn1@example.com",
+        "phone": "+84901234567",
+        "password": "Password123@",
+        "role": "customer",
+    }
+    res1 = client.post("/api/v1/auth/register", json=payload1)
+    assert res1.status_code == 201
+    data1 = res1.json()["data"]
+    # Số điện thoại trả về đã được chuẩn hóa về '0901234567'
+    assert data1["phone"] == "0901234567"
+
+    # Kiểm tra DB lưu đúng số đã chuẩn hóa
+    db: Session = TestingSessionLocal()
+    user1 = db.query(User).filter(User.email == payload1["email"]).first()
+    assert user1 is not None
+    assert user1.phone == "0901234567"
+    db.close()
+
+    # 2. Đăng ký tài khoản khác với cùng số điện thoại nhưng dạng '0901234567'
+    payload2 = {
+        "name": "Người Dùng Trùng",
+        "email": "user_vn2@example.com",
+        "phone": "0901234567",
+        "password": "Password123@",
+        "role": "customer",
+    }
+    res2 = client.post("/api/v1/auth/register", json=payload2)
+    assert res2.status_code == 409
+    assert res2.json()["error"]["code"] == "AUTH_PHONE_EXISTS"
+
+
 # ==============================================================================
 # 4. TEST VALIDATION MẬT KHẨU YẾU VÀ EMAIL SAI ĐỊNH DẠNG (HTTP 422)
 # ==============================================================================
@@ -356,6 +397,7 @@ def test_rollback_on_wallet_creation_failure(client: TestClient):
     Lỗi ở bước tạo ví thì không còn bản ghi users nào trong DB (test rollback).
     - Giả lập lỗi khi insert/add ví.
     - Transaction phải rollback toàn bộ.
+    - Trả về mã lỗi 500 với cấu trúc INTERNAL_SERVER_ERROR chuẩn.
     - Kiểm tra bảng users, user_roles và wallets không còn bất kỳ dữ liệu nào.
     """
     payload = {
@@ -383,8 +425,12 @@ def test_rollback_on_wallet_creation_failure(client: TestClient):
 
     with patch.object(Session, "add", side_effect=mock_add, autospec=True):
         response = client.post("/api/v1/auth/register", json=payload)
-        # Server phải trả về mã lỗi 500 do Runtime Exception không bắt trước
+        # Server phải trả về mã lỗi 500 với format chuẩn của hệ thống
         assert response.status_code == 500
+        res_data = response.json()
+        assert res_data["success"] is False
+        assert res_data["error"]["code"] == "INTERNAL_SERVER_ERROR"
+        assert "lỗi hệ thống" in res_data["error"]["message"].lower()
 
     # KIỂM TRA TÍNH TOÀN VẸN CỦA CSDL SAU KHI ROLLBACK:
     db_verify: Session = TestingSessionLocal()
