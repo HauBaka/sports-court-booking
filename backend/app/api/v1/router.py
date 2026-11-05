@@ -1,5 +1,13 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, courts, facilities, health, holidays, pricing_rules, services
+from app.api.v1.endpoints import (
+    auth,
+    courts,
+    facilities,
+    health,
+    holidays,
+    pricing_rules,
+    services,
+)
 
 api_router = APIRouter()
 api_router.include_router(health.router, tags=["Health"])
