@@ -1,0 +1,1542 @@
+{
+  "info": {
+    "name": "Sports Court Booking API",
+    "description": "Request theo Epic, lấy từ docs/api-endpoints.md. Đăng nhập (1.2) tự lưu access_token vào environment.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Epic 1 - Auth",
+      "item": [
+        {
+          "name": "1.1 Đăng ký tài khoản mới",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"customer@example.com\",\n  \"phone\": \"0901234567\",\n  \"password\": \"SecurePassword123@\",\n  \"role\": \"customer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "1.2 Đăng nhập hệ thống",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  pm.environment.set(\"access_token\", pm.response.json().data.access_token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.3 Lấy thông tin hồ sơ & Số dư ví hiện tại",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "1.4 Đăng xuất hệ thống",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Test",
+          "item": [
+            {
+              "name": "1.1 Đăng ký tài khoản mới - AUTH-01",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/register",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"new.user@scb.vn\",\n  \"phone\": \"0900000010\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const ID = \"AUTH-01\";",
+                      "const body = pm.response.json();",
+                      "pm.test(ID + \": 201, role customer, ví số dư 0\", () => {",
+                      "  pm.response.to.have.status(201);",
+                      "  pm.expect(body.data.role).to.eql(\"customer\");",
+                      "  pm.expect(body.data.wallet_id).to.exist;",
+                      "  pm.expect(body.data.balance).to.eql(0);",
+                      "});",
+                      "pm.test(ID + \": phản hồi không chứa mật khẩu\", () => {",
+                      "  pm.expect(pm.response.text()).to.not.include(\"password\");",
+                      "});",
+                      "const base = pm.environment.get(\"base_url\");",
+                      "pm.sendRequest({url: base + \"/auth/login\", method: \"POST\",",
+                      "  header: {\"Content-Type\": \"application/json\"},",
+                      "  body: {mode: \"raw\", raw: JSON.stringify({email: \"new.user@scb.vn\", password: pm.environment.get(\"user_password\")})}",
+                      "}, (e, login) => {",
+                      "  const token = login.json().data.access_token;",
+                      "  pm.sendRequest({url: base + \"/auth/me\", method: \"GET\", header: {Authorization: \"Bearer \" + token}}, (e2, me) => {",
+                      "    pm.test(ID + \": GET /auth/me có wallet.balance = 0\", () => pm.expect(me.json().data.wallet.balance).to.eql(0));",
+                      "  });",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.1 Đăng ký tài khoản mới - AUTH-02",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/register",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"{{user_email}}\",\n  \"phone\": \"0900000010\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"AUTH-02: status 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"AUTH-02: mã lỗi AUTH_EMAIL_EXISTS\", () => pm.expect(pm.response.json().error.code).to.eql(\"AUTH_EMAIL_EXISTS\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.1 Đăng ký tài khoản mới - AUTH-03",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/register",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"new.user@scb.vn\",\n  \"phone\": \"0900000003\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"AUTH-03: status 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"AUTH-03: mã lỗi AUTH_PHONE_EXISTS\", () => pm.expect(pm.response.json().error.code).to.eql(\"AUTH_PHONE_EXISTS\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.2 Đăng nhập hệ thống - AUTH-04",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"SaiMatKhau123@\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"AUTH-04: status 401\", () => pm.response.to.have.status(401));",
+                      "pm.test(\"AUTH-04: mã lỗi AUTH_INVALID_CREDENTIALS\", () => pm.expect(pm.response.json().error.code).to.eql(\"AUTH_INVALID_CREDENTIALS\"));",
+                      "pm.test(\"AUTH-04: không có access_token\", () => pm.expect(pm.response.text()).to.not.include(\"access_token\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.3 Lấy thông tin hồ sơ & Số dư ví hiện tại - AUTH-05",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/auth/me",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "me"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"AUTH-05: status 401\", () => pm.response.to.have.status(401));",
+                      "pm.test(\"AUTH-05: mã lỗi AUTH_UNAUTHORIZED\", () => pm.expect(pm.response.json().error.code).to.eql(\"AUTH_UNAUTHORIZED\"));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "description": "Request theo mã kịch bản trong docs/test-scenarios.md, dùng để thử tay"
+        }
+      ],
+      "description": "Xác thực và phân quyền"
+    },
+    {
+      "name": "Server Control",
+      "item": [
+        {
+          "name": "Restart server",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{server_control_url}}/api/client/servers/{{server_id}}/power",
+              "host": [
+                "{{server_control_url}}"
+              ],
+              "path": [
+                "api",
+                "client",
+                "servers",
+                "{{server_id}}",
+                "power"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"restart\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{server_token}}",
+                  "type": "string"
+                }
+              ],
+              "type": "bearer"
+            }
+          }
+        }
+      ],
+      "description": "Điều khiển server backend (khởi động lại, bật, tắt) để hỗ trợ CD."
+    },
+    {
+      "name": "Epic 2 - Facilities",
+      "item": [
+        {
+          "name": "2.1 Tra cứu danh sách cơ sở thể thao",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/facilities?page=1&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "facilities"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "2.2 Xem chi tiết cơ sở thể thao và danh sách sân con",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/facilities/{{facility_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "facilities",
+                "{{facility_id}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "2.3 Tạo cơ sở thể thao mới",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/facilities",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "facilities"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cơ Sở Cầu Lông Tân Bình\",\n  \"address\": \"123 Hoàng Hoa Thám, Phường 13, Quận Tân Bình\",\n  \"city\": \"Hồ Chí Minh\",\n  \"district\": \"Quận Tân Bình\",\n  \"latitude\": 10.7992,\n  \"longitude\": 106.6501,\n  \"open_time\": \"06:00:00\",\n  \"close_time\": \"23:00:00\",\n  \"description\": \"Cơ sở cầu lông mới thành lập tại Tân Bình.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "2.4 Lấy danh sách sân con của một cơ sở",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/facilities/{{facility_id}}/courts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "facilities",
+                "{{facility_id}}",
+                "courts"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "2.5 Tạo sân con mới thuộc cơ sở thể thao",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/facilities/{{facility_id}}/courts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "facilities",
+                "{{facility_id}}",
+                "courts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sân 1 - Thảm Tiêu Chuẩn\",\n  \"sport_id\": 1,\n  \"court_type\": \"Tiêu chuẩn thi đấu\",\n  \"environment\": \"INDOOR\",\n  \"open_time\": \"06:00:00\",\n  \"close_time\": \"23:00:00\",\n  \"default_base_price\": 100000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "2.6 Xem chi tiết một sân con cụ thể",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/courts/{{court_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "courts",
+                "{{court_id}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "2.7 Cập nhật thông tin sân con",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/courts/{{court_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "courts",
+                "{{court_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sân Cầu Lông 1 (Thảm Yonex Nâng Cấp)\",\n  \"open_time\": \"06:00:00\",\n  \"close_time\": \"23:00:00\",\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "2.8 Cấu hình quy tắc giá theo thời điểm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/facilities/{{facility_id}}/pricing-rules",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "facilities",
+                "{{facility_id}}",
+                "pricing-rules"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rules\": [\n    {\n      \"name\": \"Giờ vàng 17h-21h các ngày trong tuần\",\n      \"rule_type\": \"PEAK_HOUR\",\n      \"multiplier\": 1.30,\n      \"start_time\": \"17:00:00\",\n      \"end_time\": \"21:00:00\",\n      \"day_of_week\": null,\n      \"holiday_id\": null\n    },\n    {\n      \"name\": \"Ngày Thứ Bảy\",\n      \"rule_type\": \"WEEKEND\",\n      \"multiplier\": 1.40,\n      \"start_time\": null,\n      \"end_time\": null,\n      \"day_of_week\": 6,\n      \"holiday_id\": null\n    },\n    {\n      \"name\": \"Ngày Chủ Nhật\",\n      \"rule_type\": \"WEEKEND\",\n      \"multiplier\": 1.40,\n      \"start_time\": null,\n      \"end_time\": null,\n      \"day_of_week\": 7,\n      \"holiday_id\": null\n    },\n    {\n      \"name\": \"Tết Dương Lịch\",\n      \"rule_type\": \"HOLIDAY\",\n      \"multiplier\": 1.50,\n      \"start_time\": null,\n      \"end_time\": null,\n      \"day_of_week\": null,\n      \"holiday_id\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "2.9 Tra cứu danh mục ngày lễ trong năm",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/holidays",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "holidays"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Test",
+          "item": [
+            {
+              "name": "2.3 Tạo cơ sở thể thao mới - AUTH-06",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/facilities",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "facilities"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Cơ Sở Thử Quyền\",\n  \"address\": \"1 Đường Thử, Quận 1\",\n  \"city\": \"Hồ Chí Minh\",\n  \"district\": \"Quận 1\",\n  \"latitude\": 10.77,\n  \"longitude\": 106.7,\n  \"open_time\": \"06:00:00\",\n  \"close_time\": \"23:00:00\",\n  \"description\": \"Dùng cho AUTH-06, đăng nhập bằng Khách A trước khi chạy.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"AUTH-06: status 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"AUTH-06: mã lỗi AUTH_FORBIDDEN\", () => pm.expect(pm.response.json().error.code).to.eql(\"AUTH_FORBIDDEN\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "2.7 Cập nhật thông tin sân con - SAN-06",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/courts/{{court_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "courts",
+                    "{{court_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Sân bị đổi tên trái phép\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"SAN-06: status 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"SAN-06: mã lỗi AUTH_FORBIDDEN\", () => pm.expect(pm.response.json().error.code).to.eql(\"AUTH_FORBIDDEN\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "2.7 Cập nhật thông tin sân con - SAN-07",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/courts/{{court_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "courts",
+                    "{{court_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"close_time\": \"22:00:00\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"SAN-07: status 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"SAN-07: mã lỗi CANNOT_UPDATE_COURT_SCHEDULE_ACTIVE_BOOKINGS\", () => pm.expect(pm.response.json().error.code).to.eql(\"CANNOT_UPDATE_COURT_SCHEDULE_ACTIVE_BOOKINGS\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "2.7 Cập nhật thông tin sân con - SAN-08",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/courts/{{court_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "courts",
+                    "{{court_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"close_time\": \"22:00:00\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"SAN-08: 200, close_time = 22:00:00\", () => {",
+                      "  pm.response.to.have.status(200);",
+                      "  pm.expect(pm.response.json().data.close_time).to.eql(\"22:00:00\");",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "2.8 Cấu hình quy tắc giá theo thời điểm - SAN-04",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/facilities/{{facility_id}}/pricing-rules",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "facilities",
+                    "{{facility_id}}",
+                    "pricing-rules"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"rules\": [\n    {\n      \"name\": \"Giờ vàng 17h-21h\",\n      \"rule_type\": \"PEAK_HOUR\",\n      \"multiplier\": 1.1,\n      \"start_time\": \"17:00:00\",\n      \"end_time\": \"21:00:00\",\n      \"day_of_week\": null,\n      \"holiday_id\": null\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"SAN-04: status 422\", () => pm.response.to.have.status(422));",
+                      "pm.test(\"SAN-04: mã lỗi VALIDATION_ERROR\", () => pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "2.8 Cấu hình quy tắc giá theo thời điểm - SAN-05",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/facilities/{{facility_id}}/pricing-rules",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "facilities",
+                    "{{facility_id}}",
+                    "pricing-rules"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"rules\": [\n    {\n      \"name\": \"Giờ vàng 17h-21h\",\n      \"rule_type\": \"PEAK_HOUR\",\n      \"multiplier\": 1.6,\n      \"start_time\": \"17:00:00\",\n      \"end_time\": \"21:00:00\",\n      \"day_of_week\": null,\n      \"holiday_id\": null\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"SAN-05: status 422\", () => pm.response.to.have.status(422));",
+                      "pm.test(\"SAN-05: mã lỗi VALIDATION_ERROR\", () => pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "description": "Request theo mã kịch bản trong docs/test-scenarios.md, dùng để thử tay"
+        },
+        {
+          "name": "2.10 Thêm ngày lễ mới vào hệ thống",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/holidays",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "holidays"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Giỗ Tổ Hùng Vương\",\n  \"holiday_date\": \"2026-04-26\",\n  \"recurring_yearly\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "2.11 Tra cứu danh sách dịch vụ đi kèm của cơ sở thể thao",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/facilities/{{facility_id}}/services",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "facilities",
+                "{{facility_id}}",
+                "services"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "2.12 Thêm dịch vụ đi kèm mới cho cơ sở thể thao",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/facilities/{{facility_id}}/services",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "facilities",
+                "{{facility_id}}",
+                "services"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Thuê giày thể thao\",\n  \"unit_price\": 30000,\n  \"unit\": \"đôi/buổi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "2.13 Cập nhật thông tin dịch vụ đi kèm",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/services/{{service_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "services",
+                "{{service_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unit_price\": 35000,\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "description": "Cơ sở, sân con và bảng giá"
+    },
+    {
+      "name": "Epic 3 - Bookings",
+      "item": [
+        {
+          "name": "3.1 Xem sơ đồ khung giờ trống theo ngày của sân con",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/courts/{{court_id}}/slots?date=YYYY-MM-DD",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "courts",
+                "{{court_id}}",
+                "slots"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "YYYY-MM-DD"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "3.2 Xem trước tính tiền đặt sân và tiền cọc",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/calculate-price",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "calculate-price"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"court_id\": 101,\n  \"play_date\": \"2026-11-10\",\n  \"time_slot_ids\": [1, 2],\n  \"services\": [\n    {\n      \"service_id\": 1,\n      \"quantity\": 2\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "3.3 Tạo lịch đặt sân và giữ chỗ tạm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"court_id\": 101,\n  \"play_date\": \"2026-11-10\",\n  \"time_slot_ids\": [1, 2],\n  \"services\": [\n    {\n      \"service_id\": 1,\n      \"quantity\": 2\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "3.4 Thanh toán tiền cọc 30% qua ví nội bộ",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/bookings/{{booking_id}}/deposit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "{{booking_id}}",
+                "deposit"
+              ]
+            }
+          }
+        },
+        {
+          "name": "3.5 Tra cứu danh sách lịch đặt sân",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/bookings?status=&facility_id=&court_id=&from_date=&to_date=&page=1&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": ""
+                },
+                {
+                  "key": "facility_id",
+                  "value": ""
+                },
+                {
+                  "key": "court_id",
+                  "value": ""
+                },
+                {
+                  "key": "from_date",
+                  "value": ""
+                },
+                {
+                  "key": "to_date",
+                  "value": ""
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "3.6 Xem thông tin chi tiết đơn đặt sân",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/bookings/{{booking_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "{{booking_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "3.7 Tác vụ tự động dọn dẹp và nhả giữ chỗ hết hạn",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/bookings/expire-holds",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "bookings",
+                "expire-holds"
+              ]
+            }
+          }
+        }
+      ],
+      "description": "Lịch trống, tính tiền và đặt sân"
+    },
+    {
+      "name": "Epic 4 - Cancellation",
+      "item": [
+        {
+          "name": "4.1 Xem trước số tiền hoàn khi hủy lịch",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/bookings/{{booking_id}}/cancel-preview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "{{booking_id}}",
+                "cancel-preview"
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.2 Thực hiện hủy lịch và xử lý cọc tự động",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/{{booking_id}}/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "{{booking_id}}",
+                "cancel"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cancel_reason\": \"Bận việc gia đình đột xuất\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "4.3 Xác nhận hoàn tất buổi chơi & Kết toán cọc cho chủ sân",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/bookings/{{booking_id}}/complete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "bookings",
+                "{{booking_id}}",
+                "complete"
+              ]
+            }
+          }
+        }
+      ],
+      "description": "Hủy sân, hoàn cọc và kết toán"
+    },
+    {
+      "name": "Epic 5 - Wallets",
+      "item": [
+        {
+          "name": "5.1 Tra cứu số dư ví hiện tại",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/wallets/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "wallets",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "5.2 Tra cứu lịch sử biến động số dư",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/wallets/me/transactions?type=&page=1&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "wallets",
+                "me",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": ""
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5.3 Admin nạp tiền trải nghiệm vào ví người dùng",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/wallet-topups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "wallet-topups"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 12,\n  \"amount\": 500000,\n  \"reason\": \"Cấp số dư tài khoản trải nghiệm đồ án môn học\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "description": "Ví nội bộ và lịch sử giao dịch"
+    },
+    {
+      "name": "Epic 6 - Matchmaking",
+      "item": [
+        {
+          "name": "6.1 Xem danh sách bài đăng tìm đồng đội",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/team-posts?status=OPEN&page=1&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "team-posts"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "OPEN"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "6.2 Tạo bài đăng tìm đồng đội",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/team-posts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "team-posts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"booking_id\": 105,\n  \"title\": \"Cần tìm 2 bạn đánh đôi cầu lông trình độ trung bình khá\",\n  \"players_needed\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "6.3 Đăng ký ứng tuyển tham gia ghép đội",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/team-posts/{{team_post_id}}/applications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "team-posts",
+                "{{team_post_id}}",
+                "applications"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Mình đánh cầu lông 2 năm, xin tham gia giao lưu nhé!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "6.4 Phê duyệt ứng viên tham gia ghép đội",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/team-posts/{{team_post_id}}/applications/{{application_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "team-posts",
+                "{{team_post_id}}",
+                "applications",
+                "{{application_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACCEPTED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "description": "Tìm đồng đội"
+    }
+  ],
+  "auth": {
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ],
+    "type": "bearer"
+  }
+}
