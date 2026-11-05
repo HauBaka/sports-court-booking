@@ -36,6 +36,9 @@ class UserRegisterRequest(BaseModel):
         # Chuẩn hóa: hỗ trợ định dạng số điện thoại Việt Nam (10 chữ số bắt đầu bằng 0 hoặc +84)
         if not re.match(r"^(0|\+84)\d{9}$", cleaned):
             raise ValueError("Số điện thoại không hợp lệ. Số điện thoại phải gồm 10 chữ số.")
+        # Chuẩn hóa về định dạng thống nhất: 0xxxxxxxxx (10 chữ số)
+        if cleaned.startswith("+84"):
+            cleaned = "0" + cleaned[3:]
         return cleaned
 
     @field_validator("password")
