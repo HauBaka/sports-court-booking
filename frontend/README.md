@@ -14,8 +14,8 @@ Dùng `npm ci` để không làm đổi `package-lock.json`. Chỉ dùng `npm in
 ## Lint, test, build
 ```bash
 npm run lint
-npm test            # chạy 1 lần (CI dùng lệnh này)
-npm run test:watch  # chạy lại khi sửa code
+npm test            
+npm run test:watch  
 npm run build
 ```
 
