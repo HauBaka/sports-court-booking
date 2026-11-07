@@ -418,11 +418,16 @@ Mọi dòng tiền (cọc, hoàn cọc, tiền cọc bị mất, kết toán) đ
 Tác nhân: Khách hàng, Chủ sân, Admin, Hệ thống (tiến trình nền). FR-25 đến FR-29 ưu tiên thấp, chưa đặc tả.
 
 ```mermaid
+
 flowchart LR
-  KH([Khách hàng])
-  CS([Chủ sân])
-  AD([Admin])
-  HT([Hệ thống - tiến trình nền])
+  subgraph LEFT[ ]
+    direction TB
+    KH([Khách hàng])
+    CS([Chủ sân])
+    AD([Admin])
+    HT([Hệ thống - tiến trình nền])
+  end
+  style LEFT fill:none,stroke:none
   subgraph SYS[Hệ thống Quản lý và Đặt sân Thể thao]
     subgraph G1[Tài khoản]
       U001(U001 Đăng ký)
@@ -455,10 +460,18 @@ flowchart LR
     end
   end
   KH --- U001 & U002 & U003 & U004 & U011 & U012 & U014 & U015 & U016 & U017 & U019
-  U001 & U002 & U003 & U004 & U005 & U006 & U007 & U008 & U010 & U011 & U015 & U018 & U019 --- CS
-  U002 & U003 & U004 & U009 & U015 & U020 & U021 --- AD
-  U021 --- HT
+  CS --- U001 & U002 & U003 & U004 & U005 & U006 & U007 & U008 & U010 & U011 & U015 & U018 & U019
+  AD --- U002 & U003 & U004 & U009 & U015 & U020 & U021
+  HT --- U021
   U014 -. include .-> U013
+  style KH fill:#2b6cb0,stroke:#2b6cb0,color:#fff
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10 stroke:#2b6cb0,stroke-width:1.5px
+  style CS fill:#2e7d6b,stroke:#2e7d6b,color:#fff
+  linkStyle 11,12,13,14,15,16,17,18,19,20,21,22,23 stroke:#2e7d6b,stroke-width:1.5px
+  style AD fill:#d97706,stroke:#d97706,color:#fff
+  linkStyle 24,25,26,27,28,29,30 stroke:#d97706,stroke-width:1.5px
+  style HT fill:#6b7280,stroke:#6b7280,color:#fff
+  linkStyle 31 stroke:#6b7280,stroke-width:1.5px
 ```
 
 | Tác nhân | Use case |
@@ -798,7 +811,7 @@ Tiền điều kiện chung: người dùng dùng trình duyệt có Internet; u
 
 # 5 Bản mẫu (Prototype)
 
-Wireframe 17 màn hình `P01` đến `P17` (nguồn `prototypes.svg`, ảnh trong `images/`).
+Wireframe 17 màn hình `P01` đến `P17`.
 
 | Mã | Màn hình | Vai trò | Use case |
 | --- | --- | --- | --- |
