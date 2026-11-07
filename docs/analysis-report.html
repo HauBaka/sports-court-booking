@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analysis Report – Hệ thống Quản lý và Đặt sân Thể thao</title>
+<script>(function(){var t=null;try{t=localStorage.getItem('pp-theme')}catch(e){}if(t!=='dark'&&t!=='light'){t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-theme',t)})();</script>
+<style>:root{--bg:#f4f6f9;--paper:#fff;--ink:#18222e;--muted:#5a6776;--line:#dde2e9;--soft:#eef2f6;--accent:#1c5d8f;--accent-soft:#e4eef7;--code:#eef2f6;
+--hi:#1c5d8f;--hi-bg:#e1edf8;--lo:#566474;--lo-bg:#e9edf1;--rhi:#9a3412;--rhi-bg:#fde7da;--rmid:#7c5800;--rmid-bg:#fbefc9;--rlo:#2f6b46;--rlo-bg:#dff1e5;--shadow:0 1px 2px rgba(20,30,45,.06)}
+:root[data-theme="dark"]{--bg:#0e1319;--paper:#151b23;--ink:#e3e9f0;--muted:#98a6b5;--line:#27313c;--soft:#1b232d;--accent:#7ab6e6;--accent-soft:#1a2a3a;--code:#1b232d;
+--hi:#8cc4ee;--hi-bg:#1b3248;--lo:#a4b1bf;--lo-bg:#232d38;--rhi:#f4a47a;--rhi-bg:#43241a;--rmid:#e9c566;--rmid-bg:#3b2f12;--rlo:#7fd1a2;--rlo-bg:#173326;--shadow:none}
+@media (prefers-color-scheme:dark){:root:not([data-theme]){--bg:#0e1319;--paper:#151b23;--ink:#e3e9f0;--muted:#98a6b5;--line:#27313c;--soft:#1b232d;--accent:#7ab6e6;--accent-soft:#1a2a3a;--code:#1b232d}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 "Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;transition:background-color .2s,color .2s}
+.bar{position:sticky;top:0;z-index:30;height:56px;display:flex;align-items:center;gap:14px;padding:0 20px;background:var(--paper);border-bottom:1px solid var(--line)}
+.bar-title{display:flex;flex-direction:column;line-height:1.25;min-width:0;flex:1}
+.bar-title strong{font-size:15px}
+.bar-title span{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar button{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;transition:background-color .15s,border-color .15s}
+.bar button:hover{background:var(--soft);border-color:var(--accent)}
+.bar .menu{display:none}
+.theme .i-moon{display:none}
+:root[data-theme="dark"] .theme .i-sun{display:none}
+:root[data-theme="dark"] .theme .i-moon{display:block}
+.shell{display:grid;grid-template-columns:268px minmax(0,1fr);gap:28px;max-width:1680px;margin:0 auto;padding:28px 24px 72px}
+nav{position:sticky;top:84px;align-self:start;max-height:calc(100vh - 108px);overflow:auto;font-size:14px;padding-right:6px}
+.nav-h{margin:0 0 8px;font-size:13px;font-weight:700;color:var(--muted)}
+nav a{display:block;color:var(--muted);text-decoration:none;padding:4px 10px;border-left:2px solid transparent;line-height:1.45;border-radius:0 6px 6px 0}
+nav a.n1{color:var(--ink);font-weight:650;margin-top:10px}
+nav a.n4{padding-left:22px;font-size:13.5px}
+nav a:hover{background:var(--soft);color:var(--accent)}
+nav a.on{border-left-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.scrim{display:none}
+main{min-width:0;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:44px 48px 56px;box-shadow:var(--shadow);transition:background-color .2s,border-color .2s}
+.cover{padding-bottom:28px;margin-bottom:28px;border-bottom:1px solid var(--line)}
+.cover h3{margin:0;font-size:.95rem;font-weight:600;color:var(--muted);line-height:1.6}
+.cover .course{margin:22px 0 4px;font-weight:700;color:var(--accent);font-size:1.02rem}
+.cover h2{margin:0 0 22px;font-size:2.7rem;line-height:1.15;letter-spacing:-.02em}
+.fields{display:grid;gap:8px}
+.field{background:var(--soft);border-radius:10px;padding:10px 16px}
+.field .k{color:var(--muted);font-weight:600;margin-right:6px}
+.field .v{font-weight:600}
+.toc-card{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:18px 24px;margin-bottom:8px}
+.toc-title{margin:0 0 8px;font-weight:700}
+.toc-card ul{list-style:none;margin:0;padding-left:0}
+.toc-card ul ul{padding-left:20px}
+.toc-card li{margin:2px 0}
+.toc-card a{color:var(--accent);text-decoration:none}
+.toc-card a:hover{text-decoration:underline}
+.running{margin:28px 0 0;color:var(--muted);font-size:.9rem}
+h1{margin:48px 0 16px;padding-top:28px;border-top:1px solid var(--line);font-size:1.7rem;line-height:1.3;letter-spacing:-.01em;scroll-margin-top:80px}
+h1:first-of-type{margin-top:20px}
+h4{margin:34px 0 10px;padding-left:12px;border-left:3px solid var(--accent);font-size:1.12rem;line-height:1.4;scroll-margin-top:80px}
+p{margin:12px 0}
+ul,ol{margin:10px 0;padding-left:26px}
+li{margin:5px 0}
+li::marker{color:var(--muted)}
+a{color:var(--accent)}
+code{font-family:"Cascadia Mono","Consolas","DejaVu Sans Mono","Menlo","Liberation Mono",monospace;font-size:.88em;background:var(--code);padding:1px 6px;border-radius:5px;overflow-wrap:anywhere}
+pre{margin:16px 0;padding:18px 20px;background:var(--code);border:1px solid var(--line);border-radius:10px;overflow-x:auto;line-height:1.15}
+pre code{background:none;padding:0;font-size:.8rem;overflow-wrap:normal;white-space:pre}
+.tw{margin:18px 0;border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{padding:10px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th{background:var(--soft);font-weight:650;font-size:.88rem}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--soft)}
+.fc td:first-child,.fc th:first-child{white-space:nowrap;font-weight:650}
+.pill{display:inline-block;padding:0 10px;border-radius:999px;font-size:.85em;font-weight:650;line-height:1.7}
+.pill.hi{background:var(--hi-bg);color:var(--hi)}.pill.lo{background:var(--lo-bg);color:var(--lo)}
+.pill.rhi{background:var(--rhi-bg);color:var(--rhi)}.pill.rmid{background:var(--rmid-bg);color:var(--rmid)}.pill.rlo{background:var(--rlo-bg);color:var(--rlo)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:960px){
+.bar .menu{display:inline-grid}
+.shell{grid-template-columns:1fr;gap:0;padding:14px 12px 56px}
+nav{position:fixed;z-index:25;inset:0 auto 0 0;height:auto;width:290px;max-height:none;background:var(--paper);border-right:1px solid var(--line);padding:72px 16px 16px;transform:translateX(-100%);transition:transform .2s}
+nav.open{transform:none}
+.scrim.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20}
+main{padding:26px 18px 36px;border-radius:12px}
+.cover h2{font-size:2rem}
+}
+@media print{
+:root,:root[data-theme="dark"]{--bg:#fff;--paper:#fff;--ink:#000;--muted:#444;--line:#bbb;--soft:#f2f2f2;--accent:#124a75;--accent-soft:#eee;--code:#f2f2f2}
+body{font-size:12px;background:#fff}
+.bar,nav,.scrim{display:none}
+.shell{display:block;padding:0}
+main{border:0;padding:0;box-shadow:none}
+.tw,pre,tr{break-inside:avoid}
+h1,h4{break-after:avoid}
+.pill{border:1px solid #888;background:none!important;color:#000!important}
+}
+
+.cover{text-align:center}
+.cover h3{margin:0;font-size:1.3rem;font-weight:700;color:var(--ink);line-height:1.5;letter-spacing:.01em}
+.cover .course{margin:12px 0 0;font-size:1.3rem;font-weight:700;color:var(--accent);line-height:1.5;letter-spacing:.01em}
+.cover h2{margin:26px 0 24px}
+.fields{max-width:620px;margin:0 auto;text-align:center}
+@media (max-width:960px){.cover h3,.cover .course{font-size:1.1rem}}
+
+/* ===== Mục lục ===== */
+.tg{display:inline-grid;place-items:center;flex:none;width:26px;height:26px;padding:0;border:0;border-radius:6px;background:none;color:var(--muted);cursor:pointer;transition:background-color .15s,color .15s}
+.tg:hover{background:var(--soft);color:var(--accent)}
+.tg::before{content:"";width:7px;height:7px;margin-top:-3px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .18s,margin .18s}
+.tg[aria-expanded="false"]::before{transform:rotate(-45deg);margin-top:0}
+.tools{display:flex;gap:4px;flex:none}
+.tl{font:inherit;font-size:12.5px;line-height:1;padding:5px 9px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--muted);cursor:pointer;transition:background-color .15s,color .15s,border-color .15s}
+.tl:hover{background:var(--soft);color:var(--accent);border-color:var(--accent)}
+/* sidebar */
+.nav-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 6px}
+.nav-top .nav-h{margin:0}
+.ng{margin-top:8px}
+.nrow{display:flex;align-items:flex-start;gap:2px}
+.nrow>a.n1{flex:1;min-width:0;margin-top:0}
+.nrow .tg{margin-top:2px}
+.nsub{display:grid;grid-template-rows:1fr;transition:grid-template-rows .2s ease}
+.nsub>div{overflow:hidden;min-height:0;transition:visibility .2s}
+.ng.c .nsub{grid-template-rows:0fr}
+.ng.c .nsub>div{visibility:hidden}
+/* mục lục trong trang */
+.toc-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 8px}
+.toc-top .toc-title{margin:0}
+.toc-card li.has-sub>.trow{display:flex;align-items:center;gap:4px}
+.toc-card li.no-sub>a{margin-left:30px}
+.toc-card ul ul{padding-left:50px}
+.toc-card li.c>ul{display:none}
+
+/* ===== Highlight ===== */
+:root{--k-num-bg:#fde2e8;--k-num-fg:#9b1c3c;--k-ref-bg:#e1edf8;--k-ref-fg:#1c5d8f;--k-tech-bg:#dff1e5;--k-tech-fg:#1e6a42;--k-role-bg:#d8f0f3;--k-role-fg:#0e6572}
+:root[data-theme="dark"]{--k-num-bg:#4a2030;--k-num-fg:#f4a9bd;--k-ref-bg:#1b3248;--k-ref-fg:#8cc4ee;--k-tech-bg:#173326;--k-tech-fg:#7fd1a2;--k-role-bg:#11323a;--k-role-fg:#7fd2de}
+.hl,.sw{border-radius:4px;padding:0 3px;margin:0 -1px;font-weight:600;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.hl-num,.sw.hl-num{background:var(--k-num-bg);color:var(--k-num-fg);font-weight:700}
+.hl-ref,.sw.hl-ref{background:var(--k-ref-bg);color:var(--k-ref-fg);font-weight:700}
+.hl-tech,.sw.hl-tech{background:var(--k-tech-bg);color:var(--k-tech-fg)}
+.hl-role,.sw.hl-role{background:var(--k-role-bg);color:var(--k-role-fg)}
+.hl-off-num main .hl-num,.hl-off-ref main .hl-ref,.hl-off-tech main .hl-tech,.hl-off-role main .hl-role{background:none;color:inherit;font-weight:inherit;padding:0;margin:0}
+tbody tr:hover td .hl{box-shadow:0 0 0 1px var(--line)}
+/* bảng chú giải */
+.hl-btn[aria-expanded="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.hl-panel{position:absolute;top:62px;right:16px;width:300px;max-width:calc(100vw - 32px);padding:14px 16px;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(10,20,35,.18);font-size:14px;line-height:1.5}
+.hl-panel[hidden]{display:none}
+.hl-panel h5{margin:0 0 8px;font-size:14px}
+.hl-panel label{display:flex;align-items:flex-start;gap:10px;padding:6px 4px;border-radius:8px;cursor:pointer}
+.hl-panel label:hover{background:var(--soft)}
+.hl-panel input{margin:4px 0 0;accent-color:var(--accent);flex:none}
+.hl-panel .sw{display:inline-block;margin:0 0 2px;font-size:13px}
+.hl-panel .nm{display:block;font-weight:650}
+.hl-panel .ex{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:4px}
+.hl-panel .ex .sw{margin:0;font-size:12.5px}
+.hl-panel .all{border-bottom:1px solid var(--line);border-radius:8px 8px 0 0;margin-bottom:4px;padding-bottom:8px;font-weight:650}
+
+@media print{
+.tg,.tools,.hl-panel,.hl-btn{display:none!important}
+.toc-card li.c>ul{display:block!important}
+.hl{background:none!important;color:#000!important;font-weight:inherit;padding:0;margin:0;border-bottom:1px dotted #666;border-radius:0}
+.cover h3,.cover .course{font-size:15pt}
+}
+
+/* ===== Analysis Report: thêm ===== */
+h5{margin:26px 0 8px;font-size:1rem;color:var(--accent);scroll-margin-top:80px}
+.tab-panel>h5:first-child{margin-top:4px}
+.todo{background:var(--rmid-bg);color:var(--rmid);font-weight:650;padding:0 6px;border-radius:4px}
+.tabs{margin:14px 0 24px}
+.tab-bar{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.tab-bar button{font:inherit;font-size:.88rem;font-weight:650;cursor:pointer;background:var(--soft);color:var(--muted);border:1px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0;padding:7px 14px;margin-bottom:-1px;transition:background-color .15s,color .15s}
+.tab-bar button:hover{color:var(--accent)}
+.tab-bar button.on{background:var(--paper);color:var(--accent);border-color:var(--accent);border-bottom:1px solid var(--paper)}
+.tab-panel{display:none}.tab-panel.on{display:block}
+.mermaid{margin:16px 0;padding:16px;background:#fff;border:1px solid var(--line);border-radius:10px;overflow-x:auto;text-align:center;color:#18222e}
+.fallback{white-space:pre-wrap;font:13px/1.6 ui-monospace,Consolas,monospace}
+@media print{.tab-bar{display:none}.tab-panel{display:block!important}}
+
+.ucfig{margin:16px 0;padding:12px;background:#fff;border:1px solid var(--line);border-radius:10px;overflow-x:auto;text-align:center}
+.ucfig img{max-width:100%;height:auto}
+.ucfig a{display:block}.ucfig img{width:100%;cursor:zoom-in}.ucnote{margin-top:6px;font-size:.8rem;color:#5a6776}
+.ucfig svg{width:100%;height:auto;display:block}.ucfig{padding:8px}
+img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;display:block;margin:10px 0 18px;background:#fff}
+.split{display:grid;grid-template-columns:230px minmax(0,1fr);gap:20px;align-items:start}
+.split-nav{position:sticky;top:76px;display:flex;flex-direction:column;gap:4px;max-height:calc(100vh - 100px);overflow:auto}
+.split-nav button{font:inherit;font-size:.86rem;text-align:left;cursor:pointer;padding:8px 12px;border:1px solid transparent;border-left:3px solid var(--line);border-radius:0 8px 8px 0;background:none;color:var(--muted);line-height:1.4}
+.split-nav button:hover{background:var(--soft);color:var(--accent)}
+.split-nav button.on{background:var(--accent-soft);color:var(--accent);border-left-color:var(--accent);font-weight:650}
+.split-item{display:none}.split-item.on{display:block}
+.split-item>h5:first-child{margin-top:0}
+@media (max-width:760px){.split{grid-template-columns:1fr}.split-nav{position:static;flex-direction:row;flex-wrap:wrap;max-height:none}.split-nav button{border:1px solid var(--line);border-radius:8px}}
+@media print{.split{display:block}.split-nav{display:none}.split-item{display:block!important}}
+</style></head>
+<body>
+<header class="bar"><button class="menu" id="menuBtn" type="button" aria-label="Mở mục lục" aria-expanded="false">
+<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+<div class="bar-title"><strong>Analysis Report</strong><span>Hệ thống Quản lý và Đặt sân Thể thao</span></div>
+<button class="hl-btn" id="hlBtn" type="button" aria-label="Chú giải và bộ lọc highlight" aria-expanded="false" aria-controls="hlPanel" title="Chú giải highlight"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 11l6 6M4 20l4.5-1 9.8-9.8a2.1 2.1 0 0 0 0-3L17 5a2.1 2.1 0 0 0-3 0L4.2 14.8 4 20z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M14 20h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button><div class="hl-panel" id="hlPanel" hidden role="dialog" aria-label="Highlight"></div><button class="theme" id="themeBtn" type="button" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối"><svg class="i-sun" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><svg class="i-moon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button></header>
+<div class="shell">
+<nav id="nav" aria-label="Mục lục"><p class="nav-h">Mục lục</p></nav>
+<div class="scrim" id="scrim"></div>
+<main id="doc"><header class="cover" id="cover"></header><section class="toc-card" id="toc" aria-label="MỤC LỤC"></section><div id="content"></div></main>
+</div>
+<!-- Nội dung sinh từ analysis-report.md bằng build_analysis_html.py. Không sửa trực tiếp. -->
+<template id="uc-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 690" width="1440" role="img" aria-label="Sơ đồ use case"><defs><marker id="inc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10" fill="none" stroke="#5a6776" stroke-width="1.4"/></marker></defs><rect x="4" y="18" width="1432" height="442" rx="12" fill="#fbfcfe" stroke="#1f4e79" stroke-width="1.6"/><text x="720.0" y="44" text-anchor="middle" font-size="17" font-weight="700" fill="#1f4e79">Hệ thống Quản lý và Đặt sân Thể thao</text><rect x="24" y="58" width="330" height="386" rx="10" fill="#fff" stroke="#8fb0d0" stroke-width="1.3"/><text x="189.0" y="83" text-anchor="middle" font-size="14.5" font-weight="700" fill="#1f4e79">Quản lý sân và bảng giá</text><rect x="378" y="58" width="330" height="386" rx="10" fill="#fff" stroke="#8fb0d0" stroke-width="1.3"/><text x="543.0" y="83" text-anchor="middle" font-size="14.5" font-weight="700" fill="#1f4e79">Tài khoản</text><rect x="732" y="58" width="330" height="386" rx="10" fill="#fff" stroke="#8fb0d0" stroke-width="1.3"/><text x="897.0" y="83" text-anchor="middle" font-size="14.5" font-weight="700" fill="#1f4e79">Tìm và đặt sân</text><rect x="1086" y="58" width="330" height="386" rx="10" fill="#fff" stroke="#8fb0d0" stroke-width="1.3"/><text x="1251.0" y="83" text-anchor="middle" font-size="14.5" font-weight="700" fill="#1f4e79">Cọc, hoàn cọc và ví</text><path d="M937.0,580 C937.0,330.3 725.0,126.0 655.0,126.0" fill="none" stroke="#1f4e79" stroke-width="1.3" opacity=".85"/><path d="M937.0,580 C937.0,361.1 722.7371404766864,178.0 652.7371404766864,178.0" fill="none" stroke="#1f4e79" stroke-width="1.3" opacity=".85"/><path d="M937.0,580 C937.0,391.9 722.7371404766864,234.0 652.7371404766864,234.0" fill="none" stroke="#1f4e79" stroke-width="1.3" opacity=".85"/><path d="M937.0,580 C937.0,422.70000000000005 722.7371404766864,290.0 652.7371404766864,290.0" fill="none" stroke="#1f4e79" stroke-width="1.3" opacity=".85"/><path d="M937.0,580 C937.0,330.3 1079.0,126.0 1009.0,126.0" fill="none" stroke="#1f4e79" stroke-width="1.3" opacity=".85"/><path d="M937.0,580 C937.0,361.1 1079.0,182.0 1009.0,182.0" fill="none" stroke="#1f4e79" stroke-width="1.3" opacity=".85"/><path d="M937.0,580 C937.0,391.9 1079.0,238.0 1009.0,238.0" fill="none" stroke="#1f4e79" stroke-width="1.3" opacity=".85"/><path d="M937.0,580 C937.0,422.70000000000005 1079.0,294.0 1009.0,294.0" fill="none" stroke="#1f4e79" stroke-width="1.3" opacity=".85"/><path d="M937.0,580 C937.0,453.5 1079.0,350.0 1009.0,350.0" fill="none" stroke="#1f4e79" stroke-width="1.3" opacity=".85"/><path d="M937.0,580 C937.0,330.3 1069.0,126.0 1139.0,126.0" fill="none" stroke="#1f4e79" stroke-width="1.3" opacity=".85"/><path d="M937.0,580 C937.0,361.1 1071.2628595233136,178.0 1141.2628595233136,178.0" fill="none" stroke="#1f4e79" stroke-width="1.3" opacity=".85"/><path d="M937.0,580 C937.0,422.70000000000005 1071.2628595233136,290.0 1141.2628595233136,290.0" fill="none" stroke="#1f4e79" stroke-width="1.3" opacity=".85"/><path d="M249.0,580 C249.0,330.3 361.0,126.0 431.0,126.0" fill="none" stroke="#2e7d6b" stroke-width="1.3" opacity=".85"/><path d="M249.0,580 C249.0,361.1 361.0,182.0 431.0,182.0" fill="none" stroke="#2e7d6b" stroke-width="1.3" opacity=".85"/><path d="M249.0,580 C249.0,391.9 361.0,238.0 431.0,238.0" fill="none" stroke="#2e7d6b" stroke-width="1.3" opacity=".85"/><path d="M249.0,580 C249.0,422.70000000000005 361.0,294.0 431.0,294.0" fill="none" stroke="#2e7d6b" stroke-width="1.3" opacity=".85"/><path d="M249.0,580 C249.0,330.3 371.0,126.0 301.0,126.0" fill="none" stroke="#2e7d6b" stroke-width="1.3" opacity=".85"/><path d="M249.0,580 C249.0,361.1 371.0,182.0 301.0,182.0" fill="none" stroke="#2e7d6b" stroke-width="1.3" opacity=".85"/><path d="M249.0,580 C249.0,391.9 371.0,238.0 301.0,238.0" fill="none" stroke="#2e7d6b" stroke-width="1.3" opacity=".85"/><path d="M249.0,580 C249.0,422.70000000000005 371.0,294.0 301.0,294.0" fill="none" stroke="#2e7d6b" stroke-width="1.3" opacity=".85"/><path d="M249.0,580 C249.0,453.5 371.0,350.0 301.0,350.0" fill="none" stroke="#2e7d6b" stroke-width="1.3" opacity=".85"/><path d="M249.0,580 C249.0,330.3 715.0,126.0 785.0,126.0" fill="none" stroke="#2e7d6b" stroke-width="1.3" opacity=".85"/><path d="M249.0,580 C249.0,453.5 717.2628595233136,346.0 787.2628595233136,346.0" fill="none" stroke="#2e7d6b" stroke-width="1.3" opacity=".85"/><path d="M249.0,580 C249.0,391.9 1071.2628595233136,234.0 1141.2628595233136,234.0" fill="none" stroke="#2e7d6b" stroke-width="1.3" opacity=".85"/><path d="M249.0,580 C249.0,422.70000000000005 1071.2628595233136,298.0 1141.2628595233136,298.0" fill="none" stroke="#2e7d6b" stroke-width="1.3" opacity=".85"/><path d="M728,580 C728,361.1 722.7371404766864,186.0 652.7371404766864,186.0" fill="none" stroke="#b4590b" stroke-width="1.3" opacity=".85"/><path d="M728,580 C728,391.9 722.7371404766864,242.0 652.7371404766864,242.0" fill="none" stroke="#b4590b" stroke-width="1.3" opacity=".85"/><path d="M728,580 C728,422.70000000000005 722.7371404766864,298.0 652.7371404766864,298.0" fill="none" stroke="#b4590b" stroke-width="1.3" opacity=".85"/><path d="M249.0,580 C249.0,484.3 368.7371404766864,402.0 298.7371404766864,402.0" fill="none" stroke="#2e7d6b" stroke-width="1.3" opacity=".85"/><path d="M728,580 C728,484.3 368.7371404766864,410.0 298.7371404766864,410.0" fill="none" stroke="#b4590b" stroke-width="1.3" opacity=".85"/><path d="M728,580 C728,453.5 717.2628595233136,354.0 787.2628595233136,354.0" fill="none" stroke="#b4590b" stroke-width="1.3" opacity=".85"/><path d="M728,580 C728,361.1 1071.2628595233136,186.0 1141.2628595233136,186.0" fill="none" stroke="#b4590b" stroke-width="1.3" opacity=".85"/><path d="M728,580 C728,391.9 1071.2628595233136,242.0 1141.2628595233136,242.0" fill="none" stroke="#b4590b" stroke-width="1.3" opacity=".85"/><path d="M728,580 C728,453.5 1069.0,350.0 1139.0,350.0" fill="none" stroke="#b4590b" stroke-width="1.3" opacity=".85"/><path d="M728,580 C728,484.3 1069.0,406.0 1139.0,406.0" fill="none" stroke="#b4590b" stroke-width="1.3" opacity=".85"/><ellipse cx="189.0" cy="126.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="189.0" y="131.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U005</tspan> Tạo cơ sở</text><ellipse cx="189.0" cy="182.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="189.0" y="187.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U006</tspan> Tạo sân con</text><ellipse cx="189.0" cy="238.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="189.0" y="243.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U007</tspan> Cập nhật sân con</text><ellipse cx="189.0" cy="294.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="189.0" y="299.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U008</tspan> Cấu hình quy tắc giá</text><ellipse cx="189.0" cy="350.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="189.0" y="355.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U010</tspan> Quản lý dịch vụ đi kèm</text><ellipse cx="189.0" cy="406.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="189.0" y="411.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U009</tspan> Quản lý ngày lễ</text><ellipse cx="543.0" cy="126.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="543.0" y="131.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U001</tspan> Đăng ký</text><ellipse cx="543.0" cy="182.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="543.0" y="187.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U002</tspan> Đăng nhập</text><ellipse cx="543.0" cy="238.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="543.0" y="243.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U003</tspan> Đăng xuất</text><ellipse cx="543.0" cy="294.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="543.0" y="299.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U004</tspan> Xem hồ sơ</text><ellipse cx="897.0" cy="126.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="897.0" y="131.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U011</tspan> Tìm cơ sở và sân</text><ellipse cx="897.0" cy="182.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="897.0" y="187.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U012</tspan> Xem lịch khung giờ</text><ellipse cx="897.0" cy="238.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="897.0" y="243.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U013</tspan> Xem trước tiền</text><ellipse cx="897.0" cy="294.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="897.0" y="299.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U014</tspan> Đặt sân và giữ chỗ</text><ellipse cx="897.0" cy="350.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="897.0" y="355.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U015</tspan> Xem đơn đặt sân</text><ellipse cx="1251.0" cy="126.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="1251.0" y="131.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U016</tspan> Đặt cọc</text><ellipse cx="1251.0" cy="182.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="1251.0" y="187.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U017</tspan> Hủy đơn và hoàn cọc</text><ellipse cx="1251.0" cy="238.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="1251.0" y="243.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U018</tspan> Xác nhận hoàn tất</text><ellipse cx="1251.0" cy="294.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="1251.0" y="299.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U019</tspan> Xem ví và giao dịch</text><ellipse cx="1251.0" cy="350.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="1251.0" y="355.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U020</tspan> Cấp tiền vào ví</text><ellipse cx="1251.0" cy="406.0" rx="112" ry="20" fill="#e8eff7" stroke="#1f4e79" stroke-width="1.2"/><text x="1251.0" y="411.0" text-anchor="middle" font-size="13.5" fill="#1c2530"><tspan font-weight="700">U021</tspan> Nhả giữ chỗ hết hạn</text><line x1="897.0" y1="274.0" x2="897.0" y2="258.0" stroke="#5a6776" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#inc)"/><text x="905.0" y="270.0" font-size="11.5" font-style="italic" fill="#5a6776">«include»</text><circle cx="249.0" cy="590" r="10" fill="#fff" stroke="#2e7d6b" stroke-width="2"/><path d="M249.0,600 v28 M235.0,610 h28 M249.0,628 l-12,22 M249.0,628 l12,22" fill="none" stroke="#2e7d6b" stroke-width="2"/><text x="249.0" y="670" text-anchor="middle" font-size="14" font-weight="600" fill="#1c2530">Chủ sân</text><circle cx="728" cy="590" r="10" fill="#fff" stroke="#b4590b" stroke-width="2"/><path d="M728,600 v28 M714,610 h28 M728,628 l-12,22 M728,628 l12,22" fill="none" stroke="#b4590b" stroke-width="2"/><text x="728" y="670" text-anchor="middle" font-size="14" font-weight="600" fill="#1c2530">Admin</text><circle cx="937.0" cy="590" r="10" fill="#fff" stroke="#1f4e79" stroke-width="2"/><path d="M937.0,600 v28 M923.0,610 h28 M937.0,628 l-12,22 M937.0,628 l12,22" fill="none" stroke="#1f4e79" stroke-width="2"/><text x="937.0" y="670" text-anchor="middle" font-size="14" font-weight="600" fill="#1c2530">Khách hàng</text></svg></template>
+<script type="text/markdown" id="md-source">
+### ĐẠI HỌC KHOA HỌC TỰ NHIÊN TP HCM
+
+### KHOA CÔNG NGHỆ THÔNG TIN
+
+### BỘ MÔN CÔNG NGHỆ PHẦN MỀM
+
+**NHẬP MÔN CÔNG NGHỆ PHẦN MỀM**
+
+## Phân tích yêu cầu (Analysis Report)
+
+**Đề tài:** Hệ thống Quản lý và Đặt sân Thể thao
+
+**Nhóm:** 6
+
+**MỤC LỤC**
+
+- [1 Bảng đánh giá thành viên](#1-bảng-đánh-giá-thành-viên)
+- [2 Mô tả bài toán](#2-mô-tả-bài-toán)
+- [3 Tổng quan yêu cầu](#3-tổng-quan-yêu-cầu)
+  - [3.1 Danh sách các stakeholder](#31-danh-sách-các-stakeholder)
+  - [3.2 Danh sách yêu cầu](#32-danh-sách-yêu-cầu)
+    - [3.2.1 Đặc tả yêu cầu chức năng](#321-đặc-tả-yêu-cầu-chức-năng)
+    - [3.2.2 Đặc tả yêu cầu phi chức năng](#322-đặc-tả-yêu-cầu-phi-chức-năng)
+- [4 Đặc tả yêu cầu](#4-đặc-tả-yêu-cầu)
+  - [4.1 Sơ đồ Use Case](#41-sơ-đồ-use-case)
+  - [4.2 Đặc tả Use Case](#42-đặc-tả-use-case)
+- [5 Bản mẫu (Prototype)](#5-bản-mẫu-prototype)
+
+# 1 Bảng đánh giá thành viên
+
+| **MSSV** | **Họ Tên** | **% đóng góp (tối đa 100%)** | **Chữ ký** |
+| --- | --- | --- | --- |
+| 24120307 | Vòng Sau Hậu | 100% | |
+| 24120264 | Nguyễn Huỳnh Gia Bảo | 100% | |
+| 24120230 | Dương Danh Toàn | 100% | |
+| 24120278 | Võ Văn Khánh Đăng | 100% | |
+| 24120236 | Bùi Đặng Khả Tuân | 100% | |
+
+# 2 Mô tả bài toán
+
+#### Nghiệp vụ
+
+Người chơi cầu lông, pickleball, bóng đá mini đặt sân qua điện thoại, Zalo hoặc Facebook. Chủ sân ghi lịch bằng sổ tay hoặc Excel, nhận cọc chuyển khoản và tự quyết định hoàn cọc. Ba vấn đề thường gặp: trùng lịch, hoàn cọc tùy chủ sân, giá đổi theo giờ cao điểm, cuối tuần, ngày lễ nên tính nhẩm dễ sai.
+
+Hệ thống là ứng dụng web có ba nhóm người dùng:
+
+- **Khách hàng** tìm sân còn trống, xem trước tổng tiền, đặt sân và đặt cọc 30% từ ví nội bộ, hủy sân và nhận hoàn cọc theo quy định.
+- **Chủ sân** tạo cơ sở và sân con, cấu hình khung giờ, bảng giá, dịch vụ đi kèm; sau buổi chơi xác nhận hoàn tất để nhận tiền cọc.
+- **Admin** cấp tiền vào ví người dùng, quản lý danh mục ngày lễ và kích hoạt dọn các đơn giữ chỗ hết hạn.
+
+Mọi dòng tiền (cọc, hoàn cọc, tiền cọc bị mất, kết toán) đi qua ví nội bộ và được ghi thành giao dịch. Nạp và rút tiền thật nằm ngoài phạm vi.
+
+#### Luồng nghiệp vụ chính
+
+1. Khách tìm cơ sở theo môn, thành phố, từ khóa; xem lịch trống của sân con theo ngày.
+2. Khách chọn các khung giờ, hệ thống tính tiền và tiền cọc. Khách tạo đơn, hệ thống giữ chỗ tối đa 10 phút (trạng thái `PENDING_DEPOSIT`).
+3. Khách đặt cọc 30% từ ví trong thời gian giữ chỗ. Tiền chuyển sang ví hệ thống giữ hộ, đơn sang `DEPOSITED`, khung giờ bị khóa với mọi người khác.
+4. Khách hủy: tiền cọc được hoàn hoặc mất theo mốc thời gian. Khách đến chơi: chủ sân xác nhận hoàn tất, tiền cọc chuyển từ ví hệ thống sang ví chủ sân, đơn sang `COMPLETED`.
+5. Hết hạn giữ chỗ mà chưa cọc, đơn tự hủy và khung giờ được nhả.
+
+#### Quy định nghiệp vụ
+
+| Mã | Nội dung |
+| --- | --- |
+| QĐ1 | Giờ thường: giá cơ sở. Giờ cao điểm, cuối tuần, ngày lễ: tăng 20%–50% so với giá cơ sở. Khung giờ thuộc nhiều quy tắc thì lấy hệ số cao nhất. |
+| QĐ2 | Tổng tiền = giá khung giờ × hệ số thời điểm + phí dịch vụ đi kèm (nếu có). |
+| QĐ3 | Khung giờ đã được đặt cọc sẽ bị khóa, không ai khác đặt được. |
+| QĐ4 | Tiền cọc = 30% tổng tiền, trừ từ ví khách. Số tiền còn lại thanh toán tại sân hoặc chuyển khoản trước giờ chơi. |
+| QĐ5 | Hủy từ 24 giờ trở lên trước giờ chơi: hoàn 80% cọc. Từ 12 đến dưới 24 giờ: hoàn 50%. Dưới 12 giờ: không hoàn. Tiền hoàn vào ví khách, phần không hoàn vào ví chủ sân. |
+| QĐ6 | Mọi dòng tiền đi qua ví và được ghi thành giao dịch. Số dư ví không được âm. Tiền vào ví do Admin cấp. |
+| QĐ7 | Trạng thái lịch đặt: Chờ đặt cọc (`PENDING_DEPOSIT`) → Đã đặt cọc (`DEPOSITED`) → Đã thanh toán hoàn tất (`COMPLETED`); hoặc Đã hủy (`CANCELLED`). |
+
+#### Môi trường hoạt động
+
+- Client: trình duyệt web hỗ trợ HTML5/CSS3/JavaScript trên máy tính và điện thoại.
+- Server: 1 vCPU, 1 GB RAM, 20 GB SSD.
+- Dịch vụ ngoài: email Brevo; bản đồ Leaflet với dữ liệu OpenStreetMap.
+
+#### Ràng buộc thiết kế và triển khai
+
+- Frontend và Backend tách riêng, giao tiếp qua REST API (`/api/v1`, JSON).
+- Frontend: React.js. Backend: Python (FastAPI). CSDL quan hệ: MySQL.
+- Mật khẩu mã hóa bằng Bcrypt, giao tiếp qua HTTPS, xác thực bằng JWT.
+- Tiền là số nguyên VNĐ; thời gian theo ISO 8601 UTC. Mọi tính toán tiền làm ở Backend, Frontend chỉ hiển thị.
+- Mã nguồn quản lý bằng Git/GitHub.
+
+#### Ngoài phạm vi
+
+Ứng dụng di động riêng; nạp và rút tiền thật; SMS; chỉ đường trong ứng dụng; chủ sân đánh giá người chơi.
+
+#### Thuật ngữ
+
+| Thuật ngữ | Nghĩa |
+| --- | --- |
+| Cơ sở | Một cụm sân của một chủ sân, có địa chỉ và giờ mở cửa. |
+| Sân con | Một sân cụ thể trong cơ sở (ví dụ Sân 1), thuộc một môn. |
+| Khung giờ | Đơn vị thời gian nhỏ nhất có thể đặt của một sân con. |
+| Giữ chỗ | Khóa tạm các khung giờ tối đa 10 phút để khách đặt cọc. |
+| Tiền cọc | 30% tổng tiền, trừ từ ví khách khi đặt cọc. |
+| Ví nội bộ | Tài khoản tiền trong hệ thống của mỗi người dùng; số dư không âm. |
+| Ví hệ thống | Ví trung gian giữ tiền cọc cho đến khi hủy hoặc kết toán. |
+| Hoàn cọc | Trả lại một phần tiền cọc vào ví khách khi hủy, theo QĐ5. |
+| Kết toán | Chuyển tiền cọc từ ví hệ thống sang ví chủ sân sau buổi chơi. |
+| Hệ số giá | Số nhân áp lên giá cơ sở ở giờ cao điểm, cuối tuần, ngày lễ. |
+
+# 3 Tổng quan yêu cầu
+
+#### 3.1 Danh sách các stakeholder
+
+| STT | Stakeholder | Mô tả |
+| --- | --- | --- |
+| 1 | Khách hàng (người chơi) | Loại: end user. Tìm sân, đặt sân, đặt cọc, hủy, xem ví. Quan tâm giá rõ ràng và hoàn cọc công bằng. |
+| 2 | Chủ sân | Loại: end user. Sở hữu cơ sở và sân con, đặt giá, nhận đơn, xác nhận hoàn tất, nhận tiền kết toán. Quan tâm không bị trùng lịch và được bồi thường khi khách hủy muộn. |
+| 3 | Admin | Loại: system manager. Cấp tiền vào ví, quản lý ngày lễ, dọn đơn giữ chỗ hết hạn. |
+| 4 | Đội phát triển (nhóm 6) | Loại: system manager. Xây dựng, kiểm thử, vận hành hệ thống. |
+| 5 | Giảng viên môn Nhập môn CNPM | Loại: external stakeholder. Người đặt yêu cầu và đánh giá đồ án. |
+| 6 | Dịch vụ email Brevo | Loại: external stakeholder. Bên ngoài, gửi email cho hệ thống. |
+| 7 | Dịch vụ bản đồ OpenStreetMap / Leaflet | Loại: external stakeholder. Bên ngoài, cung cấp bản đồ hiển thị vị trí sân. |
+| 8 | Bên cung cấp hosting/VPS | Loại: external stakeholder. Cung cấp máy chủ và MySQL. |
+
+```text
+                Khách hàng        Chủ sân          Admin
+                    │                │                │
+                    ▼                ▼                ▼
+        ┌─────────────────────────────────────────────────┐
+        │   Hệ thống Quản lý và Đặt sân Thể thao          │
+        └─────────────────────────────────────────────────┘
+                    │                │                │
+                    ▼                ▼                ▼
+             Email Brevo      OpenStreetMap       Hosting/VPS
+```
+
+#### 3.2 Danh sách yêu cầu
+
+`FR-xx`: yêu cầu chức năng; `NFR-xx`: yêu cầu phi chức năng.
+
+#### 3.2.1 Đặc tả yêu cầu chức năng
+
+**Nhóm A. Tài khoản (nền tảng đăng nhập)**
+
+| User Story | Requirement | Details |
+| --- | --- | --- |
+| Là người dùng mới, tôi muốn đăng ký tài khoản khách hàng hoặc chủ sân để dùng hệ thống. | FR-01 Đăng ký tài khoản | Nhập họ tên, email, số điện thoại (10 chữ số), mật khẩu, vai trò. Mật khẩu tối thiểu 8 ký tự, có chữ hoa, chữ thường, số, ký tự đặc biệt; được mã hóa khi lưu. Email và số điện thoại không trùng tài khoản khác. Tài khoản chỉ được tạo khi nhập đúng mã OTP 6 số gửi qua email (Brevo), hiệu lực 5 phút, sai quá 5 lần thì xin mã mới. Ví số dư 0đ được tạo cùng tài khoản. |
+| Là người dùng, tôi muốn đăng nhập để dùng các chức năng theo quyền của mình. | FR-02 Đăng nhập | Đăng nhập bằng email và mật khẩu, nhận phiên đăng nhập có hiệu lực 60 phút. Sai email hoặc mật khẩu thì từ chối. |
+| Là người dùng, tôi muốn đăng xuất để người khác không dùng tiếp phiên của tôi. | FR-03 Đăng xuất | Kết thúc phiên làm việc; người dùng phải đăng nhập lại để dùng chức năng cần quyền. |
+| Là người dùng, tôi muốn xem hồ sơ và số dư ví của mình để kiểm tra thông tin tài khoản. | FR-04 Xem hồ sơ và số dư | Hiển thị thông tin tài khoản, vai trò và số dư ví hiện tại. Chỉ người đã đăng nhập. |
+
+**Nhóm B. Quản lý sân và bảng giá (chức năng 1)**
+
+| User Story | Requirement | Details |
+| --- | --- | --- |
+| Là chủ sân, tôi muốn đăng cơ sở thể thao của mình để khách tìm thấy. | FR-05 Tạo cơ sở thể thao | Nhập tên, địa chỉ, thành phố, quận, tọa độ, giờ mở và đóng cửa, mô tả. Hệ thống gán chủ sở hữu là người đang đăng nhập. Chỉ vai trò chủ sân. |
+| Là chủ sân, tôi muốn thêm sân con vào cơ sở và đặt giá cơ sở để khách đặt được. | FR-06 Tạo sân con | Nhập tên, môn, loại sân, trong nhà hoặc ngoài trời, giờ mở và đóng (phải nằm trong giờ mở cửa của cơ sở), giá cơ sở mỗi khung giờ. Sân và các khung giờ hoạt động được tạo cùng lúc. Chỉ chủ của cơ sở. |
+| Là chủ sân, tôi muốn sửa giờ hoạt động hoặc tạm ngưng sân mà không làm hỏng đơn đã cọc. | FR-07 Cập nhật sân con | Sửa tên, giờ mở và đóng, bật hoặc tắt hoạt động. Từ chối nếu còn đơn đã đặt cọc trong tương lai bị ảnh hưởng. Khi ngưng sân, các đơn `PENDING_DEPOSIT` tự hủy và nhả khung giờ. |
+| Là chủ sân, tôi muốn đặt hệ số giá cho giờ cao điểm, cuối tuần, ngày lễ để tối ưu doanh thu. | FR-08 Cấu hình quy tắc giá theo thời điểm | Ba loại quy tắc: giờ cao điểm, cuối tuần, ngày lễ, mỗi quy tắc có hệ số nhân (QĐ1: tăng 20%–50%). Nhiều quy tắc cùng khớp thì lấy hệ số cao nhất. Bộ quy tắc mới thay hoàn toàn bộ cũ, không lưu dở dang. |
+| Là chủ sân hoặc Admin, tôi muốn có danh mục ngày lễ để gắn hệ số giá cho ngày lễ. | FR-09 Quản lý danh mục ngày lễ | Mọi người dùng xem được danh mục; chỉ Admin thêm ngày lễ mới (tên, ngày, lặp lại hằng năm hay không); không thêm trùng ngày đã có. |
+| Là chủ sân, tôi muốn khai báo dịch vụ đi kèm (thuê vợt, nước, bóng) để khách chọn khi đặt. | FR-10 Quản lý dịch vụ đi kèm | Chủ sân thêm (tên, đơn vị tính, đơn giá), sửa đơn giá, bật hoặc tắt dịch vụ của cơ sở mình. Mọi người xem được danh sách dịch vụ đang bán. Phí dịch vụ cộng vào tổng tiền (QĐ2). |
+
+**Nhóm C. Tìm và đặt sân (chức năng 2)**
+
+| User Story | Requirement | Details |
+| --- | --- | --- |
+| Là khách hàng, tôi muốn tìm sân ở khu vực gần mình để không phải gọi hỏi từng sân. | FR-11 Tìm cơ sở thể thao | Lọc theo môn, thành phố, từ khóa; phân trang. Kết quả có tọa độ để hiện trên bản đồ. Không cần đăng nhập. |
+| Là khách hàng, tôi muốn xem chi tiết cơ sở và các sân con để chọn sân phù hợp. | FR-12 Xem chi tiết cơ sở và sân con | Hiển thị thông tin cơ sở, danh sách sân con đang hoạt động, dịch vụ đi kèm. Không cần đăng nhập. |
+| Là khách hàng, tôi muốn xem sân trống theo ngày để chọn giờ phù hợp. | FR-13 Xem lịch khung giờ theo ngày | Mỗi khung giờ có trạng thái: trống, đang giữ chỗ, đã đặt cọc. Đơn đã quá hạn giữ chỗ coi là trống ngay. |
+| Là khách hàng, tôi muốn biết tổng tiền và tiền cọc trước khi đặt để không bị bất ngờ. | FR-14 Xem trước tiền đặt sân | Hệ thống trả chi tiết từng khung giờ (giá, hệ số), tiền dịch vụ, tổng tiền, tiền cọc 30%, tiền còn lại (QĐ1, QĐ2, QĐ4). Giá mỗi khung giờ làm tròn đến đồng; tiền cọc lấy phần nguyên. Giao diện không tự tính. |
+| Là khách hàng, tôi muốn đặt các khung giờ và được giữ chỗ để không bị người khác lấy mất trong lúc đặt cọc. | FR-15 Tạo đơn và giữ chỗ | Chọn sân, ngày, một hoặc nhiều khung giờ, dịch vụ kèm số lượng. Đơn ở `PENDING_DEPOSIT`, giữ chỗ tối đa 10 phút hoặc đến giờ chơi nếu ngắn hơn. Chưa trừ tiền. Từ chối giờ đã qua. |
+| Là khách hàng, tôi muốn chắc rằng sân tôi đã cọc không bị người khác đặt trùng. | FR-16 Chống đặt trùng | Một khung giờ chỉ thuộc về một đơn còn hiệu lực (QĐ3). Hai người đặt cùng lúc thì chỉ một người thành công, người kia bị từ chối vì khung giờ đã có người đặt. |
+| Là người dùng, tôi muốn xem danh sách và chi tiết đơn đặt sân của mình để theo dõi lịch đặt và trạng thái đơn. | FR-17 Xem danh sách và chi tiết đơn | Khách xem đơn của mình; chủ sân xem đơn tại cơ sở của mình; Admin xem tất cả. Lọc theo trạng thái, cơ sở, sân, khoảng ngày; phân trang. Chi tiết gồm khung giờ, dịch vụ, bảng kê tiền. |
+
+**Nhóm D. Cọc, hoàn cọc và ví (chức năng 3)**
+
+| User Story | Requirement | Details |
+| --- | --- | --- |
+| Là khách hàng, tôi muốn đặt cọc từ ví để giữ chắc sân. | FR-18 Đặt cọc 30% | Trừ 30% tổng tiền từ ví khách, cộng vào ví hệ thống, ghi giao dịch `DEPOSIT`, đơn sang `DEPOSITED` (QĐ4, QĐ6, QĐ7). Hết hạn giữ chỗ hoặc ví thiếu tiền thì từ chối, không trừ tiền. Trừ ví, ghi giao dịch và đổi trạng thái đơn xảy ra cùng lúc hoặc không xảy ra gì. |
+| Là khách hàng, tôi muốn biết trước mình được hoàn bao nhiêu nếu hủy để cân nhắc trước khi hủy. | FR-19 Xem trước hoàn cọc | Hệ thống tính số giờ còn lại đến giờ chơi và trả tỉ lệ hoàn (≥24 giờ: 80%, 12 đến dưới 24 giờ: 50%, dưới 12 giờ: 0%) cùng số tiền (QĐ5). Tiền hoàn lấy phần nguyên, phần còn lại vào ví chủ sân. |
+| Là khách hàng, tôi muốn hủy sân và nhận hoàn cọc theo quy định rõ ràng, không phải thương lượng. | FR-20 Hủy đơn và hoàn cọc | Khách (chủ đơn) hoặc Admin hủy được đơn `PENDING_DEPOSIT` và `DEPOSITED` khi chưa đến giờ chơi. Đơn đã cọc: ghi `REFUND` về ví khách và `FORFEIT` về ví chủ sân theo QĐ5. Khung giờ được nhả. Bài đăng tìm đồng đội liên quan (nếu có) bị đóng. |
+| Là chủ sân, tôi muốn xác nhận buổi chơi đã xong để nhận tiền cọc. | FR-21 Xác nhận hoàn tất và kết toán | Chủ sân (chủ cơ sở) hoặc Admin làm được khi đã đến giờ chơi và đơn đang `DEPOSITED`. Chuyển tiền cọc từ ví hệ thống sang ví chủ sân, ghi `SETTLE`, đơn sang `COMPLETED`. |
+| Là người dùng, tôi muốn xem số dư và lịch sử giao dịch ví để đối chiếu tiền. | FR-22 Xem ví và lịch sử giao dịch | Số dư hiện tại; lịch sử có phân trang, lọc theo loại (`TOPUP`, `DEPOSIT`, `REFUND`, `FORFEIT`, `SETTLE`). Số dư không được âm (QĐ6). |
+| Là Admin, tôi muốn cấp tiền vào ví người dùng để họ trải nghiệm hệ thống. | FR-23 Admin cấp tiền vào ví | Chọn người dùng và số tiền, hệ thống cộng ví và ghi `TOPUP` kèm người cấp (QĐ6). |
+| Là khách hàng, tôi muốn đơn hết hạn giữ chỗ được nhả tự động để khung giờ không bị chiếm khi khách khác không cọc kịp. | FR-24 Nhả giữ chỗ hết hạn | Tiến trình nền chạy mỗi 60 giây, hủy đơn `PENDING_DEPOSIT` quá hạn và nhả khung giờ, không ghi giao dịch ví. Admin có thể kích hoạt thủ công. |
+| Là khách hàng, tôi muốn nhận email xác nhận khi đặt cọc thành công để lưu lại thông tin đặt sân. | FR-25 Email xác nhận đặt sân | Sau khi đặt cọc thành công, hệ thống gửi email xác nhận qua dịch vụ Brevo, gồm mã đơn, sân, khung giờ, tiền cọc và tiền còn lại. Gửi email lỗi thì không ảnh hưởng đơn đã cọc. |
+
+**Nhóm E. Ghép đội và tiện ích (chức năng 4, 5; ưu tiên thấp)**
+
+| User Story | Requirement | Details |
+| --- | --- | --- |
+| Là người chơi thiếu người, tôi muốn đăng bài tìm đồng đội cho sân đã đặt để có đủ người chơi. | FR-26 Đăng bài tìm đồng đội | Chỉ đơn `DEPOSITED` của chính mình và chưa đến giờ chơi; mỗi đơn có tối đa một bài đang mở. |
+| Là người chơi, tôi muốn đăng ký tham gia bài của người khác để có nhóm chơi cùng. | FR-27 Đăng ký tham gia | Bài phải đang mở; không tự đăng ký bài của mình; không đăng ký trùng. |
+| Là người đăng bài, tôi muốn duyệt hoặc từ chối người đăng ký để chọn người chơi phù hợp. | FR-28 Duyệt người đăng ký | Chủ bài chuyển trạng thái đăng ký sang đồng ý hoặc từ chối. |
+| Là khách hàng, tôi muốn đánh giá sân sau khi chơi để giúp người khác chọn. | FR-29 Đánh giá sân | Chỉ khách có đơn `COMPLETED` của chính mình được đánh giá, mỗi đơn một đánh giá, không sửa sau khi gửi. Gồm số sao từ 1 đến 5 và bình luận (không bắt buộc). Điểm trung bình và các đánh giá hiển thị trong trang chi tiết cơ sở (FR-12). |
+| Là Admin, tôi muốn xem thống kê tổng quan hệ thống để nắm tình hình hoạt động. | FR-30 Dashboard Admin | Chỉ Admin xem. Hiển thị: tổng số người dùng theo vai trò, tổng số cơ sở và sân con, số đơn theo từng trạng thái (`PENDING_DEPOSIT`, `DEPOSITED`, `COMPLETED`, `CANCELLED`), tổng tiền cọc đang giữ ở ví hệ thống, tổng tiền Admin đã cấp. |
+
+#### 3.2.2 Đặc tả yêu cầu phi chức năng
+
+| User Story | Requirement | Details |
+| --- | --- | --- |
+| Là khách hàng, tôi muốn trang tải nhanh để không phải chờ khi tìm sân. | NFR-01 Hiệu năng giao diện (sản phẩm – hiệu năng) | Trang tìm sân và lịch trống hiển thị trong tối đa 3 giây ở 95% lượt tải, mạng 4G, khi dữ liệu ở mức 50 cơ sở. |
+| Là khách hàng, tôi muốn thao tác đặt sân phản hồi ngay để không phải chờ hoặc bấm lại. | NFR-02 Thời gian phản hồi API (sản phẩm – hiệu năng) | 95% request đọc phản hồi dưới 1 giây, request ghi (đặt, cọc, hủy) dưới 2 giây, với 20 người dùng đồng thời trên máy chủ 1 vCPU, 1 GB RAM. |
+| Là chủ sân, tôi muốn không bao giờ bị đặt trùng giờ để không phải xử lý tranh chấp với khách. | NFR-03 Toàn vẹn khi đồng thời (sản phẩm – độ tin cậy) | Khi 2 yêu cầu đặt cùng sân, ngày, khung giờ chạy đồng thời, đúng 1 yêu cầu thành công, 0 trường hợp hai đơn còn hiệu lực trên cùng khung giờ. |
+| Là người dùng, tôi muốn tiền trong ví luôn đúng để yên tâm đặt cọc. | NFR-04 Toàn vẹn dữ liệu và tiền (sản phẩm – độ tin cậy) | Số dư ví không bao giờ âm. Mọi biến động số dư có đúng 1 bản ghi giao dịch tương ứng, không xóa hay sửa. Thao tác tiền thất bại thì không để lại thay đổi nào. Tiền lưu số nguyên VNĐ. Thao tác ghi nhiều bước (tạo tài khoản và ví, tạo sân và khung giờ, tạo đơn, cập nhật sân) xong toàn bộ hoặc không đổi gì. |
+| Là người dùng, tôi muốn tài khoản và dữ liệu cá nhân được bảo vệ để không bị người khác dùng trái phép. | NFR-05 Bảo mật (sản phẩm – bảo mật) | Mật khẩu được mã hóa bằng Bcrypt khi lưu. Giao tiếp qua HTTPS. Xác thực bằng JWT; request thiếu phiên hợp lệ hoặc sai quyền bị từ chối. Mỗi API kiểm tra quyền theo vai trò khách, chủ sân, Admin. |
+| Là khách hàng, tôi muốn dùng được trên điện thoại để đặt sân khi không có máy tính. | NFR-06 Tương thích (tổ chức – môi trường) | Giao diện hiển thị đúng ở chiều rộng từ 360px đến 1920px, trên 2 phiên bản mới nhất của Chrome, Edge, Firefox, Safari. |
+| Là người dùng mới, tôi muốn tự dùng được mà không cần hướng dẫn dài. | NFR-07 Khả dụng (sản phẩm – khả năng sử dụng) | Khách hàng mới hoàn thành luồng tìm sân, đặt, cọc trong tối đa 5 phút mà không cần hướng dẫn. Thông báo lỗi bằng tiếng Việt, nêu rõ cần làm gì. |
+| Là chủ sân, tôi muốn hệ thống chạy ổn định giờ khách đặt để không mất đơn. | NFR-08 Độ sẵn sàng (sản phẩm – độ tin cậy) | Trong thời gian demo và chấm điểm, hệ thống hoạt động liên tục; tiến trình nền nhả giữ chỗ chạy mỗi 60 giây. Tối đa 1 giờ ngừng hoạt động có kế hoạch mỗi tuần. |
+| Là người dùng, tôi muốn thấy giá đúng với quy định đã công bố để không bị tính sai tiền. | NFR-09 Tính đúng đắn của nghiệp vụ (sản phẩm – độ tin cậy) | Mọi phép tính giá, cọc, hoàn cọc làm ở Backend theo QĐ1 đến QĐ5; Frontend chỉ hiển thị. Các kịch bản trong `docs/test-scenarios.md` đạt 100%. |
+| Là đội phát triển, tôi muốn API nhất quán để Frontend dùng dễ. | NFR-10 Chuẩn giao tiếp (tổ chức – phát triển) | API theo `docs/api-conventions.md`: REST, JSON, thời gian ISO 8601 UTC, phản hồi và mã lỗi theo một khuôn chung. |
+| Là đội phát triển, tôi muốn mã nguồn được kiểm soát chất lượng để hạn chế lỗi khi gộp code. | NFR-11 Quy trình phát triển (tổ chức – phát triển) | Mã nguồn trên GitHub, theo `CONTRIBUTING.md`: mỗi PR cần 1 approve và CI chạy qua trước khi gộp; phần tính tiền có unit test. |
+| Là khách hàng, tôi muốn biết hệ thống tuân quy định bên ngoài để yên tâm sử dụng. | NFR-12 Ràng buộc bên ngoài (bên ngoài – quy định) | Bản đồ dùng dữ liệu OpenStreetMap, ghi nguồn đúng giấy phép. Chỉ dùng ví nội bộ, không xử lý thanh toán thật. |
+| Là chủ sân, tôi muốn hệ thống tự phục hồi sau sự cố mà không mất đơn đã cọc. | NFR-13 Khôi phục sau lỗi (sản phẩm – độ tin cậy) | Sau lỗi hệ thống, dịch vụ tự khởi động lại và hoạt động trở lại trong tối đa 5 phút. Không mất đơn đã đặt cọc và giao dịch ví đã ghi. |
+| Là đội phát triển, tôi muốn có bản sao lưu để khôi phục dữ liệu. | NFR-14 Sao lưu (tổ chức – vận hành) | CSDL sao lưu tự động mỗi đêm, giữ 7 bản gần nhất. Thử khôi phục thành công ít nhất 1 lần trước buổi demo. |
+| Là đội phát triển, tôi muốn biết hệ thống chứa được bao nhiêu dữ liệu để chuẩn bị đủ dung lượng máy chủ. | NFR-15 Lưu trữ (sản phẩm – lưu trữ) | Lưu được tối thiểu 1.000 người dùng, 50 cơ sở, 20.000 đơn đặt sân trong gói 20 GB của máy chủ. |
+| Là người dùng, tôi muốn thông tin cá nhân không bị lộ cho người khác. | NFR-16 Riêng tư và kiểm toán (bên ngoài – pháp lý) | Email và số điện thoại chỉ hiển thị cho chính chủ và vai trò có quyền. Mọi lần Admin cấp tiền được ghi lại cùng người thực hiện. |
+
+# 4 Đặc tả yêu cầu
+
+#### 4.1 Sơ đồ Use Case
+
+Tác nhân: Khách hàng, Chủ sân, Admin. FR-26 đến FR-30 ưu tiên thấp, chưa đặc tả.
+
+```mermaid
+
+flowchart LR
+  subgraph LEFT[ ]
+    direction TB
+    KH([Khách hàng])
+    CS([Chủ sân])
+    AD([Admin])
+  end
+  style LEFT fill:none,stroke:none
+  subgraph SYS[Hệ thống Quản lý và Đặt sân Thể thao]
+    subgraph G1[Tài khoản]
+      U001(U001 Đăng ký)
+      U002(U002 Đăng nhập)
+      U003(U003 Đăng xuất)
+      U004(U004 Xem hồ sơ)
+    end
+    subgraph G2[Quản lý sân và bảng giá]
+      U005(U005 Tạo cơ sở)
+      U006(U006 Tạo sân con)
+      U007(U007 Cập nhật sân con)
+      U008(U008 Cấu hình quy tắc giá)
+      U009(U009 Quản lý ngày lễ)
+      U010(U010 Quản lý dịch vụ đi kèm)
+    end
+    subgraph G3[Tìm và đặt sân]
+      U011(U011 Tìm cơ sở và sân)
+      U012(U012 Xem lịch khung giờ)
+      U013(U013 Xem trước tiền)
+      U014(U014 Đặt sân và giữ chỗ)
+      U015(U015 Xem đơn đặt sân)
+    end
+    subgraph G4[Cọc, hoàn cọc và ví]
+      U016(U016 Đặt cọc)
+      U017(U017 Hủy đơn và hoàn cọc)
+      U018(U018 Xác nhận hoàn tất)
+      U019(U019 Xem ví và giao dịch)
+      U020(U020 Cấp tiền vào ví)
+      U021(U021 Nhả giữ chỗ hết hạn)
+    end
+  end
+  KH --- U001 & U002 & U003 & U004 & U011 & U012 & U013 & U014 & U015 & U016 & U017 & U019
+  CS --- U001 & U002 & U003 & U004 & U005 & U006 & U007 & U008 & U009 & U010 & U011 & U015 & U018 & U019
+  AD --- U002 & U003 & U004 & U009 & U015 & U017 & U018 & U020 & U021
+  U014 -. include .-> U013
+  style KH fill:#2b6cb0,stroke:#2b6cb0,color:#fff
+  linkStyle 0,1,2,3,4,5,6,7,8,9,10,11 stroke:#2b6cb0,stroke-width:1.5px
+  style CS fill:#2e7d6b,stroke:#2e7d6b,color:#fff
+  linkStyle 12,13,14,15,16,17,18,19,20,21,22,23,24,25 stroke:#2e7d6b,stroke-width:1.5px
+  style AD fill:#d97706,stroke:#d97706,color:#fff
+  linkStyle 26,27,28,29,30,31,32,33,34 stroke:#d97706,stroke-width:1.5px
+```
+
+| Tác nhân | Use case |
+| --- | --- |
+| Khách hàng | U001, U002, U003, U004, U011, U012, U013, U014, U015, U016, U017, U019 |
+| Chủ sân | U001, U002, U003, U004, U005, U006, U007, U008, U009, U010, U011, U015, U018, U019 |
+| Admin | U002, U003, U004, U009, U015, U017, U018, U020, U021 |
+
+#### 4.2 Đặc tả Use Case
+
+Tiền điều kiện chung: người dùng dùng trình duyệt có Internet; use case yêu cầu đăng nhập thì phải có phiên đăng nhập hợp lệ.
+
+**Nhóm A. Tài khoản**
+
+##### U001 – Đăng ký tài khoản
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U001 |
+| Tên Use Case | Đăng ký tài khoản |
+| Yêu cầu liên quan | FR-01 |
+| Tóm tắt | Người dùng mới tạo tài khoản khách hàng hoặc chủ sân, xác minh email bằng OTP. Hệ thống tạo kèm ví nội bộ số dư 0đ. |
+| Tác nhân | Khách hàng, Chủ sân (chưa có tài khoản) |
+| Điều kiện tiên quyết | Chưa đăng nhập. |
+| Kết quả | Thành công: Có tài khoản mới với vai trò đã chọn và một ví số dư 0đ.<br>Thất bại: Không tạo tài khoản và ví. |
+| Kịch bản chính | 1. Người dùng nhập họ tên, email, số điện thoại, mật khẩu, chọn vai trò.<br>2. Hệ thống kiểm tra định dạng và email, số điện thoại chưa tồn tại.<br>3. Hệ thống gửi mã OTP đến email.<br>4. Người dùng nhập OTP.<br>5. Hệ thống tạo tài khoản và ví, mật khẩu được mã hóa.<br>6. Hệ thống báo đăng ký thành công. |
+| Kịch bản phụ | 2a. Email hoặc số điện thoại đã tồn tại: từ chối và báo lý do.<br>2b. Sai định dạng hoặc mật khẩu yếu: từ chối và báo lý do.<br>3a. Không gửi được email: báo lỗi, không tạo tài khoản.<br>4a. OTP sai: cho nhập lại; sai quá 5 lần thì xin mã mới.<br>4b. OTP quá 5 phút: báo hết hạn, cho gửi lại. |
+| Ràng buộc phi chức năng | Mật khẩu được mã hóa khi lưu (NFR-05). Không có tài khoản thiếu ví (NFR-04). |
+
+##### U002 – Đăng nhập
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U002 |
+| Tên Use Case | Đăng nhập |
+| Yêu cầu liên quan | FR-02 |
+| Tóm tắt | Người dùng xác thực bằng email và mật khẩu để nhận phiên đăng nhập. |
+| Tác nhân | Khách hàng, Chủ sân, Admin |
+| Điều kiện tiên quyết | Đã có tài khoản. |
+| Kết quả | Thành công: Nhận phiên đăng nhập; giao diện hiển thị theo vai trò.<br>Thất bại: Không cấp phiên, người dùng vẫn chưa đăng nhập. |
+| Kịch bản chính | 1. Người dùng nhập email và mật khẩu.<br>2. Hệ thống kiểm tra thông tin.<br>3. Hệ thống cấp phiên đăng nhập.<br>4. Giao diện lưu phiên và chuyển về trang chính. |
+| Kịch bản phụ | 2a. Sai email hoặc mật khẩu: từ chối và báo lý do, cho nhập lại. |
+| Ràng buộc phi chức năng | Kênh truyền mã hóa, phiên có thời hạn (NFR-05). Phản hồi dưới 1 giây (NFR-02). |
+
+##### U003 – Đăng xuất
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U003 |
+| Tên Use Case | Đăng xuất |
+| Yêu cầu liên quan | FR-03 |
+| Tóm tắt | Người dùng kết thúc phiên làm việc. |
+| Tác nhân | Khách hàng, Chủ sân, Admin |
+| Điều kiện tiên quyết | Đã đăng nhập. |
+| Kết quả | Thành công: Phiên bị xóa ở máy người dùng; phải đăng nhập lại để dùng chức năng cần quyền.<br>Thất bại: Phiên luôn bị xóa ở máy người dùng, kể cả khi gửi yêu cầu lỗi. |
+| Kịch bản chính | 1. Người dùng bấm đăng xuất.<br>2. Giao diện gửi yêu cầu đăng xuất.<br>3. Hệ thống ghi nhận kết thúc phiên.<br>4. Giao diện xóa phiên và về trang đăng nhập. |
+| Kịch bản phụ | 2a. Phiên đã hết hạn: giao diện vẫn xóa phiên và về trang đăng nhập. |
+| Ràng buộc phi chức năng | NFR-05. |
+
+##### U004 – Xem hồ sơ
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U004 |
+| Tên Use Case | Xem hồ sơ và số dư |
+| Yêu cầu liên quan | FR-04 |
+| Tóm tắt | Người dùng xem thông tin tài khoản, vai trò và số dư ví. |
+| Tác nhân | Khách hàng, Chủ sân, Admin |
+| Điều kiện tiên quyết | Đã đăng nhập. |
+| Kết quả | Thành công: Hiển thị hồ sơ và số dư hiện tại.<br>Thất bại: Không hiển thị dữ liệu, yêu cầu đăng nhập lại. |
+| Kịch bản chính | 1. Người dùng mở trang hồ sơ.<br>2. Hệ thống đọc tài khoản và ví của người đang đăng nhập.<br>3. Hệ thống hiển thị thông tin. |
+| Kịch bản phụ | 2a. Phiên thiếu hoặc hết hạn: yêu cầu đăng nhập lại, chuyển về đăng nhập. |
+| Ràng buộc phi chức năng | NFR-02, NFR-05. |
+
+**Nhóm B. Quản lý sân và bảng giá**
+
+##### U005 – Tạo cơ sở thể thao
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U005 |
+| Tên Use Case | Tạo cơ sở thể thao |
+| Yêu cầu liên quan | FR-05 |
+| Tóm tắt | Chủ sân đăng ký một cơ sở (cụm sân) mới. |
+| Tác nhân | Chủ sân |
+| Điều kiện tiên quyết | Đã đăng nhập. |
+| Kết quả | Thành công: Cơ sở mới ở trạng thái hoạt động, thuộc về chủ sân đang đăng nhập.<br>Thất bại: Không tạo cơ sở. |
+| Kịch bản chính | 1. Chủ sân chọn thêm cơ sở.<br>2. Nhập tên, địa chỉ, thành phố, quận, tọa độ, giờ mở và đóng cửa, mô tả.<br>3. Hệ thống kiểm tra dữ liệu.<br>4. Hệ thống lưu cơ sở, gán chủ sở hữu.<br>5. Hệ thống hiển thị cơ sở vừa tạo. |
+| Kịch bản phụ | 1a. Người dùng không phải chủ sân: từ chối vì không đủ quyền.<br>3a. Thiếu hoặc sai dữ liệu: từ chối và báo lý do. |
+| Ràng buộc phi chức năng | NFR-05 (kiểm tra quyền). |
+
+##### U006 – Tạo sân con
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U006 |
+| Tên Use Case | Tạo sân con |
+| Yêu cầu liên quan | FR-06 |
+| Tóm tắt | Chủ sân thêm sân con vào cơ sở, đặt giờ hoạt động và giá cơ sở. |
+| Tác nhân | Chủ sân |
+| Điều kiện tiên quyết | Đã đăng nhập. |
+| Kết quả | Thành công: Sân con mới cùng các khung giờ hoạt động và giá cơ sở.<br>Thất bại: Không tạo sân và khung giờ nào. |
+| Kịch bản chính | 1. Chủ sân chọn cơ sở, bấm thêm sân.<br>2. Nhập tên, môn, loại sân, trong nhà hoặc ngoài trời, giờ mở và đóng, giá cơ sở mỗi khung giờ.<br>3. Hệ thống kiểm tra dữ liệu và quyền sở hữu cơ sở.<br>4. Hệ thống tạo sân và các khung giờ cùng lúc.<br>5. Hệ thống hiển thị sân vừa tạo. |
+| Kịch bản phụ | 3a. Không phải chủ cơ sở: từ chối vì không đủ quyền.<br>3b. Dữ liệu sai (giờ đóng trước giờ mở, giá âm): từ chối và báo lý do.<br>3c. Giờ sân nằm ngoài giờ mở cửa của cơ sở: từ chối và báo lý do. |
+| Ràng buộc phi chức năng | Sân và khung giờ được tạo cùng lúc (NFR-04). |
+
+##### U007 – Cập nhật sân con
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U007 |
+| Tên Use Case | Cập nhật sân con |
+| Yêu cầu liên quan | FR-07 |
+| Tóm tắt | Chủ sân sửa tên, giờ hoạt động hoặc tạm ngưng sân. |
+| Tác nhân | Chủ sân |
+| Điều kiện tiên quyết | Đã đăng nhập. |
+| Kết quả | Thành công: Thông tin sân được cập nhật, khung giờ đồng bộ theo giờ mới; hoặc sân bị ẩn khi ngưng.<br>Thất bại: Giữ nguyên thông tin sân, khung giờ và các đơn hiện có. |
+| Kịch bản chính | 1. Chủ sân sửa tên, giờ mở và đóng, hoặc tắt hoạt động sân.<br>2. Hệ thống kiểm tra còn đơn `DEPOSITED` trong tương lai bị ảnh hưởng không.<br>3. Không xung đột: hệ thống cập nhật sân và các khung giờ theo giờ mới.<br>4. Nếu ngưng sân: hủy các đơn `PENDING_DEPOSIT`, nhả khung giờ.<br>5. Hệ thống báo thành công. |
+| Kịch bản phụ | 1a. Không phải chủ sân con: từ chối vì không đủ quyền.<br>3a. Giờ mới cắt mất khung giờ đã có đơn đã cọc: từ chối và báo lý do, giữ nguyên.<br>3b. Ngưng sân khi còn đơn đã cọc: từ chối và báo lý do, giữ nguyên. |
+| Ràng buộc phi chức năng | Cập nhật xong toàn bộ hoặc không đổi gì (NFR-04). |
+
+##### U008 – Cấu hình quy tắc giá
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U008 |
+| Tên Use Case | Cấu hình quy tắc giá theo thời điểm |
+| Yêu cầu liên quan | FR-08 |
+| Tóm tắt | Chủ sân đặt hệ số nhân giá cho giờ cao điểm, cuối tuần, ngày lễ của cơ sở (QĐ1). |
+| Tác nhân | Chủ sân |
+| Điều kiện tiên quyết | Đã đăng nhập. Với quy tắc ngày lễ, ngày lễ đã có trong danh mục. |
+| Kết quả | Thành công: Bộ quy tắc giá mới thay bộ cũ của cơ sở.<br>Thất bại: Giữ nguyên bộ quy tắc cũ. |
+| Kịch bản chính | 1. Chủ sân mở trang bảng giá của cơ sở.<br>2. Thêm các quy tắc: loại (cao điểm, cuối tuần, ngày lễ), hệ số, khung giờ hoặc thứ hoặc ngày lễ áp dụng.<br>3. Hệ thống kiểm tra từng quy tắc theo loại.<br>4. Hệ thống thay toàn bộ quy tắc cũ bằng quy tắc mới.<br>5. Hệ thống báo số quy tắc đang áp dụng. |
+| Kịch bản phụ | 3a. Quy tắc thiếu trường bắt buộc theo loại hoặc hệ số ngoài khoảng 1.20–1.50: từ chối và báo lý do, không lưu gì.<br>3b. Không phải chủ cơ sở: từ chối vì không đủ quyền. |
+| Ràng buộc phi chức năng | NFR-05 (kiểm tra quyền). Bộ quy tắc được thay toàn bộ hoặc không đổi gì (NFR-04). |
+
+##### U009 – Quản lý ngày lễ
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U009 |
+| Tên Use Case | Quản lý danh mục ngày lễ |
+| Yêu cầu liên quan | FR-09 |
+| Tóm tắt | Admin thêm ngày lễ vào danh mục; chủ sân xem danh mục để gắn quy tắc giá. |
+| Tác nhân | Admin (thêm); Chủ sân (xem) |
+| Điều kiện tiên quyết | Đã đăng nhập. |
+| Kết quả | Thành công: Danh mục có thêm ngày lễ mới.<br>Thất bại: Danh mục ngày lễ không đổi. |
+| Kịch bản chính | 1. Admin mở trang danh mục ngày lễ.<br>2. Nhập tên, ngày, chọn lặp lại hằng năm hay không.<br>3. Hệ thống kiểm tra và lưu.<br>4. Danh mục hiển thị ngày lễ mới. |
+| Kịch bản phụ | 1a. Người dùng không phải Admin: từ chối vì không đủ quyền khi thêm.<br>3a. Dữ liệu sai hoặc ngày đã có trong danh mục: từ chối và báo lý do. |
+| Ràng buộc phi chức năng | NFR-05. |
+
+##### U010 – Quản lý dịch vụ đi kèm
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U010 |
+| Tên Use Case | Quản lý dịch vụ đi kèm |
+| Yêu cầu liên quan | FR-10 |
+| Tóm tắt | Chủ sân thêm, sửa đơn giá, bật hoặc tắt dịch vụ đi kèm (thuê vợt, nước, bóng). |
+| Tác nhân | Chủ sân |
+| Điều kiện tiên quyết | Đã đăng nhập. |
+| Kết quả | Thành công: Danh sách dịch vụ của cơ sở được cập nhật; dịch vụ đang bật xuất hiện khi khách đặt sân.<br>Thất bại: Danh sách dịch vụ không đổi. |
+| Kịch bản chính | 1. Chủ sân mở danh sách dịch vụ của cơ sở.<br>2. Thêm dịch vụ (tên, đơn vị tính, đơn giá) hoặc sửa đơn giá hoặc tắt dịch vụ.<br>3. Hệ thống kiểm tra quyền sở hữu và dữ liệu.<br>4. Hệ thống lưu và hiển thị danh sách mới. |
+| Kịch bản phụ | 3a. Không phải chủ cơ sở: từ chối vì không đủ quyền.<br>3b. Đơn giá âm hoặc thiếu tên: từ chối và báo lý do. |
+| Ràng buộc phi chức năng | NFR-05 (kiểm tra quyền). |
+
+**Nhóm C. Tìm và đặt sân**
+
+##### U011 – Tìm cơ sở và sân
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U011 |
+| Tên Use Case | Tìm cơ sở và sân |
+| Yêu cầu liên quan | FR-11, FR-12 |
+| Tóm tắt | Người dùng tìm cơ sở theo môn, thành phố, từ khóa và xem chi tiết cơ sở, sân con, vị trí trên bản đồ. |
+| Tác nhân | Khách hàng, Chủ sân (không cần đăng nhập) |
+| Điều kiện tiên quyết | Không. |
+| Kết quả | Thành công: Danh sách cơ sở phù hợp; xem được chi tiết cơ sở, sân con và dịch vụ.<br>Thất bại: Không có kết quả hoặc báo cơ sở không tồn tại; dữ liệu không đổi. |
+| Kịch bản chính | 1. Người dùng nhập bộ lọc (môn, thành phố, từ khóa).<br>2. Hệ thống trả danh sách cơ sở phân trang, kèm tọa độ.<br>3. Giao diện hiển thị danh sách và ghim trên bản đồ.<br>4. Người dùng chọn một cơ sở.<br>5. Hệ thống hiển thị thông tin cơ sở, các sân con đang hoạt động và dịch vụ đi kèm. |
+| Kịch bản phụ | 2a. Không có kết quả: hiển thị thông báo không tìm thấy.<br>4a. Cơ sở không tồn tại hoặc ngừng hoạt động: báo không tìm thấy. |
+| Ràng buộc phi chức năng | Hiển thị trong 3 giây (NFR-01). Bản đồ OpenStreetMap (NFR-12). |
+
+##### U012 – Xem lịch khung giờ
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U012 |
+| Tên Use Case | Xem lịch khung giờ theo ngày |
+| Yêu cầu liên quan | FR-13 |
+| Tóm tắt | Khách xem trạng thái các khung giờ của một sân con trong một ngày. |
+| Tác nhân | Khách hàng |
+| Điều kiện tiên quyết | Sân con đang hoạt động. |
+| Kết quả | Thành công: Mỗi khung giờ hiện trạng thái trống, đang giữ chỗ hoặc đã đặt cọc, kèm giá cơ sở.<br>Thất bại: Không hiển thị lịch; dữ liệu không đổi. |
+| Kịch bản chính | 1. Khách chọn sân con và ngày.<br>2. Hệ thống xác định trạng thái từng khung giờ tại thời điểm hiện tại.<br>3. Giao diện hiển thị lịch; khung giờ trống chọn được. |
+| Kịch bản phụ | 1a. Thiếu ngày hoặc sai định dạng: từ chối và báo lý do.<br>2a. Đơn đã quá hạn giữ chỗ: tính là trống ngay, không cần chờ tiến trình nền. |
+| Ràng buộc phi chức năng | NFR-01, NFR-02. |
+
+##### U013 – Xem trước tiền đặt sân
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U013 |
+| Tên Use Case | Xem trước tiền đặt sân |
+| Yêu cầu liên quan | FR-14 |
+| Tóm tắt | Hệ thống tính tổng tiền, tiền cọc và tiền còn lại cho các khung giờ và dịch vụ đã chọn. Được U014 include. |
+| Tác nhân | Khách hàng |
+| Điều kiện tiên quyết | Đã đăng nhập; đã chọn ít nhất một khung giờ. |
+| Kết quả | Thành công: Bảng kê tiền chi tiết từng khung giờ; chưa tạo đơn, chưa giữ chỗ.<br>Thất bại: Không có bảng kê tiền; chưa tạo đơn. |
+| Kịch bản chính | 1. Khách chọn khung giờ và dịch vụ.<br>2. Giao diện gửi lựa chọn cho hệ thống.<br>3. Hệ thống tính giá từng khung theo hệ số lớn nhất khớp, cộng dịch vụ, tính cọc 30% và phần còn lại.<br>4. Giao diện hiển thị đúng số hệ thống tính. |
+| Kịch bản phụ | 3a. Khung giờ không thuộc sân hoặc ngoài giờ mở cửa: báo lỗi, không tính.<br>3b. Dịch vụ đã tắt: báo lỗi. |
+| Ràng buộc phi chức năng | Giao diện không tự tính tiền (NFR-09). Tiền là số nguyên VNĐ (NFR-04). Công thức: QĐ1, QĐ2, QĐ4. |
+
+##### U014 – Đặt sân và giữ chỗ
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U014 |
+| Tên Use Case | Đặt sân và giữ chỗ |
+| Yêu cầu liên quan | FR-15, FR-16 |
+| Tóm tắt | Khách tạo đơn cho một hoặc nhiều khung giờ; hệ thống giữ chỗ tối đa 10 phút chờ đặt cọc. |
+| Tác nhân | Khách hàng |
+| Điều kiện tiên quyết | Đã đăng nhập; đã chọn ít nhất một khung giờ. |
+| Kết quả | Thành công: Đơn `PENDING_DEPOSIT` kèm hạn giữ chỗ; các khung giờ bị giữ. Chưa trừ tiền ví.<br>Thất bại: Không tạo đơn, không giữ khung giờ, ví không đổi. |
+| Kịch bản chính | 1. Khách xem trước tiền (U013) rồi bấm đặt sân.<br>2. Hệ thống giải phóng các đơn giữ chỗ quá hạn trên cùng khung giờ.<br>3. Hệ thống kiểm tra khung giờ chưa có đơn còn hiệu lực (an toàn khi đặt cùng lúc), nằm trong giờ mở cửa và chưa qua giờ bắt đầu.<br>4. Hệ thống tính tiền, đặt hạn giữ chỗ (10 phút hoặc đến giờ bắt đầu nếu sớm hơn).<br>5. Hệ thống tạo đơn, lưu hệ số và giá tại thời điểm đặt.<br>6. Hệ thống trả mã đơn, tiền cọc và hạn giữ chỗ. |
+| Kịch bản phụ | 3a. Khung giờ đã có đơn còn hiệu lực: từ chối, không tạo đơn.<br>3b. Giờ bắt đầu đã qua: từ chối.<br>3c. Ngoài giờ mở cửa hoặc sân ngưng: từ chối, không tạo đơn. |
+| Ràng buộc phi chức năng | Chống đặt trùng khi đồng thời (QĐ3, NFR-03). Đơn được tạo đầy đủ hoặc không tạo gì (NFR-04). Phản hồi dưới 2 giây (NFR-02). |
+
+##### U015 – Xem đơn đặt sân
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U015 |
+| Tên Use Case | Xem danh sách và chi tiết đơn đặt sân |
+| Yêu cầu liên quan | FR-17 |
+| Tóm tắt | Người dùng xem các đơn thuộc phạm vi quyền của mình và mở chi tiết một đơn. |
+| Tác nhân | Khách hàng, Chủ sân, Admin |
+| Điều kiện tiên quyết | Đã đăng nhập. |
+| Kết quả | Thành công: Danh sách đơn (khách: đơn của mình; chủ sân: đơn tại cơ sở của mình; Admin: tất cả) và chi tiết từng đơn.<br>Thất bại: Không hiển thị đơn; không lộ đơn của người khác. |
+| Kịch bản chính | 1. Người dùng mở danh sách đơn, có thể lọc theo trạng thái, cơ sở, sân, khoảng ngày.<br>2. Hệ thống trả danh sách phân trang theo quyền.<br>3. Người dùng chọn một đơn.<br>4. Hệ thống hiển thị khung giờ, dịch vụ, bảng kê tiền, trạng thái. |
+| Kịch bản phụ | 3a. Mở đơn không thuộc quyền mình: từ chối vì không đủ quyền.<br>3b. Đơn không tồn tại: báo không tìm thấy. |
+| Ràng buộc phi chức năng | NFR-02, NFR-05. |
+
+**Nhóm D. Cọc, hoàn cọc và ví**
+
+##### U016 – Đặt cọc
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U016 |
+| Tên Use Case | Đặt cọc 30% bằng ví |
+| Yêu cầu liên quan | FR-18, FR-25 |
+| Tóm tắt | Khách thanh toán tiền cọc từ ví cho đơn đang giữ chỗ để khóa khung giờ. |
+| Tác nhân | Khách hàng |
+| Điều kiện tiên quyết | Đã đăng nhập; đã có đơn đặt sân. |
+| Kết quả | Thành công: Đơn sang `DEPOSITED`; ví khách giảm, ví hệ thống tăng đúng tiền cọc; có 1 giao dịch `DEPOSIT`; khung giờ bị khóa với mọi người (QĐ3).<br>Thất bại: Đơn giữ nguyên trạng thái, ví không đổi, không có giao dịch. |
+| Kịch bản chính | 1. Khách mở đơn và bấm đặt cọc.<br>2. Hệ thống kiểm tra đơn còn hạn và đang chờ cọc.<br>3. Hệ thống kiểm tra số dư đủ.<br>4. Hệ thống trừ ví khách, cộng ví hệ thống, ghi giao dịch `DEPOSIT`, chuyển đơn sang `DEPOSITED`.<br>5. Hệ thống báo thành công và số dư mới.<br>6. Hệ thống gửi email xác nhận đặt sân (FR-25). |
+| Kịch bản phụ | 1a. Không phải chủ đơn: từ chối vì không đủ quyền.<br>2a. Đơn đã hết hạn hoặc đã đổi trạng thái: từ chối và báo lý do, không trừ tiền.<br>3a. Số dư không đủ: từ chối và báo lý do, không trừ tiền, đơn vẫn chờ cọc đến hết hạn.<br>6a. Gửi email lỗi: bỏ qua, đơn vẫn ở `DEPOSITED`. |
+| Ràng buộc phi chức năng | Trừ tiền, cộng tiền, ghi giao dịch và đổi trạng thái đơn xảy ra cùng lúc hoặc không xảy ra gì; số dư không âm (QĐ4, QĐ6, NFR-04). |
+
+##### U017 – Hủy đơn và hoàn cọc
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U017 |
+| Tên Use Case | Hủy đơn và hoàn cọc |
+| Yêu cầu liên quan | FR-19, FR-20 |
+| Tóm tắt | Khách xem trước tiền hoàn, rồi hủy đơn. Hệ thống tự chia tiền cọc giữa ví khách và ví chủ sân theo QĐ5. Ví dụ: cọc 39.000đ, hủy còn 30 giờ: hoàn 31.200đ, chủ sân nhận 7.800đ. |
+| Tác nhân | Khách hàng (Admin cũng làm được) |
+| Điều kiện tiên quyết | Đã đăng nhập; đã có đơn đặt sân. |
+| Kết quả | Thành công: Đơn `CANCELLED`; khung giờ được nhả. Nếu đơn đã cọc: tiền hoàn về ví khách và phần còn lại về ví chủ sân.<br>Thất bại: Đơn giữ nguyên trạng thái, không hoàn tiền. |
+| Kịch bản chính | 1. Khách mở đơn và bấm hủy.<br>2. Hệ thống tính số giờ còn lại và trả tỉ lệ hoàn (≥24 giờ: 80%, 12 đến dưới 24 giờ: 50%, dưới 12 giờ: 0%) cùng số tiền.<br>3. Khách đọc, nhập lý do và xác nhận.<br>4. Hệ thống đổi đơn sang `CANCELLED`, nhả khung giờ, đóng bài đăng tìm đồng đội liên quan (nếu có).<br>5. Nếu đơn đã cọc: ghi `REFUND` về ví khách và `FORFEIT` về ví chủ sân (phần không hoàn).<br>6. Hệ thống báo số tiền hoàn và số dư ví mới. |
+| Kịch bản phụ | 1a. Không phải chủ đơn hoặc Admin: từ chối vì không đủ quyền.<br>3a. Khách bỏ qua xác nhận: không đổi gì.<br>4a. Đơn đã hủy, đã hoàn tất hoặc đã qua giờ chơi: từ chối và báo lý do.<br>5a. Đơn chưa cọc: không có giao dịch ví. |
+| Ràng buộc phi chức năng | Giao diện không tự tính hoàn cọc (NFR-09). Hoàn cọc và đổi trạng thái đơn xảy ra cùng lúc (NFR-04). |
+
+##### U018 – Xác nhận hoàn tất
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U018 |
+| Tên Use Case | Xác nhận hoàn tất và kết toán cọc |
+| Yêu cầu liên quan | FR-21 |
+| Tóm tắt | Sau buổi chơi, chủ sân xác nhận để tiền cọc đang giữ chuyển sang ví chủ sân. Phần tiền còn lại (70%) thanh toán ngoài hệ thống (QĐ4). |
+| Tác nhân | Chủ sân (Admin cũng làm được) |
+| Điều kiện tiên quyết | Đã đăng nhập; đã có đơn đặt sân. |
+| Kết quả | Thành công: Đơn `COMPLETED`; ví hệ thống giảm và ví chủ sân tăng đúng tiền cọc; có 1 giao dịch `SETTLE`.<br>Thất bại: Đơn giữ nguyên `DEPOSITED`, ví không đổi. |
+| Kịch bản chính | 1. Chủ sân mở đơn của buổi chơi và bấm hoàn tất.<br>2. Hệ thống kiểm tra đã đến giờ chơi và đơn đang `DEPOSITED`.<br>3. Hệ thống chuyển tiền cọc sang ví chủ sân, ghi `SETTLE`, đổi đơn sang `COMPLETED`.<br>4. Hệ thống báo thành công. |
+| Kịch bản phụ | 2a. Chưa đến giờ chơi: từ chối và báo lý do.<br>2b. Đơn không ở `DEPOSITED`: báo lỗi, không đổi gì.<br>2c. Không phải chủ cơ sở: từ chối vì không đủ quyền. |
+| Ràng buộc phi chức năng | Chuyển tiền và đổi trạng thái đơn cùng lúc; mỗi đơn kết toán đúng một lần (NFR-04). |
+
+##### U019 – Xem ví và giao dịch
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U019 |
+| Tên Use Case | Xem ví và lịch sử giao dịch |
+| Yêu cầu liên quan | FR-22 |
+| Tóm tắt | Người dùng xem số dư và lịch sử biến động ví. |
+| Tác nhân | Khách hàng, Chủ sân |
+| Điều kiện tiên quyết | Đã đăng nhập. |
+| Kết quả | Thành công: Hiển thị số dư và danh sách giao dịch phân trang.<br>Thất bại: Không hiển thị ví; dữ liệu không đổi. |
+| Kịch bản chính | 1. Người dùng mở trang ví.<br>2. Hệ thống trả số dư hiện tại.<br>3. Người dùng xem lịch sử, có thể lọc theo loại (`TOPUP`, `DEPOSIT`, `REFUND`, `FORFEIT`, `SETTLE`).<br>4. Hệ thống trả danh sách giao dịch của ví đó. |
+| Kịch bản phụ | 3a. Chưa có giao dịch: hiển thị danh sách rỗng. |
+| Ràng buộc phi chức năng | Mỗi người chỉ thấy ví của mình (NFR-05). Tổng các giao dịch khớp số dư (NFR-04). |
+
+##### U020 – Cấp tiền vào ví
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U020 |
+| Tên Use Case | Admin cấp tiền vào ví |
+| Yêu cầu liên quan | FR-23 |
+| Tóm tắt | Admin cộng tiền trải nghiệm vào ví một người dùng (QĐ6). |
+| Tác nhân | Admin |
+| Điều kiện tiên quyết | Đã đăng nhập. |
+| Kết quả | Thành công: Ví người nhận tăng đúng số tiền; có 1 giao dịch `TOPUP` ghi rõ Admin thực hiện.<br>Thất bại: Ví người nhận không đổi, không có giao dịch. |
+| Kịch bản chính | 1. Admin chọn người dùng và nhập số tiền.<br>2. Hệ thống kiểm tra số tiền là số nguyên dương.<br>3. Hệ thống cộng ví và ghi giao dịch `TOPUP` cùng lúc.<br>4. Hệ thống báo số dư mới. |
+| Kịch bản phụ | 1a. Không phải Admin: từ chối vì không đủ quyền.<br>2a. Số tiền không hợp lệ: từ chối và báo lý do.<br>2b. Người nhận không tồn tại: báo không tìm thấy. |
+| Ràng buộc phi chức năng | NFR-04, NFR-05. Chỉ cấp tiền trong hệ thống, không nạp tiền thật (NFR-12). |
+
+##### U021 – Nhả giữ chỗ hết hạn
+
+| Mục | Nội dung |
+| --- | --- |
+| Use case ID | U021 |
+| Tên Use Case | Nhả giữ chỗ hết hạn |
+| Yêu cầu liên quan | FR-24 |
+| Tóm tắt | Hệ thống tự chạy mỗi 60 giây để hủy các đơn chờ cọc quá hạn và mở lại khung giờ. Admin có thể kích hoạt thủ công. |
+| Tác nhân | Admin (kích hoạt thủ công) |
+| Điều kiện tiên quyết | Kích hoạt thủ công cần đăng nhập. |
+| Kết quả | Thành công: Các đơn quá hạn thành `CANCELLED`, khung giờ được nhả. Không có giao dịch ví.<br>Thất bại: Đơn chưa xử lý được sẽ được xử lý ở lần chạy sau; không có đơn bị hủy dở. |
+| Kịch bản chính | 1. Tiến trình nền chạy mỗi 60 giây (hoặc Admin kích hoạt).<br>2. Hệ thống tìm các đơn chờ cọc quá hạn.<br>3. Hệ thống đổi các đơn đó sang `CANCELLED` và nhả khung giờ.<br>4. Hệ thống ghi số đơn đã xử lý. |
+| Kịch bản phụ | 1a. Người gọi thủ công không phải Admin: từ chối vì không đủ quyền.<br>2a. Không có đơn quá hạn: không làm gì. |
+| Ràng buộc phi chức năng | Chạy mỗi 60 giây (NFR-08). |
+
+
+# 5 Bản mẫu (Prototype)
+
+Wireframe 17 màn hình `P01` đến `P17`.
+
+| Mã | Màn hình | Vai trò | Use case |
+| --- | --- | --- | --- |
+| P01 | Đăng ký | Khách hàng, Chủ sân | U001 |
+| P02 | Đăng nhập | Khách hàng, Chủ sân, Admin | U002 |
+| P03 | Tìm và lọc sân | Khách hàng | U011 |
+| P04 | Chi tiết sân và lịch trống | Khách hàng | U011, U012 |
+| P05 | Xác nhận đặt sân | Khách hàng | U013, U014, U016 |
+| P06 | Kết quả đặt cọc | Khách hàng | U016 |
+| P07 | Lịch đặt của tôi | Khách hàng | U015 |
+| P08 | Hủy đặt sân | Khách hàng | U017 |
+| P09 | Ví của khách | Khách hàng | U004, U019 |
+| P10 | Danh sách cụm sân | Chủ sân | U005 |
+| P11 | Tạo và sửa cụm sân, sân con | Chủ sân | U005, U006, U007 |
+| P12 | Giờ mở cửa | Chủ sân | U007 |
+| P13 | Bảng giá và hệ số | Chủ sân | U008 |
+| P14 | Lịch đặt theo ngày | Chủ sân | U015 |
+| P15 | Ví của chủ sân | Chủ sân | U019 |
+| P16 | Admin cấp tiền | Admin | U020 |
+| P17 | Danh sách giao dịch | Admin | U019 |
+
+**Nhóm A. Khách hàng**
+
+##### P01 – Đăng ký (U001)
+
+![P01 Đăng ký](images/p01-dang-ky.png)
+
+##### P02 – Đăng nhập (U002)
+
+![P02 Đăng nhập](images/p02-dang-nhap.png)
+
+##### P03 – Tìm và lọc sân (U011)
+
+![P03 Tìm và lọc sân](images/p03-tim-san.png)
+
+##### P04 – Chi tiết sân và lịch trống (U011, U012)
+
+![P04 Chi tiết sân và lịch trống](images/p04-chi-tiet-san.png)
+
+##### P05 – Xác nhận đặt sân (U013, U014, U016)
+
+![P05 Xác nhận đặt sân](images/p05-xac-nhan-dat-san.png)
+
+##### P06 – Kết quả đặt cọc (U016)
+
+![P06 Kết quả đặt cọc](images/p06-ket-qua-dat-coc.png)
+
+##### P07 – Lịch đặt của tôi (U015)
+
+![P07 Lịch đặt của tôi](images/p07-lich-dat-cua-toi.png)
+
+##### P08 – Hủy đặt sân (U017)
+
+![P08 Hủy đặt sân](images/p08-huy-dat-san.png)
+
+##### P09 – Ví của khách (U004, U019)
+
+![P09 Ví của khách](images/p09-vi-khach.png)
+
+**Nhóm B. Chủ sân**
+
+##### P10 – Danh sách cụm sân (U005)
+
+![P10 Danh sách cụm sân](images/p10-ds-cum-san.png)
+
+##### P11 – Tạo và sửa cụm sân, sân con (U005, U006, U007)
+
+![P11 Tạo và sửa cụm sân, sân con](images/p11-sua-cum-san.png)
+
+##### P12 – Giờ mở cửa (U007)
+
+![P12 Giờ mở cửa](images/p12-gio-mo-cua.png)
+
+##### P13 – Bảng giá và hệ số (U008)
+
+![P13 Bảng giá và hệ số](images/p13-bang-gia.png)
+
+##### P14 – Lịch đặt theo ngày (U015)
+
+![P14 Lịch đặt theo ngày](images/p14-lich-dat-theo-ngay.png)
+
+##### P15 – Ví của chủ sân (U019)
+
+![P15 Ví của chủ sân](images/p15-vi-chu-san.png)
+
+**Nhóm C. Admin**
+
+##### P16 – Admin cấp tiền (U020)
+
+![P16 Admin cấp tiền](images/p16-admin-cap-tien.png)
+
+##### P17 – Danh sách giao dịch (U019)
+
+![P17 Danh sách giao dịch](images/p17-admin-giao-dich.png)
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked-gfm-heading-id@3.1.3/lib/index.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+(async function () {
+  var md = document.getElementById('md-source').textContent.replace(/^\n/, '');
+  var $ = function (id) { return document.getElementById(id); };
+  var content = $('content');
+
+  if (typeof marked === 'undefined') {
+    $('cover').hidden = true; $('toc').hidden = true;
+    content.innerHTML = '<div class="fallback"></div>';
+    content.firstChild.textContent = md;
+    return;
+  }
+  if (typeof markedGfmHeadingId !== 'undefined') marked.use(markedGfmHeadingId.gfmHeadingId());
+  marked.use({ gfm: true });
+
+  var tocStart = md.indexOf('**MỤC LỤC**');
+  var bodyStart = md.search(/^# /m);
+
+  // ----- bìa -----
+  var cv = document.createElement('div');
+  cv.innerHTML = marked.parse(md.slice(0, tocStart));
+  var cover = $('cover'), fields = document.createElement('div');
+  fields.className = 'fields';
+  Array.prototype.slice.call(cv.children).forEach(function (n) {
+    var s = n.tagName === 'P' && n.firstElementChild && n.firstElementChild.tagName === 'STRONG' ? n.firstElementChild : null;
+    if (s && /:$/.test(s.textContent)) {
+      var f = document.createElement('div'); f.className = 'field';
+      f.innerHTML = '<span class="k"></span> <span class="v"></span>';
+      f.firstChild.textContent = s.textContent;
+      f.lastChild.textContent = n.textContent.slice(s.textContent.length).trim();
+      fields.appendChild(f);
+    } else {
+      if (s && s.textContent === n.textContent) n.className = 'course';
+      cover.appendChild(n);
+    }
+  });
+  cover.appendChild(fields);
+
+  // ----- mục lục trong trang -----
+  var tc = document.createElement('div');
+  tc.innerHTML = marked.parse(md.slice(tocStart, bodyStart));
+  var toc = $('toc');
+  var tp = document.createElement('p'); tp.className = 'toc-title'; tp.textContent = 'MỤC LỤC';
+  toc.appendChild(tp);
+  toc.appendChild(tc.querySelector('ul'));
+
+  // ----- thân bài -----
+  content.innerHTML = marked.parse(md.slice(bodyStart));
+
+  // Sơ đồ use case: SVG dựng sẵn khi build (ucsvg.py); thiếu thì dùng Mermaid trong md
+  var mer = content.querySelectorAll('pre > code.language-mermaid');
+  var tpl = $('uc-svg');
+  for (var mi = 0; mi < mer.length; mi++) {
+    var pre = mer[mi].parentNode;
+    if (tpl) {
+      var fig = document.createElement('div');
+      fig.className = 'ucfig';
+      fig.innerHTML = tpl.innerHTML;
+      pre.parentNode.replaceChild(fig, pre);
+    } else if (typeof mermaid !== 'undefined') {
+      var d = document.createElement('div');
+      d.className = 'mermaid'; d.textContent = mer[mi].textContent;
+      pre.parentNode.replaceChild(d, pre);
+      mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+      try { await mermaid.run({ nodes: [d] }); } catch (e) { console.error(e); }
+    }
+  }
+
+  // Bảng: bọc, cột đầu ngắn thì không xuống dòng
+  content.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div'); w.className = 'tw';
+    t.parentNode.insertBefore(w, t); w.appendChild(t);
+    var short = true;
+    t.querySelectorAll('tr').forEach(function (r) { if (r.cells[0] && r.cells[0].textContent.length > 18) short = false; });
+    if (short) t.className = 'fc';
+  });
+
+  // Tab: chỉ ở 3.2.1 và 4.2
+  function isNhom(x) {
+    return x.tagName === 'P' && x.firstElementChild && x.firstElementChild.tagName === 'STRONG' && /^Nhóm /.test(x.textContent);
+  }
+  function tabify(h4re) {
+    var h = Array.prototype.filter.call(content.querySelectorAll('h1, h4'), function (x) { return h4re.test(x.textContent); })[0];
+    if (!h) return;
+    var seg = [], n = h.nextElementSibling;
+    while (n && !/^H[1-4]$/.test(n.tagName)) { seg.push(n); n = n.nextElementSibling; }
+    var groups = [], pre = [];
+    seg.forEach(function (x) {
+      if (isNhom(x)) groups.push({ label: x.textContent.trim(), nodes: [] });
+      else if (groups.length) groups[groups.length - 1].nodes.push(x);
+      else pre.push(x);
+    });
+    if (groups.length < 2) return;
+    seg.forEach(function (x) { if (isNhom(x)) x.remove(); });
+    var box = document.createElement('div'); box.className = 'tabs';
+    var bar = document.createElement('div'); bar.className = 'tab-bar'; box.appendChild(bar);
+    var panels = groups.map(function (g, i) {
+      var p = document.createElement('div'); p.className = 'tab-panel' + (i ? '' : ' on');
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = g.label;
+      if (!i) b.className = 'on';
+      b.onclick = function () {
+        panels.forEach(function (q, k) { q.classList.toggle('on', q === p); bar.children[k].classList.toggle('on', q === p); });
+      };
+      bar.appendChild(b);
+      g.nodes.forEach(function (x) { p.appendChild(x); });
+      box.appendChild(p);
+      return p;
+    });
+    (pre.length ? pre[pre.length - 1] : h).after(box);
+  }
+  tabify(/^3\.2\.1\b/);
+  tabify(/^4\.2\b/);
+  tabify(/^5 Bản mẫu/);
+
+  // Trong mỗi tab còn nhiều mục h5 (use case, màn hình): cột trái chọn, bên phải hiện nội dung
+  content.querySelectorAll('.tab-panel').forEach(function (panel) {
+    var kids = Array.prototype.slice.call(panel.children);
+    var items = [], pre = [];
+    kids.forEach(function (x) {
+      if (x.tagName === 'H5') items.push({ title: x.textContent.trim(), nodes: [x] });
+      else if (items.length) items[items.length - 1].nodes.push(x);
+      else pre.push(x);
+    });
+    if (items.length < 2) return;
+    var split = document.createElement('div'); split.className = 'split';
+    var navc = document.createElement('div'); navc.className = 'split-nav';
+    var main = document.createElement('div'); main.className = 'split-main';
+    split.appendChild(navc); split.appendChild(main);
+    var views = items.map(function (it, i) {
+      var v = document.createElement('div'); v.className = 'split-item' + (i ? '' : ' on');
+      it.nodes.forEach(function (x) { v.appendChild(x); });
+      main.appendChild(v);
+      var b = document.createElement('button'); b.type = 'button';
+      b.className = i ? '' : 'on'; b.textContent = it.title;
+      b.onclick = function () {
+        views.forEach(function (w, k) { w.classList.toggle('on', w === v); navc.children[k].classList.toggle('on', w === v); });
+      };
+      navc.appendChild(b);
+      return v;
+    });
+    panel.appendChild(split);
+  });
+
+  // Sidebar
+  var nav = $('nav');
+  content.querySelectorAll('h1[id], h4[id]').forEach(function (h) {
+    var a = document.createElement('a');
+    a.className = h.tagName === 'H1' ? 'n1' : 'n4';
+    a.href = '#' + h.id; a.textContent = h.textContent;
+    nav.appendChild(a);
+  });
+
+  // Highlight: bỏ qua code, svg, tiêu đề, link, header bảng
+  var cats = [
+    ['num', /\b\d[\d.,]*\s?(?:%|đ|giây|phút|giờ|GB|vCPU|px|ms|bản|người dùng|cơ sở|đơn)(?![\wÀ-ỹ])/g],
+    ['ref', /\b(?:N?FR-\d+|QĐ\d(?:[–-]QĐ\d)?|U\d{3}|M\d{2})\b/g],
+    ['tech', /\b(?:React(?:\.js)?|FastAPI|Python|MySQL|Bcrypt|HTTPS|JWT|REST(?: API)?|JSON|Brevo|OTP|Leaflet|OpenStreetMap|GitHub|Git|ISO 8601|HTML5|CSS3|JavaScript|CI)\b/g],
+    ['role', /(?:khách hàng|chủ sân|Admin|Frontend|Backend|CSDL)/gi]
+  ];
+  var skip = { CODE: 1, PRE: 1, SCRIPT: 1, STYLE: 1, H1: 1, H2: 1, H3: 1, H4: 1, H5: 1, A: 1, TH: 1, BUTTON: 1, svg: 1 };
+  var walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
+    acceptNode: function (n) {
+      for (var p = n.parentNode; p && p !== content; p = p.parentNode) {
+        if (skip[p.tagName] || (p.classList && (p.classList.contains('mermaid') || p.classList.contains('tab-bar')))) return NodeFilter.FILTER_REJECT;
+      }
+      return n.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    }
+  });
+  var nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(function (n) {
+    var text = n.nodeValue, spans = [];
+    cats.forEach(function (c) {
+      c[1].lastIndex = 0;
+      var m;
+      while ((m = c[1].exec(text))) spans.push({ s: m.index, e: m.index + m[0].length, k: c[0] });
+    });
+    if (!spans.length) return;
+    spans.sort(function (a, b) { return a.s - b.s || b.e - a.e; });
+    var out = [], pos = 0;
+    spans.forEach(function (x) { if (x.s >= pos) { out.push(x); pos = x.e; } });
+    var frag = document.createDocumentFragment();
+    pos = 0;
+    out.forEach(function (x) {
+      frag.appendChild(document.createTextNode(text.slice(pos, x.s)));
+      var sp = document.createElement('span');
+      sp.className = 'hl hl-' + x.k; sp.textContent = text.slice(x.s, x.e);
+      frag.appendChild(sp); pos = x.e;
+    });
+    frag.appendChild(document.createTextNode(text.slice(pos)));
+    n.parentNode.replaceChild(frag, n);
+  });
+
+  // TODO tô vàng
+  var tw = document.createTreeWalker(content, NodeFilter.SHOW_TEXT), hits = [];
+  while (tw.nextNode()) if (/TODO - /.test(tw.currentNode.nodeValue)) hits.push(tw.currentNode);
+  hits.forEach(function (n) {
+    var frag = document.createDocumentFragment();
+    n.nodeValue.split(/(TODO - [^:]+:?)/).forEach(function (s) {
+      if (/^TODO - /.test(s)) { var sp = document.createElement('span'); sp.className = 'todo'; sp.textContent = s; frag.appendChild(sp); }
+      else frag.appendChild(document.createTextNode(s));
+    });
+    n.parentNode.replaceChild(frag, n);
+  });
+
+  // ----- chrome giống proposal: mục lục thu gọn, highlight, theme, scrollspy -----
+  var s = document.createElement('script');
+  s.textContent = "/* ===== Mục lục ===== */\n(function(){\nfunction mk(cls,label,exp){var b=document.createElement('button');b.type='button';b.className=cls;if(label)b.setAttribute('aria-label',label);if(exp!==undefined)b.setAttribute('aria-expanded',exp?'true':'false');return b}\nfunction tools(onOpen,onClose){var s=document.createElement('span');s.className='tools';\nvar a=mk('tl');a.textContent='Mở hết';a.addEventListener('click',onOpen);\nvar c=mk('tl');c.textContent='Thu gọn';c.addEventListener('click',onClose);s.appendChild(a);s.appendChild(c);return s}\n/* sidebar */\nvar nav=document.getElementById('nav'),groups=[];\nvar h=nav.querySelector('.nav-h'),kids=[].slice.call(nav.children).filter(function(e){return e.tagName==='A'}),cur=null,list=[];\nkids.forEach(function(a){if(a.classList.contains('n1')){cur={head:a,subs:[]};list.push(cur)}else if(cur)cur.subs.push(a)});\nlist.forEach(function(g){\n var wrap=document.createElement('div');wrap.className='ng c';var row=document.createElement('div');row.className='nrow';\n nav.insertBefore(wrap,g.head);wrap.appendChild(row);row.appendChild(g.head);\n if(g.subs.length){\n  var sub=document.createElement('div');sub.className='nsub';var inner=document.createElement('div');sub.appendChild(inner);\n  g.subs.forEach(function(a){inner.appendChild(a)});wrap.appendChild(sub);\n  var b=mk('tg','Mở/thu gọn: '+g.head.textContent,false);row.appendChild(b);\n  var id='nsub-'+groups.length;sub.id=id;b.setAttribute('aria-controls',id);\n  b.addEventListener('click',function(){wrap.dataset.user='1';set(wrap,wrap.classList.contains('c'))});\n }\n groups.push(wrap)});\nfunction set(w,open){w.classList.toggle('c',!open);var b=w.querySelector('.tg');if(b)b.setAttribute('aria-expanded',open?'true':'false')}\nvar top=document.createElement('div');top.className='nav-top';nav.insertBefore(top,h);top.appendChild(h);\ntop.appendChild(tools(function(){groups.forEach(function(w){w.dataset.user='1';set(w,true)})},function(){groups.forEach(function(w){w.dataset.user='1';set(w,false)})}));\nvar lastAuto=null;\nwindow.__navOpen=function(link){var w=link&&link.closest('.ng');if(!w)return;\n if(lastAuto&&lastAuto!==w&&!lastAuto.dataset.user)set(lastAuto,false);\n if(w.classList.contains('c')){set(w,true);lastAuto=w}else if(!w.dataset.user){lastAuto=w}};\n/* mục lục trong trang */\nvar card=document.querySelector('.toc-card');\nif(card){\n var title=card.querySelector('.toc-title'),root=card.querySelector(':scope > ul'),lis=[];\n [].slice.call(root.children).forEach(function(li){\n  var a=li.querySelector(':scope > a'),u=li.querySelector(':scope > ul');\n  if(!u){li.classList.add('no-sub');return}\n  li.classList.add('has-sub');\n  var row=document.createElement('div');row.className='trow';li.insertBefore(row,li.firstChild);\n  var b=mk('tg','Mở/thu gọn: '+a.textContent,true);row.appendChild(b);row.appendChild(a);\n  b.addEventListener('click',function(){tset(li,li.classList.contains('c'))});lis.push(li)});\n function tset(li,open){li.classList.toggle('c',!open);li.querySelector('.tg').setAttribute('aria-expanded',open?'true':'false')}\n var tp=document.createElement('div');tp.className='toc-top';card.insertBefore(tp,title);tp.appendChild(title);\n tp.appendChild(tools(function(){lis.forEach(function(l){tset(l,true)})},function(){lis.forEach(function(l){tset(l,false)})}));\n}\n})();\n/* ===== Highlight ===== */\n(function(){\nvar root=document.documentElement,btn=document.getElementById('hlBtn'),panel=document.getElementById('hlPanel');\nvar cats=[['num','Số liệu, tỷ lệ, mức tiền',['30%','3 giây','20.000đ']],\n['ref','Mã quy định, yêu cầu, use case',['QĐ1–QĐ7','FR-01','U014']],\n['tech','Công nghệ và công cụ',['React','FastAPI','JWT']],\n['role','Vai trò',['chủ sân','khách hàng','Admin']]];\nvar off={tech:true,role:true};try{var sv=localStorage.getItem('ar-hl');if(sv)off=JSON.parse(sv)||off}catch(e){}\nfunction save(){try{localStorage.setItem('ar-hl',JSON.stringify(off))}catch(e){}}\nfunction apply(){cats.forEach(function(c){root.classList.toggle('hl-off-'+c[0],!!off[c[0]])})}\nvar h5=document.createElement('h5');h5.textContent='Chú giải highlight';panel.appendChild(h5);\nvar all=document.createElement('label');all.className='all';var allIn=document.createElement('input');allIn.type='checkbox';all.appendChild(allIn);\nvar allTx=document.createElement('span');allTx.textContent='Hiện tất cả';all.appendChild(allTx);panel.appendChild(all);\nvar ins=[];\ncats.forEach(function(c){\n var l=document.createElement('label'),i=document.createElement('input');i.type='checkbox';i.checked=!off[c[0]];\n var d=document.createElement('span'),nm=document.createElement('span'),ex=document.createElement('span');\n nm.className='nm';nm.textContent=c[1];ex.className='ex';\n c[2].forEach(function(t){var sw=document.createElement('span');sw.className='sw hl-'+c[0];sw.textContent=t;ex.appendChild(sw)});\n d.appendChild(nm);d.appendChild(ex);\n l.appendChild(i);l.appendChild(d);panel.appendChild(l);ins.push([c[0],i]);\n i.addEventListener('change',function(){off[c[0]]=!i.checked;save();apply();sync()})});\nfunction sync(){var n=ins.filter(function(x){return x[1].checked}).length;allIn.checked=n===ins.length;allIn.indeterminate=n>0&&n<ins.length}\nallIn.addEventListener('change',function(){var on=allIn.checked;ins.forEach(function(x){x[1].checked=on;off[x[0]]=!on});save();apply();sync()});\napply();sync();\nfunction toggle(o){panel.hidden=!o;btn.setAttribute('aria-expanded',o?'true':'false')}\nbtn.addEventListener('click',function(e){e.stopPropagation();toggle(panel.hidden)});\ndocument.addEventListener('click',function(e){if(!panel.hidden&&!panel.contains(e.target))toggle(false)});\ndocument.addEventListener('keydown',function(e){if(e.key==='Escape'&&!panel.hidden){toggle(false);btn.focus()}});\n})();\n\n(function(){\nvar root=document.documentElement,btn=document.getElementById('themeBtn');\nfunction label(){var d=root.getAttribute('data-theme')==='dark';btn.setAttribute('aria-pressed',d?'true':'false');btn.title=d?'Chuyển sang giao diện sáng':'Chuyển sang giao diện tối';btn.setAttribute('aria-label',btn.title)}\nfunction save(t){try{localStorage.setItem('pp-theme',t)}catch(e){}}\nbtn.addEventListener('click',function(){var t=root.getAttribute('data-theme')==='dark'?'light':'dark';root.setAttribute('data-theme',t);save(t);label()});\nif(window.matchMedia){var mq=matchMedia('(prefers-color-scheme: dark)');var fn=function(e){var s=null;try{s=localStorage.getItem('pp-theme')}catch(x){}if(s!=='dark'&&s!=='light'){root.setAttribute('data-theme',e.matches?'dark':'light');label()}};if(mq.addEventListener)mq.addEventListener('change',fn)}\nlabel();\nvar nav=document.getElementById('nav'),scrim=document.getElementById('scrim'),menu=document.getElementById('menuBtn');\nfunction setOpen(o){nav.classList.toggle('open',o);scrim.classList.toggle('show',o);menu.setAttribute('aria-expanded',o?'true':'false')}\nmenu.addEventListener('click',function(){setOpen(!nav.classList.contains('open'))});\nscrim.addEventListener('click',function(){setOpen(false)});\ndocument.addEventListener('keydown',function(e){if(e.key==='Escape')setOpen(false)});\nvar links={};nav.querySelectorAll('a').forEach(function(a){links[a.getAttribute('href').slice(1)]=a;a.addEventListener('click',function(){setOpen(false)})});\nvar heads=[].slice.call(document.querySelectorAll('main h1[id],main h4[id]')).filter(function(h){return links[h.id]});\nfunction spy(){var y=window.scrollY+100,cur=null;heads.forEach(function(h){if(h.getBoundingClientRect().top+window.scrollY<=y)cur=h});\nObject.keys(links).forEach(function(k){links[k].classList.remove('on')});\nif(cur){var a=links[cur.id];a.classList.add('on');if(spy.last!==cur.id){spy.last=cur.id;if(window.__navOpen)window.__navOpen(a)}if(getComputedStyle(nav).position==='sticky'){var t=a.offsetTop-nav.clientHeight/2;nav.scrollTop=t>0?t:0}}}\nwindow.addEventListener('scroll',spy,{passive:true});spy();\n})();\n";
+  document.body.appendChild(s);
+  if (location.hash) {
+    var t = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    if (t) t.scrollIntoView();
+  }
+})();
+
+</script>
+</body>
+</html>
