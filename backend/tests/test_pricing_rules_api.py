@@ -246,3 +246,50 @@ class TestPermissions:
         res = client.post(url(9999), json={"rules": [PEAK]}, headers=auth_header(OWNER_A_ID))
         assert res.status_code == 404
         assert res.json()["error"]["code"] == "FACILITY_NOT_FOUND"
+
+
+class TestGetRules:
+    def test_tra_ve_bo_quy_tac_hien_tai_dung_dinh_dang(self, client):
+        client.post(url(FACILITY_A_ID), json={"rules": [PEAK, SATURDAY]}, headers=auth_header(OWNER_A_ID))
+
+        res = client.get(url(FACILITY_A_ID), headers=auth_header(OWNER_A_ID))
+
+        assert res.status_code == 200
+        data = res.json()["data"]
+        assert data["facility_id"] == FACILITY_A_ID
+        rules = data["rules"]
+        assert [r["name"] for r in rules] == ["Giờ vàng", "Thứ Bảy"]
+        assert rules[0] == {
+            "id": rules[0]["id"], "name": "Giờ vàng", "rule_type": "PEAK_HOUR", "multiplier": 1.3,
+            "start_time": "17:00:00", "end_time": "21:00:00", "day_of_week": None, "holiday_id": None,
+        }
+        assert rules[1]["day_of_week"] == 6 and rules[1]["start_time"] is None
+
+    def test_co_so_chua_co_quy_tac_tra_danh_sach_rong(self, client):
+        set_rules(FACILITY_A_ID, [])
+        res = client.get(url(FACILITY_A_ID), headers=auth_header(OWNER_A_ID))
+        assert res.status_code == 200
+        assert res.json()["data"]["rules"] == []
+
+    def test_chi_tra_quy_tac_cua_co_so_do(self, client):
+        set_rules(FACILITY_A_ID, ["Của A"])
+        set_rules(FACILITY_B_ID, ["Của B"])
+        res = client.get(url(FACILITY_A_ID), headers=auth_header(OWNER_A_ID))
+        assert [r["name"] for r in res.json()["data"]["rules"]] == ["Của A"]
+
+    def test_chu_san_khac_bi_403(self, client):
+        res = client.get(url(FACILITY_A_ID), headers=auth_header(OWNER_B_ID))
+        assert res.status_code == 403
+        assert res.json()["error"]["code"] == "AUTH_FORBIDDEN"
+
+    def test_khach_hang_bi_403(self, client):
+        res = client.get(url(FACILITY_A_ID), headers=auth_header(CUSTOMER_ID))
+        assert res.status_code == 403
+
+    def test_khong_dang_nhap_bi_401(self, client):
+        assert client.get(url(FACILITY_A_ID)).status_code == 401
+
+    def test_co_so_khong_ton_tai_bi_404(self, client):
+        res = client.get(url(9999), headers=auth_header(OWNER_A_ID))
+        assert res.status_code == 404
+        assert res.json()["error"]["code"] == "FACILITY_NOT_FOUND"

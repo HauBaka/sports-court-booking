@@ -488,6 +488,37 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
   }
   ```
 
+
+#### 2.8b Xem quy tắc giá hiện tại của cơ sở
+* **Endpoint:** `GET /api/v1/facilities/{id}/pricing-rules`
+* **Mô tả:** Trả toàn bộ bộ quy tắc giá đang áp dụng cho cơ sở, cùng định dạng với request body của 2.8 để frontend đọc về, chỉnh sửa rồi gửi lại.
+* **Quyền truy cập:** `owner` (chủ sở hữu cơ sở thể thao).
+* **Database Transaction:** Không cần (chỉ đọc).
+* **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Lấy bảng giá theo thời điểm thành công.",
+    "data": {
+      "facility_id": 1,
+      "rules": [
+        {
+          "id": 10,
+          "name": "Giờ vàng 17h-21h các ngày trong tuần",
+          "rule_type": "PEAK_HOUR",
+          "multiplier": 1.3,
+          "start_time": "17:00:00",
+          "end_time": "21:00:00",
+          "day_of_week": null,
+          "holiday_id": null
+        }
+      ]
+    }
+  }
+  ```
+  Cơ sở chưa có quy tắc nào thì `rules` là `[]`.
+* **Lỗi:** `401` chưa đăng nhập, `403` không phải chủ cơ sở, `404 FACILITY_NOT_FOUND`.
+
 #### 2.9 Tra cứu danh mục ngày lễ trong năm (Holidays)
 * **Endpoint:** `GET /api/v1/holidays`
 * **Mô tả:** Lấy danh mục các ngày lễ trong hệ thống. Dùng cho giao diện của Chủ sân để lấy `holiday_id` khi cấu hình bảng giá thời điểm (`HOLIDAY`) tại mục 2.8.
