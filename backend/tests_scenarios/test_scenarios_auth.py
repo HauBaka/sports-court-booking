@@ -1,7 +1,9 @@
 """Kịch bản AUTH-01..06 (docs/test-scenarios.md mục 4). Chạy trên CSDL test đã nạp seed."""
+import random
+import uuid
+
 import pytest
 
-pytestmark = pytest.mark.skip(reason="Chờ API đăng ký, đăng nhập, hồ sơ (SCB-80, SCB-81) và dependency phân quyền (SCB-76). Bỏ dòng này khi API xong")
 
 API = "/api/v1"
 PASSWORD = "TestPass123@"  # mật khẩu tài khoản seed, xem database/README.md
@@ -16,7 +18,10 @@ def login(client, email, password=PASSWORD):
 
 
 def test_auth_01_dang_ky_thanh_cong_vi_so_du_0(client):
-    res = client.post(f"{API}/auth/register", json=register_body("new.user@scb.vn", "0900000010"))
+    # Email và số điện thoại ngẫu nhiên để chạy lại được trên cùng CSDL
+    email = f"new.{uuid.uuid4().hex[:8]}@scb.vn"
+    phone = "09" + "".join(random.choices("0123456789", k=8))
+    res = client.post(f"{API}/auth/register", json=register_body(email, phone))
     assert res.status_code == 201
     data = res.json()["data"]
     assert data["role"] == "customer"
@@ -24,7 +29,7 @@ def test_auth_01_dang_ky_thanh_cong_vi_so_du_0(client):
     assert data["balance"] == 0
     assert "password" not in res.text
 
-    token = login(client, "new.user@scb.vn").json()["data"]["access_token"]
+    token = login(client, email).json()["data"]["access_token"]
     me = client.get(f"{API}/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert me.json()["data"]["wallet"]["balance"] == 0
 

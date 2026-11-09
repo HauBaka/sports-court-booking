@@ -7,7 +7,6 @@ from sqlalchemy import text
 
 from app.core.database import engine
 
-pytestmark = pytest.mark.skip(reason="Chờ API cơ sở, sân con, bảng giá (SCB-84, SCB-86, SCB-90). Bỏ dòng này khi API xong")
 
 API = "/api/v1"
 PASSWORD = "TestPass123@"
@@ -33,22 +32,27 @@ def count_rules():
 
 @pytest.mark.parametrize("code, multiplier", [("san_04", 1.10), ("san_05", 1.60)])
 def test_san_04_05_he_so_ngoai_bien(client, code, multiplier):
-    res = client.post(f"{API}/facilities/1/pricing-rules", json=peak_rule(multiplier), headers=auth(client, "owner@scb.vn"))
+    rules_before = count_rules()
+    res = client.post(f"{API}/facilities/1/pricing-rules", json=peak_rule(multiplier), headers=auth(client, "owner1@scb.vn"))
     assert res.status_code == 422
     assert res.json()["error"]["code"] == "VALIDATION_ERROR"
-    assert count_rules() == 4  # bảng giá seed không đổi
+    assert count_rules() == rules_before  # bảng giá seed không đổi
+
+
+def court_name(court_id):
+    with engine.connect() as conn:
+        return conn.execute(text("SELECT name FROM courts WHERE id = :id"), {"id": court_id}).scalar()
 
 
 def test_san_06_sua_san_cua_chu_khac(client):
+    name_before = court_name(1)
     client.post(f"{API}/auth/register", json={
         "name": "Chủ Sân B", "email": "owner.b@scb.vn", "phone": "0900000020", "password": PASSWORD, "role": "owner",
     })
     res = client.patch(f"{API}/courts/1", json={"name": "Sân bị đổi tên trái phép"}, headers=auth(client, "owner.b@scb.vn"))
     assert res.status_code == 403
     assert res.json()["error"]["code"] == "AUTH_FORBIDDEN"
-    with engine.connect() as conn:
-        name = conn.execute(text("SELECT name FROM courts WHERE id = 1")).scalar()
-    assert name == "Sân Cầu Lông 1 (Thảm Yonex)"
+    assert court_name(1) == name_before
 
 
 @pytest.fixture
@@ -72,7 +76,7 @@ def deposited_booking():
 
 
 def test_san_07_doi_gio_khi_con_lich_coc(client, deposited_booking):
-    res = client.patch(f"{API}/courts/1", json={"close_time": "22:00:00"}, headers=auth(client, "owner@scb.vn"))
+    res = client.patch(f"{API}/courts/1", json={"close_time": "22:00:00"}, headers=auth(client, "owner1@scb.vn"))
     assert res.status_code == 400
     assert res.json()["error"]["code"] == "CANNOT_UPDATE_COURT_SCHEDULE_ACTIVE_BOOKINGS"
     with engine.connect() as conn:
@@ -81,7 +85,7 @@ def test_san_07_doi_gio_khi_con_lich_coc(client, deposited_booking):
 
 
 def test_san_08_doi_gio_khi_khong_co_lich(client):
-    res = client.patch(f"{API}/courts/2", json={"close_time": "22:00:00"}, headers=auth(client, "owner@scb.vn"))
+    res = client.patch(f"{API}/courts/2", json={"close_time": "22:00:00"}, headers=auth(client, "owner1@scb.vn"))
     assert res.status_code == 200
     assert res.json()["data"]["close_time"] == "22:00:00"
     with engine.connect() as conn:
