@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Field from "./Field";
-import { getHolidays, savePricingRules } from "../services/pricingService";
+import { getHolidays, getPricingRules, savePricingRules } from "../services/pricingService";
 import "../styles/facility.css";
 import "../styles/pricing.css";
 
@@ -33,37 +33,18 @@ const emptyRule = () => ({
   holiday_id: "",
 });
 
-// ── localStorage helpers ──
-const storageKey = (facilityId) => `pricing_rules_${facilityId}`;
-
-function loadFromStorage(facilityId) {
-  try {
-    const raw = localStorage.getItem(storageKey(facilityId));
-    if (!raw) return [];
-    // Restore payload thành form state (thêm _key cho mỗi rule)
-    return JSON.parse(raw).map((r) => ({
-      _key: crypto.randomUUID(),
-      name: r.name,
-      rule_type: r.rule_type,
-      multiplier: String(r.multiplier),
-      start_time: r.start_time ? r.start_time.slice(0, 5) : "",
-      end_time:   r.end_time   ? r.end_time.slice(0, 5)   : "",
-      day_of_week: r.day_of_week != null ? String(r.day_of_week) : "",
-      holiday_id:  r.holiday_id  != null ? String(r.holiday_id)  : "",
-    }));
-  } catch (_e) {
-    return [];
-  }
-}
-
-function saveToStorage(facilityId, payload) {
-  try {
-    localStorage.setItem(storageKey(facilityId), JSON.stringify(payload));
-  } catch (_e) { /* quota exceeded — bỏ qua */ }
-}
-
-function clearStorage(facilityId) {
-  localStorage.removeItem(storageKey(facilityId));
+// ── Map API response → form state ──
+function rulesFromApi(apiRules) {
+  return apiRules.map((r) => ({
+    _key: crypto.randomUUID(),
+    name: r.name,
+    rule_type: r.rule_type,
+    multiplier: String(r.multiplier),
+    start_time: r.start_time ? r.start_time.slice(0, 5) : "",
+    end_time:   r.end_time   ? r.end_time.slice(0, 5)   : "",
+    day_of_week: r.day_of_week != null ? String(r.day_of_week) : "",
+    holiday_id:  r.holiday_id  != null ? String(r.holiday_id)  : "",
+  }));
 }
 
 function validateRule(rule, index) {
@@ -99,8 +80,10 @@ export default function PricingRulesSection({ facilityId }) {
   const [holidays, setHolidays] = useState([]);
   const [loadingHolidays, setLoadingHolidays] = useState(true);
 
-  const [rules, setRules] = useState(() => loadFromStorage(facilityId));
-  const [errors, setErrors] = useState({}); // { "index.field": message }
+  const [rules, setRules] = useState([]);
+  const [loadingRules, setLoadingRules] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -112,6 +95,17 @@ export default function PricingRulesSection({ facilityId }) {
       .catch(() => {/* holidays optional */})
       .finally(() => setLoadingHolidays(false));
   }, []);
+
+  // Load pricing rules từ API
+  useEffect(() => {
+    if (!facilityId) return;
+    setLoadingRules(true);
+    setLoadError("");
+    getPricingRules(facilityId)
+      .then((res) => setRules(rulesFromApi(res.data.rules)))
+      .catch(() => setLoadError("Không tải được bảng giá. Vui lòng tải lại trang."))
+      .finally(() => setLoadingRules(false));
+  }, [facilityId]);
 
   // ── Helpers ──
   const updateRule = (key, field, value) =>
@@ -158,7 +152,9 @@ export default function PricingRulesSection({ facilityId }) {
     setSaving(true);
     try {
       await savePricingRules(facilityId, payload);
-      saveToStorage(facilityId, payload);
+      // Reload từ API để đồng bộ state với server (có id, thứ tự chuẩn)
+      const res = await getPricingRules(facilityId);
+      setRules(rulesFromApi(res.data.rules));
       setSaved(true);
     } catch (err) {
       if (err.code === "VALIDATION_ERROR" && Array.isArray(err.details)) {
@@ -179,6 +175,24 @@ export default function PricingRulesSection({ facilityId }) {
     }
   };
 
+  // ── Clear all ──
+  const handleClearAll = async () => {
+    if (!window.confirm("Xóa toàn bộ quy tắc giá? Thao tác này sẽ xóa dữ liệu trên server.")) return;
+    setSaving(true);
+    setApiError("");
+    setSaved(false);
+    try {
+      await savePricingRules(facilityId, []);
+      setRules([]);
+      setErrors({});
+      setSaved(true);
+    } catch (err) {
+      setApiError(err.message || "Không xóa được quy tắc giá. Vui lòng thử lại.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <section className="detail-section">
       <div className="section-head">
@@ -191,10 +205,10 @@ export default function PricingRulesSection({ facilityId }) {
       <p className="hint pricing-hint">
         Hệ số nhân áp dụng lên giá cơ sở của từng sân con. Nếu nhiều quy tắc cùng khớp, hệ số cao nhất được dùng.
         Nhấn <strong>Lưu bảng giá</strong> để áp dụng.
-        {rules.length > 0 && !saved && (
-          <span className="pricing-cached-note"> · Hiển thị từ lần lưu trước.</span>
-        )}
       </p>
+
+      {loadingRules && <p className="hint">Đang tải bảng giá...</p>}
+      {loadError && <p className="notice error" role="alert">{loadError}</p>}
 
       {saved && (
         <p className="notice success" role="status">
@@ -206,6 +220,7 @@ export default function PricingRulesSection({ facilityId }) {
         <p className="notice error" role="alert">{apiError}</p>
       )}
 
+      {!loadingRules && !loadError && (
       <form onSubmit={handleSave} noValidate>
         {rules.length === 0 && (
           <div className="empty pricing-empty">
@@ -345,22 +360,24 @@ export default function PricingRulesSection({ facilityId }) {
           ))}
         </div>
 
-        {/* Nút lưu — chỉ hiện khi có ít nhất 1 rule */}
-        {rules.length > 0 && (
-          <div className="form-actions pricing-actions">
+        {/* Nút lưu — luôn hiện để có thể gửi danh sách rỗng lên server */}
+        <div className="form-actions pricing-actions">
+          {rules.length > 0 && (
             <button
               className="btn btn-outline"
               type="button"
-              onClick={() => { setRules([]); setErrors({}); setApiError(""); setSaved(false); clearStorage(facilityId); }}
+              disabled={saving}
+              onClick={handleClearAll}
             >
-              Xóa tất cả
+              {saving ? "Đang xóa..." : "Xóa tất cả"}
             </button>
-            <button className="btn" type="submit" disabled={saving}>
-              {saving ? "Đang lưu..." : "Lưu bảng giá"}
-            </button>
-          </div>
-        )}
+          )}
+          <button className="btn" type="submit" disabled={saving}>
+            {saving ? "Đang lưu..." : "Lưu bảng giá"}
+          </button>
+        </div>
       </form>
+      )}
     </section>
   );
 }
