@@ -2,6 +2,11 @@ $kind: http-request
 method: POST
 url: "{{server_control_url}}/api/client/servers/{{server_id}}/power"
 order: 1000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{server_token}}'
 headers:
   Content-Type: application/json
   Accept: "*/*"

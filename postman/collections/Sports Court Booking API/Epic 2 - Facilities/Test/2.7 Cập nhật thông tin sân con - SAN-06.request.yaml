@@ -1,0 +1,19 @@
+$kind: http-request
+method: PATCH
+url: '{{base_url}}/courts/{{court_id}}'
+order: 7100
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Sân bị đổi tên trái phép"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("SAN-06: status 403", () => pm.response.to.have.status(403));
+      pm.test("SAN-06: mã lỗi AUTH_FORBIDDEN", () => pm.expect(pm.response.json().error.code).to.eql("AUTH_FORBIDDEN"));
