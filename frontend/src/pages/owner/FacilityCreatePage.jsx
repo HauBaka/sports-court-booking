@@ -54,7 +54,10 @@ export default function FacilityCreatePage() {
   return (
     <div className="owner-page">
       <div className="page-head">
-        <h1>Thêm cơ sở mới</h1>
+        <div className="page-head-left">
+          <Link className="back-link" to="/owner/facilities">←</Link>
+          <h1>Thêm cơ sở mới</h1>
+        </div>
       </div>
 
       <form className="facility-form" onSubmit={handleSubmit} noValidate>

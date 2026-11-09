@@ -1,8 +1,5 @@
 import api from "./api";
 
-// Gọi API thật. Khi VITE_USE_MOCK=true thì request được chặn bởi mockAdapter (xem api.js).
-// Interceptor trả về body { success, message, data }, lỗi dạng { code, message, details }.
-
 export const login = ({ email, password }) =>
   api.post("/auth/login", { email: email.trim(), password });
 

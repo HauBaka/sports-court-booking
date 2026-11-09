@@ -14,6 +14,9 @@ import RequireRole from "./components/RequireRole";
 import MyFacilitiesPage from "./pages/owner/MyFacilitiesPage";
 import ProfilePage from "./pages/ProfilePage";
 import FacilityCreatePage from "./pages/owner/FacilityCreatePage";
+import FacilityDetailPage from "./pages/owner/FacilityDetailPage";
+import CourtDetailPage from "./pages/owner/CourtDetailPage";
+import CourtEditPage from "./pages/owner/CourtEditPage";
 
 export default function App() {
   return (
@@ -33,6 +36,9 @@ export default function App() {
             <Route element={<RequireRole roles="owner" />}>
               <Route path="owner/facilities" element={<MyFacilitiesPage />} />
               <Route path="owner/facilities/new" element={<FacilityCreatePage />} />
+              <Route path="owner/facilities/:id" element={<FacilityDetailPage />} />
+              <Route path="owner/courts/:courtId" element={<CourtDetailPage />} />
+              <Route path="owner/courts/:courtId/edit" element={<CourtEditPage />} />
             </Route>
 
             {/* Admin */}

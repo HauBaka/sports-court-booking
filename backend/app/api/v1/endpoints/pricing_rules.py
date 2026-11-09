@@ -13,6 +13,47 @@ router = APIRouter()
 
 
 # ==============================================================================
+# 2.8b Xem bộ quy tắc giá hiện tại của cơ sở (Chủ sân - Owner)
+# ==============================================================================
+@router.get(
+    "/facilities/{id}/pricing-rules",
+    status_code=status.HTTP_200_OK,
+    summary="Xem bộ quy tắc giá hiện tại của cơ sở",
+)
+def get_pricing_rules(
+    current_user: User = Depends(require_role("owner")),
+    facility: Facility = Depends(get_facility_for_owner),
+    db: Session = Depends(get_db),
+):
+    rows = (
+        db.query(PricingRule)
+        .filter(PricingRule.applies_to_facility_id == facility.id)
+        .order_by(PricingRule.id.asc())
+        .all()
+    )
+    return {
+        "success": True,
+        "message": "Lấy bảng giá theo thời điểm thành công.",
+        "data": {
+            "facility_id": facility.id,
+            "rules": [
+                {
+                    "id": r.id,
+                    "name": r.name,
+                    "rule_type": r.rule_type,
+                    "multiplier": float(r.multiplier),
+                    "start_time": r.start_time.strftime("%H:%M:%S") if r.start_time else None,
+                    "end_time": r.end_time.strftime("%H:%M:%S") if r.end_time else None,
+                    "day_of_week": r.day_of_week,
+                    "holiday_id": r.holiday_id,
+                }
+                for r in rows
+            ],
+        },
+    }
+
+
+# ==============================================================================
 # 2.8 Thay thế bộ quy tắc giá của cơ sở (Chủ sân - Owner)
 # ==============================================================================
 @router.post(

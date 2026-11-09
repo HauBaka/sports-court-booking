@@ -73,7 +73,12 @@ export default function MyFacilitiesPage() {
         <ul className="facility-list">
           {state.items.map((f) => (
             <li key={f.id} className={`facility-card${created?.id === f.id ? " highlight" : ""}`}>
-              <h2>{f.name}</h2>
+              <div className="facility-card-head">
+                <h2>{f.name}</h2>
+                <Link className="btn btn-sm btn-outline btn-link" to={`/owner/facilities/${f.id}`}>
+                  Quản lý
+                </Link>
+              </div>
               <p>{f.address}</p>
               <p className="muted">{[f.district, f.city].filter(Boolean).join(", ")}</p>
               <div className="facility-meta">

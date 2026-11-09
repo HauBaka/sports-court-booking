@@ -1,7 +1,5 @@
 import axios from "axios";
-import { mockAdapter } from "./mockAdapter";
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 const PUBLIC_PATHS = ["/auth/login", "/auth/register"];
 // Chỉ các lỗi này mới nghĩa là phiên hỏng. Sai mật khẩu cũng là 401 nhưng phải hiện lỗi tại form.
 const TOKEN_ERRORS = ["AUTH_TOKEN_EXPIRED", "AUTH_TOKEN_INVALID", "AUTH_UNAUTHORIZED"];
@@ -10,7 +8,6 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1",
   timeout: 10000,
   headers: { "Content-Type": "application/json" },
-  ...(USE_MOCK && { adapter: mockAdapter }),
 });
 
 api.interceptors.request.use((config) => {

@@ -349,14 +349,26 @@ def create_court_for_facility(
                 message="Giờ hoạt động không chứa khung giờ nào hợp lệ. Vui lòng chọn giờ khớp với các khung giờ của hệ thống.",
             )
 
+        # Trigger trg_courts_after_insert (MySQL) có thể đã tự tạo court_slots với giá 0:
+        # slot nào đã có thì cập nhật giá, slot nào chưa có thì tạo mới (tránh trùng uq_court_slots).
+        existing_slots = {
+            cs.time_slot_id: cs
+            for cs in db.query(CourtSlot).filter(CourtSlot.court_id == court.id).all()
+        }
         for slot in matching_slots:
-            court_slot = CourtSlot(
-                court_id=court.id,
-                time_slot_id=slot.id,
-                base_price=body.default_base_price,
-                is_active=True,
-            )
-            db.add(court_slot)
+            existing = existing_slots.get(slot.id)
+            if existing is not None:
+                existing.base_price = body.default_base_price
+                existing.is_active = True
+            else:
+                db.add(
+                    CourtSlot(
+                        court_id=court.id,
+                        time_slot_id=slot.id,
+                        base_price=body.default_base_price,
+                        is_active=True,
+                    )
+                )
 
         db.commit()
         db.refresh(court)

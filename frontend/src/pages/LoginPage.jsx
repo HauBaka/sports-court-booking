@@ -15,7 +15,7 @@ export default function LoginPage() {
   const { setRole } = useRole();
   const { fetchUser } = useUser();
 
-  const [form, setForm] = useState({ email: "", password: "", remember: false });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -88,14 +88,6 @@ export default function LoginPage() {
           onChange={set("password")}
         />
       </Field>
-
-      <div className="between">
-        <label className="check">
-          <input type="checkbox" checked={form.remember} onChange={set("remember")} />
-          Ghi nhớ đăng nhập
-        </label>
-        <Link to="/forgot-password">Quên mật khẩu?</Link>
-      </div>
 
       <button className="btn btn-block" type="submit" disabled={submitting}>
         {submitting ? "Đang đăng nhập..." : "Đăng nhập"}
