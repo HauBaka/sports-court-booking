@@ -9,11 +9,7 @@ import "../../styles/facility.css";
 const SPORTS = [
   { id: 1, label: "Cầu lông" },
   { id: 2, label: "Pickleball" },
-  { id: 3, label: "Bóng đá 5 người" },
-  { id: 4, label: "Bóng đá 7 người" },
-  { id: 5, label: "Tennis" },
-  { id: 6, label: "Bóng rổ" },
-  { id: 7, label: "Bóng chuyền" },
+  { id: 3, label: "Bóng đá mini" },
 ];
 const SPORT_LABEL = Object.fromEntries(SPORTS.map((s) => [s.id, s.label]));
 
