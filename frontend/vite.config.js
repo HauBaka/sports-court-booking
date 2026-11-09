@@ -9,4 +9,13 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/test/setup.js',
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://ember.pikamc.vn:26008',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 })
