@@ -14,7 +14,7 @@ export function UserProvider({ children }) {
     try {
       const res = await getMe();
       setUser(res.data);
-    } catch (_e) {
+    } catch {
       setUser(null);
     } finally {
       setLoading(false);

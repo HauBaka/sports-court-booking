@@ -28,7 +28,7 @@ export default function MainLayout() {
   const menu = MENU_BY_ROLE[role] ?? MENU_BY_ROLE.customer;
 
   const handleLogout = async () => {
-    try { await logout(); } catch (_e) { /* bo qua loi mang */ }
+    try { await logout(); } catch { /* bo qua loi mang */ }
     localStorage.removeItem("access_token");
     setRole(null);
     clearUser();

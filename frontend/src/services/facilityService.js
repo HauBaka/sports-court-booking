@@ -11,7 +11,7 @@ export const getFacility = (id) => api.get(`/facilities/${id}`);
 export const createCourt = (facilityId, payload) =>
   api.post(`/facilities/${facilityId}/courts`, payload);
 
-// GET /facilities chưa có bộ lọc theo chủ sân (spec 2.1),
+// GET /facilities chưa có bộ lọc theo chủ sân (docs/api-endpoints.md mục 2.1),
 // nên duyệt qua các trang rồi lọc theo owner_id ở FE. Đổi sang bộ lọc của BE khi có.
 export async function listMyFacilities(ownerId) {
   const mine = [];

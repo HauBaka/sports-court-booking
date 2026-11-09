@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";import Field from "../../components/Field";
+import { Link, useNavigate } from "react-router-dom";
+import Field from "../../components/Field";
 import { createFacility } from "../../services/facilityService";
 import { EMPTY_FORM, toFacilityPayload, validateFacility } from "../../utils/facilityForm";
 import "../../styles/facility.css";
