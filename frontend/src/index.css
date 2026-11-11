@@ -9,3 +9,11 @@ pre { background: #f3f4f6; padding: 12px; border-radius: 6px; }
 .ok { color: #15803d; }
 .fail { color: #b91c1c; }
 button { padding: 6px 12px; cursor: pointer; }
+/* Profile page */
+.profile-card { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+.profile-row { display: flex; justify-content: space-between; align-items: center;
+               padding: 14px 16px; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
+.profile-row:last-child { border-bottom: none; }
+.profile-label { color: #6b7280; }
+.profile-value { color: #111827; font-weight: 500; }
+.profile-value.highlight { color: #15803d; font-size: 16px; font-weight: 700; }

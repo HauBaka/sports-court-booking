@@ -1,0 +1,27 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/facilities'
+order: 3100
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Cơ Sở Thử Quyền",
+      "address": "1 Đường Thử, Quận 1",
+      "city": "Hồ Chí Minh",
+      "district": "Quận 1",
+      "latitude": 10.77,
+      "longitude": 106.7,
+      "open_time": "06:00:00",
+      "close_time": "23:00:00",
+      "description": "Dùng cho AUTH-06, đăng nhập bằng Khách A trước khi chạy."
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("AUTH-06: status 403", () => pm.response.to.have.status(403));
+      pm.test("AUTH-06: mã lỗi AUTH_FORBIDDEN", () => pm.expect(pm.response.json().error.code).to.eql("AUTH_FORBIDDEN"));

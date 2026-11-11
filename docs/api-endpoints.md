@@ -44,6 +44,17 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
 
 ## 2. DANH SÁCH ENDPOINTS CHI TIẾT THEO EPIC
 
+Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 3.1.1). Bảng ánh xạ:
+
+| Chức năng (proposal) | Epic Jira | Epic API |
+| --- | --- | --- |
+| Nền tảng đăng nhập | SCB-67 | Epic 1 |
+| 1 Quản lý sân và bảng giá | SCB-2 | Epic 2 |
+| 2 Tìm và đặt sân | SCB-3 | Epic 3 |
+| 3 Cọc và hoàn cọc qua ví | SCB-4 | Epic 4, Epic 5, mục 3.4 của Epic 3 |
+| 4 Ghép đội | SCB-5 | Epic 6 |
+| 5 Tiện ích | SCB-6 | Dịch vụ đi kèm (2.11 đến 2.13) nằm ở Epic 2, đánh giá và dashboard chưa có API |
+
 ---
 
 ### 🟢 EPIC 1: XÁC THỰC VÀ PHÂN QUYỀN (AUTH & USER MANAGEMENT)
@@ -476,6 +487,37 @@ Mọi phản hồi từ Backend đều tuân thủ cấu trúc chuẩn trong `ap
     }
   }
   ```
+
+
+#### 2.8b Xem quy tắc giá hiện tại của cơ sở
+* **Endpoint:** `GET /api/v1/facilities/{id}/pricing-rules`
+* **Mô tả:** Trả toàn bộ bộ quy tắc giá đang áp dụng cho cơ sở, cùng định dạng với request body của 2.8 để frontend đọc về, chỉnh sửa rồi gửi lại.
+* **Quyền truy cập:** `owner` (chủ sở hữu cơ sở thể thao).
+* **Database Transaction:** Không cần (chỉ đọc).
+* **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Lấy bảng giá theo thời điểm thành công.",
+    "data": {
+      "facility_id": 1,
+      "rules": [
+        {
+          "id": 10,
+          "name": "Giờ vàng 17h-21h các ngày trong tuần",
+          "rule_type": "PEAK_HOUR",
+          "multiplier": 1.3,
+          "start_time": "17:00:00",
+          "end_time": "21:00:00",
+          "day_of_week": null,
+          "holiday_id": null
+        }
+      ]
+    }
+  }
+  ```
+  Cơ sở chưa có quy tắc nào thì `rules` là `[]`.
+* **Lỗi:** `401` chưa đăng nhập, `403` không phải chủ cơ sở, `404 FACILITY_NOT_FOUND`.
 
 #### 2.9 Tra cứu danh mục ngày lễ trong năm (Holidays)
 * **Endpoint:** `GET /api/v1/holidays`

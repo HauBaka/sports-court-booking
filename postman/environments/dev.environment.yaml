@@ -7,7 +7,7 @@ values:
     value: 4a022df8
     enabled: true
   - key: base_url
-    value: ''
+    value: http://ember.pikamc.vn:26008/api/v1
     enabled: true
   - key: user_email
     value: ''
