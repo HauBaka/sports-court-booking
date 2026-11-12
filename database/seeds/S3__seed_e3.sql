@@ -1,7 +1,10 @@
 -- S3__seed_e3.sql
--- Dữ liệu mẫu E3: OTP đăng ký / quên mk
+-- Dữ liệu mẫu E3: OTP đăng ký / quên mật khẩu, ví khách và đơn DEPOSITED ngày mai
 -- Mã OTP mẫu cho mọi dòng: 123456 (bcrypt rounds = 12)
--- chạy lại được: chỉ TRUNCATE email_otps, không đụng bảng của S1/S2
+-- Chạy sau S2. Chạy lại được: TRUNCATE email_otps, wallet_transactions,
+-- booking_slots, bookings rồi nạp lại, không nhân đôi dữ liệu
+-- Ngày giờ tính theo lúc nạp seed nên nạp lại trước mỗi lần test
+
 SET FOREIGN_KEY_CHECKS = 0;
 SET time_zone = '+00:00';
 TRUNCATE TABLE email_otps;
