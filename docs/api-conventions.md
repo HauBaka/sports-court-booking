@@ -104,6 +104,7 @@ Mọi phản hồi từ Backend đều có cấu trúc JSON thống nhất để
 | **404** | Not Found | Tài nguyên không tồn tại trong hệ thống. |
 | **409** | Conflict | Xung đột trạng thái (ví dụ: đặt trùng khung giờ đã khóa). |
 | **422** | Unprocessable Entity | Dữ liệu gửi lên không đúng định dạng Schema (Pydantic validation). |
+| **429** | Too Many Requests | Gửi yêu cầu quá tần suất cho phép (ví dụ: cooldown gửi lại OTP, thử sai OTP quá số lần). |
 | **500** | Internal Server Error | Lỗi hệ thống server ngoài ý muốn. |
 
 ### 3.2. Cấu trúc JSON phản hồi lỗi thống nhất
@@ -157,6 +158,10 @@ Khi xảy ra lỗi (HTTP Status >= 400), response trả về luôn tuân theo m�
 | | `AUTH_FORBIDDEN` | **403** | Không đủ quyền truy cập (ví dụ khách hàng gọi API admin hoặc chủ sân khác). |
 | | `AUTH_EMAIL_EXISTS` | **409** | Email đã được đăng ký bởi tài khoản khác trong hệ thống. |
 | | `AUTH_PHONE_EXISTS` | **409** | Số điện thoại đã được đăng ký trong hệ thống. |
+| | `AUTH_OTP_INVALID` | **400** | Mã xác thực OTP không chính xác hoặc không khớp với email/mục đích. |
+| | `AUTH_OTP_EXPIRED` | **400** | Mã xác thực OTP đã quá thời hạn hiệu lực (hạn 5 phút kể từ lúc gửi). |
+| | `AUTH_OTP_TOO_MANY_ATTEMPTS` | **400** | Nhập sai OTP quá 5 lần; hệ thống đã tự động hủy mã OTP. |
+| | `AUTH_OTP_TOO_SOON` | **429** | Yêu cầu gửi lại OTP quá sớm, chưa đủ thời gian giãn cách 60 giây (cooldown). |
 | **3. Cơ sở & Sân con (Facilities & Courts)** | `FACILITY_NOT_FOUND` | **404** | Không tìm thấy cơ sở thể thao theo ID yêu cầu. |
 | | `COURT_NOT_FOUND` | **404** | Không tìm thấy sân con theo ID yêu cầu. |
 | | `COURT_INACTIVE` | **400** | Sân con đang tạm dừng hoạt động hoặc bảo trì (`is_active = false`). |
