@@ -171,3 +171,60 @@ Endpoint xem ở `docs/api-endpoints.md` mục 2.7, 2.8. Dữ liệu dùng chung
 | SAN-06 | Sửa sân của chủ khác | QĐ7 | Chủ sân B đã đăng ký (role `owner`), chưa có cơ sở nào, đã đăng nhập | `PATCH /courts/1` với token của Chủ sân B, đổi `name` | 403 `AUTH_FORBIDDEN`<br>Tên sân 1 không đổi |
 | SAN-07 | Đổi giờ khi còn lịch cọc | QĐ3, QĐ7 | Có đơn "Đã đặt cọc" của sân 1 ngày mai, khung 22:00 đến 23:00. Chủ sân A đã đăng nhập | `PATCH /courts/1` đổi `close_time` thành `22:00:00` | 400 `CANNOT_UPDATE_COURT_SCHEDULE_ACTIVE_BOOKINGS`<br>`close_time` sân 1 vẫn 23:00, `court_slots` không đổi |
 | SAN-08 | Đổi giờ khi không có lịch | QĐ3 | Sân 2 không có đơn đặt cọc nào. Chủ sân A đã đăng nhập | `PATCH /courts/2` đổi `close_time` thành `22:00:00` | 200<br>`close_time` sân 2 là 22:00<br>`court_slots` khung 22:00 đến 23:00 của sân 2 chuyển `is_active = false`, các khung từ 06:00 đến 22:00 vẫn `true` |
+
+## 6. Kịch bản đặt sân, đặt cọc và ví - Epic 3, Epic 5 (SCB-176)
+
+Mục 3 chỉ nêu tình huống. Mục này chọn các ca chạy qua API và ghi đủ dữ liệu, các bước, số tiền.
+
+Endpoint:
+
+| Mục | Endpoint | Việc |
+| --- | --- | --- |
+| 2.8 | `POST /facilities/{id}/pricing-rules` | Chủ sân thay bảng giá của cơ sở |
+| 3.1 | `GET /courts/{id}/slots?date=` | Xem lưới khung giờ trống của sân |
+| 3.3 | `POST /bookings` | Tạo đơn, giữ chỗ 10 phút, chưa trừ ví |
+| 3.4 | `POST /bookings/{id}/deposit` | Đặt cọc 30% từ ví |
+| 3.7 | `POST /admin/bookings/expire-holds` | Admin nhả các đơn giữ chỗ đã hết hạn |
+| 5.1 | `GET /wallets/me` | Xem số dư ví |
+| 5.2 | `GET /wallets/me/transactions` | Xem lịch sử giao dịch ví |
+| 5.3 | `POST /admin/wallet-topups` | Admin cấp tiền vào ví |
+| 5.4 | `GET /admin/users?search=` | Admin tìm người dùng |
+
+Dữ liệu chung, lấy từ seed S2 và S3 (`database/README.md` mục 3). Mật khẩu mọi tài khoản là `TestPass123@`.
+
+| Dữ liệu | Giá trị |
+| --- | --- |
+| Tài khoản | Admin `admin@scb.vn` (id 2). Chủ sân cơ sở 1 `owner1@scb.vn`. Khách A `customer.a@scb.vn` (id 5), ví 500.000đ. Khách B `customer.b@scb.vn` (id 6), ví 200.000đ. Ví hệ thống 100.000đ |
+| Sân | Sân 1 và sân 2 thuộc cơ sở 1, giá cơ sở 100.000đ/giờ, mở 06:00 đến 23:00 |
+| Bảng giá cơ sở 1 | Cao điểm 17:00 đến 21:00 hệ số 1,30. Thứ Bảy, Chủ nhật hệ số 1,40 |
+| Đơn seed | Đơn id 1, `DEPOSITED`, của Khách B, sân 1, ngày mai, 08:00 đến 10:00 |
+| Ngày T | Thứ Ba kế tiếp, không phải ngày lễ. Không dùng "ngày mai" cho ca có số tiền vì ngày mai có thể là cuối tuần |
+| Khách mới | Tài khoản đăng ký mới trong ca (ví 0đ), Admin cấp tiền bằng 5.3 |
+
+Mỗi ca đặt một khung giờ riêng để các ca không đặt trùng nhau. Chạy lại phải nạp lại seed. Số dư ghi trong bảng là số khi vừa nạp seed. Khi chạy nhiều ca liền nhau, kiểm phần chênh lệch số dư trước và sau ca.
+
+| Mã | Story | QĐ | Điều kiện trước | Các bước | Kết quả mong đợi |
+| --- | --- | --- | --- | --- | --- |
+| GIA-09 | Đổi bảng giá sau khi có đơn | QĐ1, QĐ2 | Khách A, chủ sân cơ sở 1 đã đăng nhập | 1. Khách A gọi 3.3 đặt sân 1, ngày T, 20:00 đến 21:00<br>2. Chủ sân gọi 2.8 đổi cao điểm thành hệ số 1,50, giữ các quy tắc khác<br>3. Khách A gọi 3.3 đặt sân 2, ngày T, 20:00 đến 21:00<br>4. Chủ sân trả bảng giá về như seed | Bước 1: `total_amount` 130.000đ, cọc 39.000đ<br>Bước 3: `total_amount` 150.000đ, cọc 45.000đ<br>Đơn bước 1 vẫn 130.000đ |
+| GIA-10 | Client tự gửi số tiền | QĐ2 | Khách A đã đăng nhập | Gọi 3.3 đặt sân 1, ngày T, 19:00 đến 20:00, body thêm `"total_amount": 1000, "deposit_amount": 300` | Server bỏ qua, `total_amount` 130.000đ, cọc 39.000đ |
+| DAT-01 | Tạo đơn hợp lệ | QĐ3, QĐ7 | Khách A đã đăng nhập, ví 500.000đ | 1. Gọi 3.3 đặt sân 1, ngày T, 10:00 đến 11:00<br>2. Gọi 3.1 sân 1 ngày T<br>3. Gọi 5.1, 5.2 | Bước 1: 201, `PENDING_DEPOSIT`, `total_amount` 100.000đ, cọc 30.000đ, `hold_expires_at` khoảng 10 phút sau lúc gọi<br>Bước 2: khung 10:00 là `HOLDING`<br>Bước 3: ví vẫn 500.000đ, không có giao dịch mới |
+| DAT-02 | Hết hạn giữ chỗ | QĐ3, QĐ7 | Khách A đã đăng nhập. Chỉ chạy bằng pytest | 1. Gọi 3.3 đặt sân 2, ngày T, 06:00 đến 07:00<br>2. Sửa DB: `hold_expires_at = NOW() - INTERVAL 1 MINUTE`<br>3. Admin gọi 3.7<br>4. Gọi 3.1 sân 2 ngày T | Bước 3: đơn chuyển `CANCELLED`<br>Bước 4: khung 06:00 là `AVAILABLE`<br>Ví A không đổi, không có giao dịch ví |
+| DAT-04 | Đặt khung giờ đã qua | QĐ3 | Khách A đã đăng nhập | Gọi 3.3 đặt sân 1, ngày hôm qua, 10:00 đến 11:00 | 400 `INVALID_BOOKING_TIME`. Không tạo đơn |
+| DAT-06 | Chưa đăng nhập | QĐ7 | Không gửi `Authorization` | Gọi 3.3 đặt sân 1, ngày T, 11:00 đến 12:00 | 401 `AUTH_UNAUTHORIZED`. Không tạo đơn |
+| COC-01 | Cọc đơn hợp lệ | QĐ4, QĐ6 | Khách A ví 500.000đ, ví hệ thống 100.000đ | 1. Khách A gọi 3.3 đặt sân 1, ngày T, 18:00 đến 19:00<br>2. Gọi 3.4 với đơn vừa tạo<br>3. Gọi 5.2 | Bước 1: `total_amount` 130.000đ, cọc 39.000đ<br>Bước 2: `DEPOSITED`, `deposit_amount_paid` 39.000đ, `remaining_amount_due_at_court` 91.000đ, `wallet_balance_remaining` 461.000đ. Ví hệ thống 139.000đ<br>Bước 3: có 1 giao dịch `DEPOSIT` 39.000đ, `balance_after` 461.000đ |
+| COC-02 | Số dư đúng bằng tiền cọc | QĐ6 | Khách mới, Admin cấp 39.000đ | 1. Gọi 3.3 đặt sân 2, ngày T, 18:00 đến 19:00<br>2. Gọi 3.4 | Bước 2: `DEPOSITED`, ví còn 0đ |
+| COC-03 | Số dư thiếu 1đ | QĐ4, QĐ6 | Khách mới, Admin cấp 38.999đ | 1. Gọi 3.3 đặt sân 2, ngày T, 19:00 đến 20:00<br>2. Gọi 3.4 | Bước 2: 402 `WALLET_INSUFFICIENT_BALANCE`<br>Đơn vẫn `PENDING_DEPOSIT`, ví vẫn 38.999đ, không có giao dịch `DEPOSIT` |
+| COC-04 | Cọc đơn đã hết hạn giữ chỗ | QĐ7 | Khách A đã đăng nhập. Chỉ chạy bằng pytest | 1. Gọi 3.3 đặt sân 1, ngày T, 06:00 đến 07:00<br>2. Sửa DB: `hold_expires_at = NOW() - INTERVAL 1 MINUTE`<br>3. Gọi 3.4 | Bước 3: 400 `CANNOT_DEPOSIT_EXPIRED_BOOKING`. Ví A không đổi |
+| COC-05 | Gửi cọc hai lần | QĐ6 | Khách A đã đăng nhập | 1. Gọi 3.3 đặt sân 1, ngày T, 07:00 đến 08:00 (100.000đ, cọc 30.000đ)<br>2. Gọi 3.4 hai lần liền | Lần 1: `DEPOSITED`, ví A giảm 30.000đ<br>Lần 2: bị từ chối, ví không giảm thêm<br>Chỉ có 1 giao dịch `DEPOSIT` cho đơn |
+| COC-07 | Cọc đơn của người khác | QĐ7 | Khách A, Khách B đã đăng nhập | 1. Khách A gọi 3.3 đặt sân 1, ngày T, 11:00 đến 12:00<br>2. Khách B gọi 3.4 với đơn đó | 403 `AUTH_FORBIDDEN`. Ví B vẫn 200.000đ, đơn vẫn `PENDING_DEPOSIT` |
+| COC-08 | Cọc đơn đã hủy | QĐ7 | Đơn `CANCELLED` sau DAT-02 | Khách A gọi 3.4 với đơn đó | 400 `CANNOT_DEPOSIT_EXPIRED_BOOKING`. Ví A không đổi |
+| TRUNG-01 | Đặt khung đã được cọc | QĐ3 | Đơn seed id 1 | Khách A gọi 3.3 đặt sân 1, ngày mai, 08:00 đến 09:00 | 409 `SLOT_ALREADY_BOOKED`. Không tạo đơn, ví A vẫn 500.000đ |
+| TRUNG-03 | Đơn nhiều khung, một khung trùng | QĐ3 | Đơn seed id 1 | 1. Khách A gọi 3.3 đặt sân 1, ngày mai, 07:00 đến 09:00 (2 khung)<br>2. Gọi 3.1 sân 1 ngày mai | Bước 1: 409 `SLOT_ALREADY_BOOKED`<br>Bước 2: khung 07:00 vẫn `AVAILABLE` |
+| TRUNG-04 | Khung liền kề, khác sân | QĐ3 | Đơn seed id 1 | 1. Khách A gọi 3.3 đặt sân 1, ngày mai, 10:00 đến 11:00<br>2. Gọi 3.3 đặt sân 2, ngày mai, 08:00 đến 09:00 | Cả hai: 201 `PENDING_DEPOSIT` |
+| VI-01 | Admin cấp tiền | QĐ6 | Admin đã đăng nhập | 1. Gọi 5.3 với `user_id` 6, `amount` 100.000<br>2. Khách B gọi 5.2 | Bước 1: ví B 300.000đ<br>Bước 2: có giao dịch `TOPUP` 100.000đ, `balance_after` 300.000đ, ghi người cấp là Admin |
+| VI-02 | Số tiền cấp sai | QĐ6 | Admin đã đăng nhập | Gọi 5.3 với `user_id` 6, `amount` lần lượt 0, -1000, 1000.5 | Cả ba: 422 `VALIDATION_ERROR`. Ví B không đổi |
+| VI-03 | Không phải Admin cấp tiền | QĐ6 | Khách A đã đăng nhập | Gọi 5.3 với `user_id` 5, `amount` 100.000 | 403 `AUTH_FORBIDDEN`. Ví A không đổi |
+| VI-04 | Xem lịch sử giao dịch | QĐ6 | Khách B đã đăng nhập, seed vừa nạp | Gọi 5.2 | Có `TOPUP` 300.000đ và `DEPOSIT` 100.000đ của đơn 1. Không có giao dịch của ví khác. Lọc `type=DEPOSIT` chỉ còn 1 dòng |
+| VI-06 | Admin tìm người dùng | | Admin, Khách A đã đăng nhập | 1. Admin gọi 5.4 với `search=customer.a`<br>2. Khách A gọi 5.4 | Bước 1: 1 kết quả, `id` 5, `balance` 500.000đ<br>Bước 2: 403 `AUTH_FORBIDDEN` |
+
+Khung giờ đã dùng, để thêm ca mới không trùng: sân 1 ngày T dùng 06:00 đến 08:00, 10:00 đến 12:00, 18:00 đến 21:00. Sân 2 ngày T dùng 06:00 đến 07:00, 18:00 đến 21:00. Ngày mai dùng sân 1 từ 07:00 đến 11:00 và sân 2 từ 08:00 đến 09:00.
