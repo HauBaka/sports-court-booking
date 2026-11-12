@@ -119,28 +119,55 @@ Cột "Cấp" là nơi nên kiểm: Unit (hàm tính, không cần CSDL), DB (r�
 
 ## 4. Kịch bản xác thực và phân quyền - Epic 1 (SCB-67)
 
-Endpoint xem ở `docs/api-endpoints.md` mục 1.1 đến 1.4 và 2.3. Dữ liệu dùng chung lấy từ seed `database/seeds/S1__sample_data.sql`, tài khoản và mật khẩu xem ở `database/README.md`. Dùng Khách A (`customer.a@scb.vn`, số điện thoại `0900000003`, mật khẩu `TestPass123@`). Test chạy trên CSDL test đã nạp seed. Người đăng ký mới trong AUTH-01 dùng email `new.user@scb.vn` và số điện thoại `0900000010`, không có trong seed.
+Endpoint xem ở `docs/api-endpoints.md` mục 1.1 đến 1.6 và 2.3. Từ Sprint 3 đăng ký phải có OTP: gọi `POST /auth/otp` (mục 1.5) trước rồi gửi `otp_code` khi `POST /auth/register` (mục 1.1). Ở máy cá nhân và CI (`EMAIL_BACKEND=console`, không phải production) mã OTP luôn là `123456`. Dữ liệu dùng chung lấy từ seed `database/seeds/S2__seed_e2.sql`, tài khoản và mật khẩu xem ở `database/README.md`. Dùng Khách A (`customer.a@scb.vn`, số điện thoại `0900000004`, mật khẩu `TestPass123@`). Test chạy trên CSDL test đã nạp seed. Người đăng ký mới trong AUTH-01 dùng email `new.user@scb.vn` và số điện thoại `0900000010`, không có trong seed.
 
 | Mã | Story | QĐ | Điều kiện trước | Các bước | Kết quả mong đợi |
 | --- | --- | --- | --- | --- | --- |
-| AUTH-01 | Đăng ký tài khoản | QĐ6 | Seed đã nạp, chưa có `new.user@scb.vn` | 1. `POST /auth/register` với email `new.user@scb.vn`, phone `0900000010`, role `customer`<br>2. Đăng nhập rồi `GET /auth/me` | Bước 1: 201, `role` = `customer`, có `wallet_id`, `balance` = 0<br>Bước 2: `wallet.balance` = 0đ, không có giao dịch ví<br>Phản hồi không chứa mật khẩu |
-| AUTH-02 | Đăng ký trùng email | | Seed đã nạp | `POST /auth/register` với email `customer.a@scb.vn`, phone `0900000010` | 409 `AUTH_EMAIL_EXISTS`<br>Không tạo user, không tạo ví |
-| AUTH-03 | Đăng ký trùng số điện thoại | | Seed đã nạp | `POST /auth/register` với email `new.user@scb.vn`, phone `0900000003` | 409 `AUTH_PHONE_EXISTS`<br>Không tạo user, không tạo ví |
+| AUTH-01 | Đăng ký tài khoản | QĐ6 | Seed đã nạp, chưa có `new.user@scb.vn` | 1. `POST /auth/otp` (gửi OTP) với email `new.user@scb.vn`, `purpose` = `REGISTER`<br>2. `POST /auth/register` với email `new.user@scb.vn`, phone `0900000010`, role `customer`, `otp_code` = `123456`<br>3. Đăng nhập rồi `GET /auth/me` | Bước 1: 200<br>Bước 2: 201, `role` = `customer`, có `wallet_id`, `balance` = 0<br>Bước 3: `wallet.balance` = 0đ, không có giao dịch ví<br>Phản hồi không chứa mật khẩu |
+| AUTH-02 | Đăng ký trùng email | | Seed đã nạp | `POST /auth/otp` với email `customer.a@scb.vn`, `purpose` = `REGISTER` | 409 `AUTH_EMAIL_EXISTS`<br>Không gửi OTP, không tạo user, không tạo ví |
+| AUTH-03 | Đăng ký trùng số điện thoại | | Seed đã nạp | 1. `POST /auth/otp` với email `new.user@scb.vn`, `purpose` = `REGISTER`<br>2. `POST /auth/register` với email `new.user@scb.vn`, phone `0900000004`, `otp_code` = `123456` | Bước 2: 409 `AUTH_PHONE_EXISTS`<br>Không tạo user, không tạo ví |
 | AUTH-04 | Đăng nhập sai mật khẩu | | Seed đã nạp | `POST /auth/login` với email `customer.a@scb.vn`, mật khẩu `SaiMatKhau123@` | 401 `AUTH_INVALID_CREDENTIALS`<br>Không có `access_token` |
 | AUTH-05 | Gọi API cần đăng nhập khi thiếu token | QĐ7 | Không gửi header `Authorization` | `GET /auth/me` | 401 `AUTH_UNAUTHORIZED` |
 | AUTH-06 | Khách gọi API của chủ sân | QĐ7 | Khách A đã đăng nhập, có `access_token` | `POST /facilities` với token của Khách A, body hợp lệ | 403 `AUTH_FORBIDDEN`<br>Không tạo cơ sở |
 
+### 4.1. OTP và đặt lại mật khẩu (SCB-175)
+
+Endpoint: `POST /auth/otp` gửi mã OTP 6 số qua email (mục 1.5), `POST /auth/register` đăng ký kèm `otp_code` (mục 1.1), `POST /auth/password/reset` đặt lại mật khẩu bằng OTP (mục 1.6). Luật: mã có hạn 5 phút, chỉ dùng một lần, gửi lại sau 60 giây, sai 5 lần thì mã bị hủy. HTTP status của các mã `AUTH_OTP_*` xem ở `docs/api-conventions.md`.
+
+Dữ liệu lấy từ seed E3 (`database/seeds/S3__seed_e3.sql`), mọi dòng OTP trong seed đều có mã `123456`. Ca nào cần OTP mới thì tự gọi `POST /auth/otp` với email riêng của ca đó (`otp.wrong@`, `otp.attempts@`, `otp.resend@`), mã cũng là `123456`. OTP trong seed:
+
+| Email | `purpose` | Trạng thái OTP trong seed |
+| --- | --- | --- |
+| `newuser@scb.vn` | `REGISTER` | Còn hạn, `attempts` = 0, chưa dùng. Chỉ AUTH-07 dùng |
+| `late@scb.vn` | `REGISTER` | Hết hạn 1 phút trước |
+| `locked@scb.vn` | `REGISTER` | Còn hạn, `attempts` = 5 |
+| `done@scb.vn` | `REGISTER` | Còn hạn, đã dùng (`consumed_at` có giá trị) |
+| `customer.a@scb.vn` | `RESET_PASSWORD` | Còn hạn, chưa dùng. Tài khoản có thật, mật khẩu `TestPass123@` |
+
+| Mã | Story | QĐ | Điều kiện trước | Các bước | Kết quả mong đợi |
+| --- | --- | --- | --- | --- | --- |
+| AUTH-07 | Đăng ký đúng OTP | QĐ6 | Seed E3 đã nạp, chưa có user `newuser@scb.vn` | `POST /auth/register` với email `newuser@scb.vn`, phone `0900000021`, role `customer`, `otp_code` = `123456` | 201, có `wallet_id`, `balance` = 0<br>OTP chuyển sang đã dùng |
+| AUTH-08 | Sai OTP | | Chưa có user `otp.wrong@scb.vn` | 1. `POST /auth/otp` với email `otp.wrong@scb.vn`, `purpose` = `REGISTER`<br>2. `POST /auth/register` với email `otp.wrong@scb.vn`, `otp_code` = `000000` | Bước 2: `AUTH_OTP_INVALID`<br>Không tạo user, `attempts` của OTP tăng lên 1 |
+| AUTH-09 | OTP hết hạn | | Seed E3 đã nạp | `POST /auth/register` với email `late@scb.vn`, `otp_code` = `123456` | `AUTH_OTP_EXPIRED`<br>Không tạo user |
+| AUTH-10 | Sai 5 lần | | Chưa có user `otp.attempts@scb.vn` | 1. `POST /auth/otp` với email `otp.attempts@scb.vn`, `purpose` = `REGISTER`<br>2. `POST /auth/register` với `otp_code` = `000000`, lặp 4 lần<br>3. Gửi sai lần thứ 5<br>4. Gửi đúng `123456`<br>5. `POST /auth/register` với email `locked@scb.vn` (seed, đã sai 5 lần), `otp_code` = `123456` | Bước 2: cả 4 lần trả `AUTH_OTP_INVALID`<br>Bước 3: `AUTH_OTP_TOO_MANY_ATTEMPTS`<br>Bước 4, 5: bị từ chối, không tạo user |
+| AUTH-11 | OTP đã dùng | | Seed E3 đã nạp | `POST /auth/register` với email `done@scb.vn`, `otp_code` = `123456` | Bị từ chối, không tạo user |
+| AUTH-12 | Gửi lại OTP trong 60 giây | | Chưa có OTP nào của `otp.resend@scb.vn` | 1. `POST /auth/otp` với email `otp.resend@scb.vn`, `purpose` = `REGISTER`<br>2. Gọi lại ngay | Bước 1: 200<br>Bước 2: `AUTH_OTP_TOO_SOON`, không gửi mail mới |
+| AUTH-13 | Đặt lại mật khẩu | | Seed E3 đã nạp | 1. `POST /auth/password/reset` với email `customer.a@scb.vn`, `otp_code` = `123456`, `new_password` = `MatKhauMoi123@`<br>2. Đăng nhập bằng mật khẩu cũ `TestPass123@`<br>3. Đăng nhập bằng `MatKhauMoi123@` | Bước 1: 200<br>Bước 2: 401 `AUTH_INVALID_CREDENTIALS`<br>Bước 3: 200, có `access_token` |
+| AUTH-14 | Quên mật khẩu với email không tồn tại | | Không có user `khong.co@scb.vn` | `POST /auth/otp` với email `khong.co@scb.vn`, `purpose` = `RESET_PASSWORD` | 200, cùng câu thông báo như email có thật<br>Không tạo OTP, không gửi mail |
+
+AUTH-13 đổi mật khẩu của Khách A: chạy sau cùng hoặc nạp lại seed trước khi chạy kịch bản khác.
+
 ## 5. Kịch bản quản lý sân và bảng giá - Epic 2 (SCB-2)
 
-Endpoint xem ở `docs/api-endpoints.md` mục 2.7, 2.8. Dữ liệu dùng chung lấy từ seed `database/seeds/S1__sample_data.sql`: cơ sở 1 của `owner@scb.vn` (Chủ sân A), sân 1 và sân 2 giá cơ sở 100.000đ/giờ, giờ mở 06:00 đến 23:00. Bảng giá seed của cơ sở 1: cao điểm 17:00 đến 21:00 hệ số 1,30, thứ Bảy và Chủ nhật hệ số 1,40, Tết Dương Lịch hệ số 1,50. Các kịch bản giá chỉ kiểm hệ số và việc lưu quy tắc, tính tiền đặt sân thuộc Sprint 3.
+Endpoint xem ở `docs/api-endpoints.md` mục 2.7, 2.8. Dữ liệu dùng chung lấy từ seed `database/seeds/S2__seed_e2.sql`: cơ sở 1 của `owner1@scb.vn` (Chủ sân A), sân 1 và sân 2 giá cơ sở 100.000đ/giờ, giờ mở 06:00 đến 23:00. Bảng giá seed của cơ sở 1 có 3 quy tắc: cao điểm 17:00 đến 21:00 hệ số 1,30, thứ Bảy hệ số 1,40, Chủ nhật hệ số 1,40. Các kịch bản giá chỉ kiểm hệ số và việc lưu quy tắc, tính tiền đặt sân thuộc Sprint 3.
 
 | Mã | Story | QĐ | Điều kiện trước | Các bước | Kết quả mong đợi |
 | --- | --- | --- | --- | --- | --- |
 | SAN-01 | Hệ số giờ cao điểm | QĐ1 | Seed đã nạp. Ngày chơi là thứ Ba, không phải ngày lễ | Lấy hệ số của sân 1 khung 18:00 đến 19:00 | Hệ số 1,30<br>Giá khung 100.000 × 1,30 = 130.000đ |
 | SAN-02 | Nhiều quy tắc cùng khớp | QĐ1 | Seed đã nạp. Ngày chơi là thứ Bảy, không phải ngày lễ | Lấy hệ số của sân 1 khung 18:00 đến 19:00 | Khớp cao điểm 1,30 và cuối tuần 1,40, lấy hệ số lớn nhất 1,40, không cộng dồn<br>Giá khung 100.000 × 1,40 = 140.000đ |
 | SAN-03 | Ngoài mọi quy tắc | QĐ1 | Seed đã nạp. Ngày chơi là thứ Ba, không phải ngày lễ | Lấy hệ số của sân 1 khung 10:00 đến 11:00 | Hệ số 1,00<br>Giá khung 100.000đ |
-| SAN-04 | Hệ số dưới biên | QĐ1 | Chủ sân A đã đăng nhập | `POST /facilities/1/pricing-rules` với một quy tắc `PEAK_HOUR` hệ số 1,10 | 422 `VALIDATION_ERROR`<br>Không lưu, bảng giá cơ sở 1 vẫn 4 quy tắc như seed |
-| SAN-05 | Hệ số trên biên | QĐ1 | Chủ sân A đã đăng nhập | `POST /facilities/1/pricing-rules` với một quy tắc `PEAK_HOUR` hệ số 1,60 | 422 `VALIDATION_ERROR`<br>Không lưu, bảng giá cơ sở 1 vẫn 4 quy tắc như seed |
+| SAN-04 | Hệ số dưới biên | QĐ1 | Chủ sân A đã đăng nhập | `POST /facilities/1/pricing-rules` với một quy tắc `PEAK_HOUR` hệ số 1,10 | 422 `VALIDATION_ERROR`<br>Không lưu, bảng giá cơ sở 1 vẫn 3 quy tắc như seed |
+| SAN-05 | Hệ số trên biên | QĐ1 | Chủ sân A đã đăng nhập | `POST /facilities/1/pricing-rules` với một quy tắc `PEAK_HOUR` hệ số 1,60 | 422 `VALIDATION_ERROR`<br>Không lưu, bảng giá cơ sở 1 vẫn 3 quy tắc như seed |
 | SAN-06 | Sửa sân của chủ khác | QĐ7 | Chủ sân B đã đăng ký (role `owner`), chưa có cơ sở nào, đã đăng nhập | `PATCH /courts/1` với token của Chủ sân B, đổi `name` | 403 `AUTH_FORBIDDEN`<br>Tên sân 1 không đổi |
 | SAN-07 | Đổi giờ khi còn lịch cọc | QĐ3, QĐ7 | Có đơn "Đã đặt cọc" của sân 1 ngày mai, khung 22:00 đến 23:00. Chủ sân A đã đăng nhập | `PATCH /courts/1` đổi `close_time` thành `22:00:00` | 400 `CANNOT_UPDATE_COURT_SCHEDULE_ACTIVE_BOOKINGS`<br>`close_time` sân 1 vẫn 23:00, `court_slots` không đổi |
 | SAN-08 | Đổi giờ khi không có lịch | QĐ3 | Sân 2 không có đơn đặt cọc nào. Chủ sân A đã đăng nhập | `PATCH /courts/2` đổi `close_time` thành `22:00:00` | 200<br>`close_time` sân 2 là 22:00<br>`court_slots` khung 22:00 đến 23:00 của sân 2 chuyển `is_active = false`, các khung từ 06:00 đến 22:00 vẫn `true` |
