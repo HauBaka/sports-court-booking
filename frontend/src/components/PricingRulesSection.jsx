@@ -19,8 +19,11 @@ const MULTIPLIER_MIN = 1.20;
 const MULTIPLIER_MAX = 1.50;
 const MULTIPLIER_STEP = 0.05;
 
+let _keyCounter = 0;
+const nextKey = () => ++_keyCounter;
+
 const emptyRule = () => ({
-  _key: crypto.randomUUID(),
+  _key: nextKey(),
   name: "",
   rule_type: "PEAK_HOUR",
   multiplier: "1.30",
@@ -36,7 +39,7 @@ const emptyRule = () => ({
 // ── Map API response → form state ──
 function rulesFromApi(apiRules) {
   return apiRules.map((r) => ({
-    _key: crypto.randomUUID(),
+    _key: nextKey(),
     name: r.name,
     rule_type: r.rule_type,
     multiplier: String(r.multiplier),
