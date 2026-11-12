@@ -30,7 +30,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"customer@example.com\",\n  \"phone\": \"0901234567\",\n  \"password\": \"SecurePassword123@\",\n  \"role\": \"customer\"\n}",
+              "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"customer@example.com\",\n  \"phone\": \"0901234567\",\n  \"password\": \"SecurePassword123@\",\n  \"role\": \"customer\",\n  \"otp_code\": \"{{otp_code}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -124,6 +124,75 @@
           }
         },
         {
+          "name": "1.5 Gửi mã OTP qua email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "otp"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"purpose\": \"REGISTER\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "1.6 Đặt lại mật khẩu bằng OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/password/reset",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "password",
+                "reset"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"otp_code\": \"{{otp_code}}\",\n  \"new_password\": \"MatKhauMoi123@\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
           "name": "Test",
           "item": [
             {
@@ -148,7 +217,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"new.user@scb.vn\",\n  \"phone\": \"0900000010\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\"\n}",
+                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"new.user@scb.vn\",\n  \"phone\": \"0900000010\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\",\n  \"otp_code\": \"{{otp_code}}\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -160,6 +229,30 @@
                 }
               },
               "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "call(\"POST\", \"/auth/otp\", null, {email: \"new.user@scb.vn\", purpose: \"REGISTER\"}, () => {});"
+                    ]
+                  }
+                },
                 {
                   "listen": "test",
                   "script": {
@@ -192,7 +285,7 @@
               ]
             },
             {
-              "name": "1.1 Đăng ký tài khoản mới - AUTH-02",
+              "name": "1.5 Gửi mã OTP qua email - AUTH-02",
               "request": {
                 "method": "POST",
                 "header": [
@@ -202,18 +295,18 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{base_url}}/auth/register",
+                  "raw": "{{base_url}}/auth/otp",
                   "host": [
                     "{{base_url}}"
                   ],
                   "path": [
                     "auth",
-                    "register"
+                    "otp"
                   ]
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"{{user_email}}\",\n  \"phone\": \"0900000010\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\"\n}",
+                  "raw": "{\n  \"email\": \"customer.a@scb.vn\",\n  \"purpose\": \"REGISTER\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -230,8 +323,10 @@
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "pm.test(\"AUTH-02: status 409\", () => pm.response.to.have.status(409));",
-                      "pm.test(\"AUTH-02: mã lỗi AUTH_EMAIL_EXISTS\", () => pm.expect(pm.response.json().error.code).to.eql(\"AUTH_EMAIL_EXISTS\"));"
+                      "pm.test(\"AUTH-02: 409 AUTH_EMAIL_EXISTS, không gửi OTP\", () => {",
+                      "  pm.response.to.have.status(409);",
+                      "  pm.expect(pm.response.json().error.code).to.eql(\"AUTH_EMAIL_EXISTS\");",
+                      "});"
                     ]
                   }
                 }
@@ -259,7 +354,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"new.user@scb.vn\",\n  \"phone\": \"0900000003\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\"\n}",
+                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"new.user@scb.vn\",\n  \"phone\": \"0900000004\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\",\n  \"otp_code\": \"{{otp_code}}\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -272,12 +367,38 @@
               },
               "event": [
                 {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "call(\"POST\", \"/auth/otp\", null, {email: \"new.user@scb.vn\", purpose: \"REGISTER\"}, () => {});"
+                    ]
+                  }
+                },
+                {
                   "listen": "test",
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "pm.test(\"AUTH-03: status 409\", () => pm.response.to.have.status(409));",
-                      "pm.test(\"AUTH-03: mã lỗi AUTH_PHONE_EXISTS\", () => pm.expect(pm.response.json().error.code).to.eql(\"AUTH_PHONE_EXISTS\"));"
+                      "pm.test(\"AUTH-03: 409 AUTH_PHONE_EXISTS\", () => {",
+                      "  pm.response.to.have.status(409);",
+                      "  pm.expect(pm.response.json().error.code).to.eql(\"AUTH_PHONE_EXISTS\");",
+                      "});"
                     ]
                   }
                 }
@@ -357,6 +478,437 @@
                     "exec": [
                       "pm.test(\"AUTH-05: status 401\", () => pm.response.to.have.status(401));",
                       "pm.test(\"AUTH-05: mã lỗi AUTH_UNAUTHORIZED\", () => pm.expect(pm.response.json().error.code).to.eql(\"AUTH_UNAUTHORIZED\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.1 Đăng ký tài khoản mới - AUTH-07",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/register",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"newuser@scb.vn\",\n  \"phone\": \"0900000021\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\",\n  \"otp_code\": \"123456\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"AUTH-07: 201, ví số dư 0\", () => {",
+                      "  pm.response.to.have.status(201);",
+                      "  pm.expect(pm.response.json().data.balance).to.eql(0);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.1 Đăng ký tài khoản mới - AUTH-08",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/register",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"otp.wrong@scb.vn\",\n  \"phone\": \"0900000022\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\",\n  \"otp_code\": \"000000\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "call(\"POST\", \"/auth/otp\", null, {email: \"otp.wrong@scb.vn\", purpose: \"REGISTER\"}, () => {});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"AUTH-08: AUTH_OTP_INVALID\", () => {",
+                      "  pm.expect(pm.response.json().error.code).to.eql(\"AUTH_OTP_INVALID\");",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.1 Đăng ký tài khoản mới - AUTH-09",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/register",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"late@scb.vn\",\n  \"phone\": \"0900000023\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\",\n  \"otp_code\": \"123456\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"AUTH-09: AUTH_OTP_EXPIRED\", () => {",
+                      "  pm.expect(pm.response.json().error.code).to.eql(\"AUTH_OTP_EXPIRED\");",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.1 Đăng ký tài khoản mới - AUTH-10",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/register",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"locked@scb.vn\",\n  \"phone\": \"0900000025\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\",\n  \"otp_code\": \"123456\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Postman chỉ kiểm dòng seed đã sai 5 lần. Đếm 4 lần sai rồi lần 5 bị khóa kiểm ở pytest.",
+                      "pm.test(\"AUTH-10: mã đã bị khóa, nhập đúng cũng bị từ chối\", () => {",
+                      "  pm.expect(pm.response.code).to.be.at.least(400);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.1 Đăng ký tài khoản mới - AUTH-11",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/register",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"done@scb.vn\",\n  \"phone\": \"0900000026\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\",\n  \"otp_code\": \"123456\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"AUTH-11: mã đã dùng bị từ chối\", () => {",
+                      "  pm.expect(pm.response.code).to.be.at.least(400);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.5 Gửi mã OTP qua email - AUTH-12",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/otp",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "otp"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"otp.resend@scb.vn\",\n  \"purpose\": \"REGISTER\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "call(\"POST\", \"/auth/otp\", null, {email: \"otp.resend@scb.vn\", purpose: \"REGISTER\"}, () => {});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"AUTH-12: gửi lại trong 60 giây bị AUTH_OTP_TOO_SOON\", () => {",
+                      "  pm.expect(pm.response.json().error.code).to.eql(\"AUTH_OTP_TOO_SOON\");",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.5 Gửi mã OTP qua email - AUTH-14",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/otp",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "otp"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"khong.co@scb.vn\",\n  \"purpose\": \"RESET_PASSWORD\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"AUTH-14: 200 như email có thật\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.6 Đặt lại mật khẩu bằng OTP - AUTH-13",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/password/reset",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "password",
+                    "reset"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"customer.a@scb.vn\",\n  \"otp_code\": \"123456\",\n  \"new_password\": \"MatKhauMoi123@\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const ID = \"AUTH-13\";",
+                      "pm.test(ID + \": đặt lại thành công\", () => pm.response.to.have.status(200));",
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const tryLogin = (password, cb) => pm.sendRequest({url: base + \"/auth/login\", method: \"POST\",",
+                      "  header: {\"Content-Type\": \"application/json\"},",
+                      "  body: {mode: \"raw\", raw: JSON.stringify({email: \"customer.a@scb.vn\", password})}}, (e, r) => cb(r));",
+                      "tryLogin(pm.environment.get(\"user_password\"), r => pm.test(ID + \": mật khẩu cũ bị 401\", () => pm.expect(r.code).to.eql(401)));",
+                      "tryLogin(\"MatKhauMoi123@\", r => pm.test(ID + \": mật khẩu mới đăng nhập được\", () => pm.expect(r.code).to.eql(200)));",
+                      "// Ca này đổi mật khẩu Khách A: chạy sau cùng, xong thì nạp lại seed"
                     ]
                   }
                 }
@@ -657,6 +1209,121 @@
           }
         },
         {
+          "name": "2.10 Thêm ngày lễ mới vào hệ thống",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/holidays",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "holidays"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Giỗ Tổ Hùng Vương\",\n  \"holiday_date\": \"2026-04-26\",\n  \"recurring_yearly\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "2.11 Tra cứu danh sách dịch vụ đi kèm của cơ sở thể thao",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/facilities/{{facility_id}}/services",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "facilities",
+                "{{facility_id}}",
+                "services"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "2.12 Thêm dịch vụ đi kèm mới cho cơ sở thể thao",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/facilities/{{facility_id}}/services",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "facilities",
+                "{{facility_id}}",
+                "services"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Thuê giày thể thao\",\n  \"unit_price\": 30000,\n  \"unit\": \"đôi/buổi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "2.13 Cập nhật thông tin dịch vụ đi kèm",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/services/{{service_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "services",
+                "{{service_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unit_price\": 35000,\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
           "name": "Test",
           "item": [
             {
@@ -922,121 +1589,6 @@
             }
           ],
           "description": "Request theo mã kịch bản trong docs/test-scenarios.md, dùng để thử tay"
-        },
-        {
-          "name": "2.10 Thêm ngày lễ mới vào hệ thống",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/holidays",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "admin",
-                "holidays"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Giỗ Tổ Hùng Vương\",\n  \"holiday_date\": \"2026-04-26\",\n  \"recurring_yearly\": false\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "2.11 Tra cứu danh sách dịch vụ đi kèm của cơ sở thể thao",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/facilities/{{facility_id}}/services",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "facilities",
-                "{{facility_id}}",
-                "services"
-              ]
-            },
-            "auth": {
-              "type": "noauth"
-            }
-          }
-        },
-        {
-          "name": "2.12 Thêm dịch vụ đi kèm mới cho cơ sở thể thao",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/facilities/{{facility_id}}/services",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "facilities",
-                "{{facility_id}}",
-                "services"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Thuê giày thể thao\",\n  \"unit_price\": 30000,\n  \"unit\": \"đôi/buổi\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "2.13 Cập nhật thông tin dịch vụ đi kèm",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/services/{{service_id}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "services",
-                "{{service_id}}"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"unit_price\": 35000,\n  \"is_active\": true\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
         }
       ],
       "description": "Cơ sở, sân con và bảng giá"
@@ -1230,6 +1782,773 @@
               ]
             }
           }
+        },
+        {
+          "name": "Test",
+          "item": [
+            {
+              "name": "3.3 Tạo lịch đặt sân và giữ chỗ tạm - GIA-10",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/bookings",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"court_id\": 1,\n  \"play_date\": \"{{date_t}}\",\n  \"time_slot_ids\": [\n    14\n  ],\n  \"services\": [],\n  \"total_amount\": 1000,\n  \"deposit_amount\": 300\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{case_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "login(\"customer.a@scb.vn\", t => pm.variables.set(\"case_token\", t));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const d = pm.response.json().data;",
+                      "pm.test(\"GIA-10: server bỏ qua số tiền client gửi, 130.000đ, cọc 39.000đ\", () => {",
+                      "  pm.expect(d.total_amount).to.eql(130000);",
+                      "  pm.expect(d.deposit_amount_required).to.eql(39000);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "3.3 Tạo lịch đặt sân và giữ chỗ tạm - DAT-01",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/bookings",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"court_id\": 1,\n  \"play_date\": \"{{date_t}}\",\n  \"time_slot_ids\": [\n    5\n  ],\n  \"services\": []\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{case_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "login(\"customer.a@scb.vn\", t => pm.variables.set(\"case_token\", t));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const d = pm.response.json().data;",
+                      "pm.test(\"DAT-01: 201 PENDING_DEPOSIT, 100.000đ, cọc 30.000đ\", () => {",
+                      "  pm.response.to.have.status(201);",
+                      "  pm.expect(d.status).to.eql(\"PENDING_DEPOSIT\");",
+                      "  pm.expect(d.total_amount).to.eql(100000);",
+                      "  pm.expect(d.deposit_amount_required).to.eql(30000);",
+                      "});",
+                      "pm.sendRequest({url: pm.environment.get(\"base_url\") + \"/wallets/me\", header: {Authorization: \"Bearer \" + pm.variables.get(\"case_token\")}},",
+                      "  (e, w) => pm.test(\"DAT-01: chưa trừ ví\", () => pm.expect(w.json().data.balance).to.eql(500000)));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "3.3 Tạo lịch đặt sân và giữ chỗ tạm - DAT-04",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/bookings",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"court_id\": 1,\n  \"play_date\": \"{{date_yesterday}}\",\n  \"time_slot_ids\": [\n    5\n  ],\n  \"services\": []\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{case_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "login(\"customer.a@scb.vn\", t => pm.variables.set(\"case_token\", t));",
+                      "const y = new Date(); y.setDate(y.getDate() - 1); pm.variables.set(\"date_yesterday\", fmt(y));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"DAT-04: 400 INVALID_BOOKING_TIME\", () => {",
+                      "  pm.response.to.have.status(400);",
+                      "  pm.expect(pm.response.json().error.code).to.eql(\"INVALID_BOOKING_TIME\");",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "3.3 Tạo lịch đặt sân và giữ chỗ tạm - DAT-06",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/bookings",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"court_id\": 1,\n  \"play_date\": \"{{date_t}}\",\n  \"time_slot_ids\": [\n    6\n  ],\n  \"services\": []\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "// chỉ tính ngày, không đăng nhập"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"DAT-06: 401 AUTH_UNAUTHORIZED\", () => {",
+                      "  pm.response.to.have.status(401);",
+                      "  pm.expect(pm.response.json().error.code).to.eql(\"AUTH_UNAUTHORIZED\");",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "3.4 Thanh toán tiền cọc 30% qua ví nội bộ - COC-01",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/bookings/{{booking_id}}/deposit",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings",
+                    "{{booking_id}}",
+                    "deposit"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{case_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "login(\"customer.a@scb.vn\", t => {",
+                      "  pm.variables.set(\"case_token\", t);",
+                      "  call(\"GET\", \"/wallets/me\", t, null, w => pm.variables.set(\"balance_before\", w.json().data.balance));",
+                      "  call(\"POST\", \"/bookings\", t, {court_id: 1, play_date: pm.variables.get(\"date_t\"), time_slot_ids: [slot(18)], services: []}, r => {",
+                      "    pm.variables.set(\"booking_id\", r.json().data.booking_id);",
+                      "  });",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const d = pm.response.json().data;",
+                      "pm.test(\"COC-01: DEPOSITED, cọc 39.000đ, còn lại 91.000đ, ví giảm 39.000đ\", () => {",
+                      "  pm.expect(d.status).to.eql(\"DEPOSITED\");",
+                      "  pm.expect(d.deposit_amount_paid).to.eql(39000);",
+                      "  pm.expect(d.remaining_amount_due_at_court).to.eql(91000);",
+                      "  pm.expect(d.wallet_balance_remaining).to.eql(pm.variables.get(\"balance_before\") - 39000);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "3.4 Thanh toán tiền cọc 30% qua ví nội bộ - COC-05",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/bookings/{{booking_id}}/deposit",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings",
+                    "{{booking_id}}",
+                    "deposit"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{case_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "login(\"customer.a@scb.vn\", t => {",
+                      "  pm.variables.set(\"case_token\", t);",
+                      "  call(\"GET\", \"/wallets/me\", t, null, w => pm.variables.set(\"balance_before\", w.json().data.balance));",
+                      "  call(\"POST\", \"/bookings\", t, {court_id: 1, play_date: pm.variables.get(\"date_t\"), time_slot_ids: [slot(7)], services: []}, r => {",
+                      "    pm.variables.set(\"booking_id\", r.json().data.booking_id);",
+                      "    call(\"POST\", \"/bookings/\" + r.json().data.booking_id + \"/deposit\", t, null, () => {});",
+                      "  });",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"COC-05: cọc lần 2 bị từ chối\", () => pm.expect(pm.response.code).to.be.at.least(400));",
+                      "pm.sendRequest({url: pm.environment.get(\"base_url\") + \"/wallets/me\", header: {Authorization: \"Bearer \" + pm.variables.get(\"case_token\")}},",
+                      "  (e, w) => pm.test(\"COC-05: ví chỉ bị trừ 30.000đ một lần\", () => pm.expect(w.json().data.balance).to.eql(pm.variables.get(\"balance_before\") - 30000)));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "3.4 Thanh toán tiền cọc 30% qua ví nội bộ - COC-07",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/bookings/{{booking_id}}/deposit",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings",
+                    "{{booking_id}}",
+                    "deposit"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{case_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "login(\"customer.a@scb.vn\", ta => call(\"POST\", \"/bookings\", ta, {court_id: 1, play_date: pm.variables.get(\"date_t\"), time_slot_ids: [slot(11)], services: []}, r => {",
+                      "  pm.variables.set(\"booking_id\", r.json().data.booking_id);",
+                      "  login(\"customer.b@scb.vn\", tb => pm.variables.set(\"case_token\", tb));",
+                      "}));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"COC-07: 403 AUTH_FORBIDDEN\", () => {",
+                      "  pm.response.to.have.status(403);",
+                      "  pm.expect(pm.response.json().error.code).to.eql(\"AUTH_FORBIDDEN\");",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "3.3 Tạo lịch đặt sân và giữ chỗ tạm - TRUNG-01",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/bookings",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"court_id\": 1,\n  \"play_date\": \"{{date_tomorrow}}\",\n  \"time_slot_ids\": [\n    3\n  ],\n  \"services\": []\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{case_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "login(\"customer.a@scb.vn\", t => pm.variables.set(\"case_token\", t));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"TRUNG-01: 409 SLOT_ALREADY_BOOKED\", () => {",
+                      "  pm.response.to.have.status(409);",
+                      "  pm.expect(pm.response.json().error.code).to.eql(\"SLOT_ALREADY_BOOKED\");",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "3.3 Tạo lịch đặt sân và giữ chỗ tạm - TRUNG-03",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/bookings",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"court_id\": 1,\n  \"play_date\": \"{{date_tomorrow}}\",\n  \"time_slot_ids\": [\n    2,\n    3\n  ],\n  \"services\": []\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{case_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "login(\"customer.a@scb.vn\", t => pm.variables.set(\"case_token\", t));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"TRUNG-03: 409, cả đơn bị từ chối\", () => {",
+                      "  pm.response.to.have.status(409);",
+                      "  pm.expect(pm.response.json().error.code).to.eql(\"SLOT_ALREADY_BOOKED\");",
+                      "});",
+                      "pm.sendRequest({url: pm.environment.get(\"base_url\") + \"/courts/1/slots?date=\" + pm.variables.get(\"date_tomorrow\"), header: {Authorization: \"Bearer \" + pm.variables.get(\"case_token\")}},",
+                      "  (e, r) => pm.test(\"TRUNG-03: khung 07:00 vẫn AVAILABLE\", () => pm.expect(r.json().data.slots.find(s => s.time_slot_id === 2).status).to.eql(\"AVAILABLE\")));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "3.3 Tạo lịch đặt sân và giữ chỗ tạm - TRUNG-04",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/bookings",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"court_id\": 2,\n  \"play_date\": \"{{date_tomorrow}}\",\n  \"time_slot_ids\": [\n    3\n  ],\n  \"services\": []\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{case_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "login(\"customer.a@scb.vn\", t => pm.variables.set(\"case_token\", t));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"TRUNG-04: khác sân cùng khung đặt được\", () => pm.response.to.have.status(201));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "description": "Request theo mã kịch bản trong docs/test-scenarios.md, dùng để thử tay"
         }
       ],
       "description": "Lịch trống, tính tiền và đặt sân"
@@ -1390,6 +2709,421 @@
               }
             }
           }
+        },
+        {
+          "name": "5.4 Admin tìm người dùng",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/users?search=customer&page=1&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "customer"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Test",
+          "item": [
+            {
+              "name": "5.3 Admin nạp tiền trải nghiệm vào ví người dùng - VI-01",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/wallet-topups",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "wallet-topups"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_id\": 6,\n  \"amount\": 100000,\n  \"reason\": \"Kịch bản VI-01\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{case_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "login(\"admin@scb.vn\", t => pm.variables.set(\"case_token\", t));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const d = pm.response.json().data;",
+                      "pm.test(\"VI-01: cấp 100.000đ, giao dịch TOPUP\", () => {",
+                      "  pm.response.to.have.status(200);",
+                      "  pm.expect(d.granted_amount).to.eql(100000);",
+                      "  pm.expect(d.transaction_type).to.eql(\"TOPUP\");",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "5.3 Admin nạp tiền trải nghiệm vào ví người dùng - VI-02",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/wallet-topups",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "wallet-topups"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_id\": 6,\n  \"amount\": 0,\n  \"reason\": \"Kịch bản VI-02\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{case_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "login(\"admin@scb.vn\", t => pm.variables.set(\"case_token\", t));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Đổi amount thành -1000, 1000.5 để thử hai giá trị còn lại",
+                      "pm.test(\"VI-02: 422 VALIDATION_ERROR\", () => {",
+                      "  pm.response.to.have.status(422);",
+                      "  pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\");",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "5.3 Admin nạp tiền trải nghiệm vào ví người dùng - VI-03",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/admin/wallet-topups",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "wallet-topups"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_id\": 5,\n  \"amount\": 100000,\n  \"reason\": \"Kịch bản VI-03\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{case_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "login(\"customer.a@scb.vn\", t => pm.variables.set(\"case_token\", t));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"VI-03: 403 AUTH_FORBIDDEN\", () => {",
+                      "  pm.response.to.have.status(403);",
+                      "  pm.expect(pm.response.json().error.code).to.eql(\"AUTH_FORBIDDEN\");",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "5.2 Tra cứu lịch sử biến động số dư - VI-04",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/wallets/me/transactions",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "wallets",
+                    "me",
+                    "transactions"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{case_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "login(\"customer.b@scb.vn\", t => pm.variables.set(\"case_token\", t));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const types = pm.response.json().data.map(t => t.type);",
+                      "pm.test(\"VI-04: có TOPUP và DEPOSIT của ví mình\", () => {",
+                      "  pm.expect(types).to.include(\"TOPUP\");",
+                      "  pm.expect(types).to.include(\"DEPOSIT\");",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "5.4 Admin tìm người dùng - VI-06",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/users?search=customer.a",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "users"
+                  ],
+                  "query": [
+                    {
+                      "key": "search",
+                      "value": "customer.a"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{case_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_t\", fmt(T));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "login(\"admin@scb.vn\", t => pm.variables.set(\"case_token\", t));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const users = pm.response.json().data;",
+                      "pm.test(\"VI-06: tìm thấy đúng Khách A\", () => {",
+                      "  pm.expect(users.map(u => u.id)).to.eql([5]);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "description": "Request theo mã kịch bản trong docs/test-scenarios.md, dùng để thử tay"
         }
       ],
       "description": "Ví nội bộ và lịch sử giao dịch"

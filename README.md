@@ -9,7 +9,6 @@ sports-court-booking/
 ├── frontend/   # React + Vite: giao diện
 ├── backend/    # FastAPI: API, unit test
 ├── database/   # migration, seed, test ràng buộc (MySQL)
-├── postman/    # collection, environment để thử API
 ├── docs/       # đề xuất dự án, ERD, quy ước API, danh sách endpoint
 └── .github/    # workflow CI
 ```
@@ -109,4 +108,4 @@ npm run build    # build bản production
 
 ## Postman
 
-Request thử API nằm trong `postman/`. Mở thư mục repo bằng Local View trong Postman bản desktop, chọn environment `local` hoặc `dev`. Hướng dẫn chi tiết xem [docs/postman.md](docs/postman.md).
+Collection và environment Postman nằm trong `docs/postman-export/`. Import 3 file JSON vào Postman, chọn environment `local` hoặc `dev`. Hướng dẫn chi tiết xem [docs/postman.md](docs/postman.md).
