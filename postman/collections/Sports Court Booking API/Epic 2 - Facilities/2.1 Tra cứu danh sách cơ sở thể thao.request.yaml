@@ -1,6 +1,0 @@
-$kind: http-request
-method: GET
-url: '{{base_url}}/facilities?page=1&limit=10'
-order: 1000
-auth:
-  type: noauth
