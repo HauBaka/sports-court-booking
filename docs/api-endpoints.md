@@ -64,7 +64,7 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 * **Mô tả:** Đăng ký tài khoản mới cho Khách hàng (`customer`) hoặc Chủ sân (`owner`). Trước khi gọi đăng ký, Client phải gọi `POST /api/v1/auth/otp` với `purpose = "REGISTER"` để nhận mã OTP 6 số qua email và gửi kèm `otp_code` để xác thực. Mật khẩu được mã hóa an toàn bằng Bcrypt. Tự động khởi tạo một Ví nội bộ với số dư ban đầu bằng 0 VNĐ.
 * **Quyền truy cập:** Public.
 * **Database Transaction:** **BẮT BUỘC**
-  - **Tách riêng bước cập nhật số lần thử (Attempts):** Khi kiểm tra `otp_code`, nếu sai thì việc tăng `attempts` (và đánh dấu hủy mã nếu đạt 5 lần) **phải được commit riêng biệt trước khi trả về lỗi 400** (`AUTH_OTP_INVALID` / `AUTH_OTP_TOO_MANY_ATTEMPTS`). Không gộp vào transaction chính để tránh việc rollback làm mất số lần nhập sai dẫn đến lỗ hổng brute-force thử vô hạn lần.
+  - **Tách riêng bước cập nhật số lần thử (Attempts):** Khi kiểm tra `otp_code`, nếu sai thì việc tăng `attempts` (và hủy mã nếu sai đủ 5 lần) **phải được commit riêng biệt trước khi trả về lỗi 400**. Ở lần sai thứ 5, hệ thống hủy mã và trả về `AUTH_OTP_TOO_MANY_ATTEMPTS`; các lần thử tiếp theo trả về `AUTH_OTP_INVALID`. Không gộp vào transaction chính để tránh việc rollback làm mất số lần nhập sai dẫn đến lỗ hổng brute-force thử vô hạn lần.
   - **Transaction chính:** Chỉ khi `otp_code` hợp lệ, transaction chính mới bắt đầu để thực hiện đồng thời: (1) hủy/đánh dấu đã dùng mã OTP, (2) tạo bản ghi `users`, và (3) tạo bản ghi `wallets`.
 * **Request Body:**
 ```json
@@ -94,7 +94,7 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 }
 ```
 * **Mã lỗi phát sinh:**
-  - `400 Bad Request`: `AUTH_OTP_INVALID` (Mã OTP không chính xác), `AUTH_OTP_EXPIRED` (Mã OTP đã hết hạn 5 phút), `AUTH_OTP_TOO_MANY_ATTEMPTS` (Nhập sai OTP quá 5 lần dẫn đến mã bị hủy).
+  - `400 Bad Request`: `AUTH_OTP_INVALID` (Mã OTP không chính xác hoặc đã bị hủy), `AUTH_OTP_EXPIRED` (Mã OTP đã hết hạn 5 phút), `AUTH_OTP_TOO_MANY_ATTEMPTS` (Nhập sai OTP đủ 5 lần; hệ thống hủy mã ở lần sai thứ 5, các lần thử tiếp theo trả `AUTH_OTP_INVALID`).
   - `409 Conflict`: `AUTH_EMAIL_EXISTS` (Email đã tồn tại) hoặc `AUTH_PHONE_EXISTS` (Số điện thoại đã tồn tại).
   - `422 Unprocessable Entity`: `VALIDATION_ERROR` (Sai định dạng email, mật khẩu yếu, `otp_code` không đúng 6 chữ số).
 
@@ -179,7 +179,7 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
   - **Số lần sử dụng:** Dùng **1 lần duy nhất** (single-use), sau khi xác thực thành công mã sẽ tự động bị xóa/hủy.
   - **Giãn cách gửi lại (Cooldown):** Tối thiểu **60 giây** giữa các lần yêu cầu gửi mã mới tính theo từng `email`. Cooldown áp dụng cho mọi email kể cả email không tồn tại trong hệ thống. Nếu gửi lại trước 60 giây, hệ thống trả lỗi `429 Too Many Requests` (`AUTH_OTP_TOO_SOON`).
   - **Cơ chế ghi đè:** Mỗi lần tạo mã OTP mới thành công sẽ lập tức thay thế và vô hiệu hóa mã cũ trước đó.
-  - **Chống Brute-force:** Nhập sai liên tiếp quá **5 lần** thì mã OTP bị hủy ngay lập tức (`AUTH_OTP_TOO_MANY_ATTEMPTS`).
+  - **Chống Brute-force:** Nhập sai **đủ 5 lần** thì hủy mã OTP. Ở lần nhập sai thứ 5, hệ thống hủy mã và trả lỗi `400 Bad Request` (`AUTH_OTP_TOO_MANY_ATTEMPTS`); các lần gọi tiếp theo trả lỗi `AUTH_OTP_INVALID`.
   - **Xử lý theo mục đích (`purpose`) & Bảo mật chống User Enumeration:**
     - `REGISTER`: Nếu email đã tồn tại trong hệ thống $\rightarrow$ trả về `409 Conflict` (`AUTH_EMAIL_EXISTS`), không tạo mã và không gửi email.
     - `RESET_PASSWORD`: Áp dụng cơ chế chống dò quét tài khoản người dùng:
@@ -213,7 +213,7 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 * **Mô tả:** Đặt lại mật khẩu mới cho tài khoản thông qua xác thực mã OTP 6 số đã gửi qua email. Mật khẩu mới bắt buộc phải tuân theo cùng quy tắc/luật mật khẩu của đăng ký (tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường, chữ số và ký tự đặc biệt). Đổi mật khẩu thành công sẽ vô hiệu hóa mã OTP.
 * **Quyền truy cập:** Public.
 * **Database Transaction:** **BẮT BUỘC**
-  - **Tách riêng bước cập nhật số lần thử (Attempts):** Khi kiểm tra `otp_code`, nếu sai thì việc tăng `attempts` (và hủy mã nếu chạm 5 lần) **phải được commit riêng biệt trước khi trả về lỗi 400** (`AUTH_OTP_INVALID` / `AUTH_OTP_TOO_MANY_ATTEMPTS`). Tuyệt đối không gộp chung vào transaction chính làm rollback bộ đếm attempts khi gặp lỗi, nhằm triệt tiêu nguy cơ brute-force thử OTP vô hạn.
+  - **Tách riêng bước cập nhật số lần thử (Attempts):** Khi kiểm tra `otp_code`, nếu sai thì việc tăng `attempts` (và hủy mã nếu sai đủ 5 lần) **phải được commit riêng biệt trước khi trả về lỗi 400**. Ở lần sai thứ 5, hệ thống hủy mã và trả về `AUTH_OTP_TOO_MANY_ATTEMPTS`; các lần thử tiếp theo trả về `AUTH_OTP_INVALID`. Tuyệt đối không gộp chung vào transaction chính làm rollback bộ đếm attempts khi gặp lỗi, nhằm triệt tiêu nguy cơ brute-force thử OTP vô hạn.
   - **Transaction chính:** Chỉ khi `otp_code` hợp lệ, transaction chính mới bắt đầu để thực hiện đồng thời: (1) hủy/đánh dấu đã sử dụng mã OTP, và (2) cập nhật Bcrypt hash của mật khẩu mới cho tài khoản người dùng.
 * **Request Body:**
 ```json
@@ -232,7 +232,7 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 }
 ```
 * **Mã lỗi phát sinh:**
-  - `400 Bad Request`: `AUTH_OTP_INVALID` (Mã OTP không chính xác), `AUTH_OTP_EXPIRED` (Mã OTP đã hết hạn 5 phút), `AUTH_OTP_TOO_MANY_ATTEMPTS` (Nhập sai OTP quá 5 lần, mã bị hủy).
+  - `400 Bad Request`: `AUTH_OTP_INVALID` (Mã OTP không chính xác hoặc đã bị hủy), `AUTH_OTP_EXPIRED` (Mã OTP đã hết hạn 5 phút), `AUTH_OTP_TOO_MANY_ATTEMPTS` (Nhập sai OTP đủ 5 lần; hệ thống hủy mã ở lần sai thứ 5, các lần thử tiếp theo trả `AUTH_OTP_INVALID`).
   - `422 Unprocessable Entity`: `VALIDATION_ERROR` (Sai định dạng email, `otp_code` không đúng 6 số, hoặc mật khẩu mới không đạt chuẩn bảo mật).
 
 ---
