@@ -8,6 +8,7 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+import app.models  # Đảm bảo tất cả tables đều được nạp vào Base.metadata
 from app.api.deps import get_db
 from app.core.database import Base
 from app.core.security import create_access_token, hash_password
@@ -40,17 +41,12 @@ def override_get_db():
         db.close()
 
 
-app.dependency_overrides[get_db] = override_get_db
+@pytest.fixture(autouse=True)
+def setup_database():
+    """Tự động tạo mới database và override get_db trước mỗi test, dọn dẹp sau khi xong."""
+    original_override = app.dependency_overrides.get(get_db)
+    app.dependency_overrides[get_db] = override_get_db
 
-
-@pytest.fixture(scope="module")
-def client():
-    with TestClient(app) as test_client:
-        yield test_client
-
-
-@pytest.fixture(scope="module")
-def setup_calc_db():
     Base.metadata.create_all(bind=test_engine)
     db = TestingSessionLocal()
 
@@ -150,13 +146,27 @@ def setup_calc_db():
     db.commit()
     db.close()
 
+    yield
 
-@pytest.fixture(scope="module")
+    Base.metadata.drop_all(bind=test_engine)
+    if original_override is not None:
+        app.dependency_overrides[get_db] = original_override
+    else:
+        app.dependency_overrides.pop(get_db, None)
+
+
+@pytest.fixture
+def client():
+    with TestClient(app, raise_server_exceptions=False) as test_client:
+        yield test_client
+
+
+@pytest.fixture
 def customer_token():
     return create_access_token({"sub": "12", "user_id": 12, "role": "customer"})
 
 
-def test_chua_dang_nhap_tra_401(client, setup_calc_db):
+def test_chua_dang_nhap_tra_401(client):
     """Gọi tính giá không có header Authorization -> 401 Unauthorized."""
     payload = {
         "court_id": 101,
@@ -167,7 +177,7 @@ def test_chua_dang_nhap_tra_401(client, setup_calc_db):
     assert res.status_code == 401
 
 
-def test_tinh_gia_thanh_cong_chuan_muc_3_2(client, setup_calc_db, customer_token):
+def test_tinh_gia_thanh_cong_chuan_muc_3_2(client, customer_token):
     """
     Yêu cầu SCB-142:
     - Trả slots_breakdown và các tổng như mục 3.2.
@@ -229,7 +239,7 @@ def test_tinh_gia_thanh_cong_chuan_muc_3_2(client, setup_calc_db, customer_token
     assert data["user_wallet_status"]["balance_after_deposit"] == 119000
 
 
-def test_khung_khong_thuoc_san_tra_422(client, setup_calc_db, customer_token):
+def test_khung_khong_thuoc_san_tra_422(client, customer_token):
     """
     Yêu cầu SCB-142: Khung không thuộc sân trả 422.
     Slot 99 không được cấu hình trong court_slots của sân 101 -> 422 VALIDATION_ERROR.
@@ -248,7 +258,7 @@ def test_khung_khong_thuoc_san_tra_422(client, setup_calc_db, customer_token):
     assert "99" in body["error"]["message"]
 
 
-def test_court_khong_ton_tai_tra_404(client, setup_calc_db, customer_token):
+def test_court_khong_ton_tai_tra_404(client, customer_token):
     """Sân không tồn tại -> 404 COURT_NOT_FOUND."""
     headers = {"Authorization": f"Bearer {customer_token}"}
     payload = {
@@ -263,7 +273,7 @@ def test_court_khong_ton_tai_tra_404(client, setup_calc_db, customer_token):
     assert body["error"]["code"] == "COURT_NOT_FOUND"
 
 
-def test_dich_vu_khong_thuoc_co_so_tra_422(client, setup_calc_db, customer_token):
+def test_dich_vu_khong_thuoc_co_so_tra_422(client, customer_token):
     """Dịch vụ không thuộc cơ sở của sân -> 422 VALIDATION_ERROR."""
     headers = {"Authorization": f"Bearer {customer_token}"}
     payload = {

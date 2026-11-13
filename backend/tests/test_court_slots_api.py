@@ -7,6 +7,7 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+import app.models  # Đảm bảo tất cả tables đều được nạp vào Base.metadata
 from app.api.deps import get_db
 from app.core.database import Base
 from app.core.security import hash_password
@@ -38,17 +39,12 @@ def override_get_db():
         db.close()
 
 
-app.dependency_overrides[get_db] = override_get_db
+@pytest.fixture(autouse=True)
+def setup_database():
+    """Tự động tạo mới database và override get_db trước mỗi test, dọn dẹp sau khi xong."""
+    original_override = app.dependency_overrides.get(get_db)
+    app.dependency_overrides[get_db] = override_get_db
 
-
-@pytest.fixture(scope="module")
-def client():
-    with TestClient(app) as test_client:
-        yield test_client
-
-
-@pytest.fixture(scope="module")
-def setup_court_slots_db():
     Base.metadata.create_all(bind=test_engine)
     db = TestingSessionLocal()
 
@@ -227,12 +223,25 @@ def setup_court_slots_db():
         )
     )
 
-    # Slot 1 không có đơn nào -> AVAILABLE
     db.commit()
     db.close()
 
+    yield
 
-def test_thieu_date_tra_422(client, setup_court_slots_db):
+    Base.metadata.drop_all(bind=test_engine)
+    if original_override is not None:
+        app.dependency_overrides[get_db] = original_override
+    else:
+        app.dependency_overrides.pop(get_db, None)
+
+
+@pytest.fixture
+def client():
+    with TestClient(app, raise_server_exceptions=False) as test_client:
+        yield test_client
+
+
+def test_thieu_date_tra_422(client):
     """Thiếu tham số query date -> 422 Unprocessable Entity."""
     res = client.get("/api/v1/courts/101/slots")
     assert res.status_code == 422
@@ -241,7 +250,7 @@ def test_thieu_date_tra_422(client, setup_court_slots_db):
     assert data["error"]["code"] == "VALIDATION_ERROR"
 
 
-def test_sai_format_date_tra_422(client, setup_court_slots_db):
+def test_sai_format_date_tra_422(client):
     """Sai định dạng date (không phải YYYY-MM-DD) -> 422 Unprocessable Entity."""
     res = client.get("/api/v1/courts/101/slots?date=2026-99-99")
     assert res.status_code == 422
@@ -253,7 +262,7 @@ def test_sai_format_date_tra_422(client, setup_court_slots_db):
     assert res_str.status_code == 422
 
 
-def test_court_khong_ton_tai_tra_404(client, setup_court_slots_db):
+def test_court_khong_ton_tai_tra_404(client):
     """Sân con không tồn tại -> 404 COURT_NOT_FOUND."""
     res = client.get("/api/v1/courts/99999/slots?date=2026-11-10")
     assert res.status_code == 404
@@ -262,7 +271,7 @@ def test_court_khong_ton_tai_tra_404(client, setup_court_slots_db):
     assert data["error"]["code"] == "COURT_NOT_FOUND"
 
 
-def test_ca_ba_trang_thai_va_hold_het_han(client, setup_court_slots_db):
+def test_ca_ba_trang_thai_va_hold_het_han(client):
     """
     Yêu cầu SCB-141:
     - Trạng thái AVAILABLE, HOLDING, BOOKED theo đúng điều kiện mục 3.1.
