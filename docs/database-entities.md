@@ -27,6 +27,7 @@
 | 16 | `reviews` | Đánh giá sân sau khi chơi. | 5 | – | **[PHÁC THẢO]** |
 | 17 | `team_posts` | Bài đăng tìm đồng đội. | 4 | – | **[PHÁC THẢO]** |
 | 18 | `team_post_applications` | Lượt đăng ký tham gia ghép đội. | 4 | – | **[PHÁC THẢO]** |
+| 19 | `email_otps` | Mã OTP gửi qua email để xác thực (đăng ký, quên mật khẩu). | 1 | – | Chính thức |
 
 ### 1.2 Bảng quan hệ thực thể
 
@@ -79,6 +80,9 @@
     | REFUND | ví hệ thống | ví khách | NULL | booking id |
     | FORFEIT | ví hệ thống | ví chủ sân | NULL | booking id |
     | SETTLE | ví hệ thống | ví chủ sân | NULL | booking id |
+
+*   **`email_otps`**: `id` (BIGINT PK), `email` (VARCHAR), `purpose` (ENUM: `REGISTER`, `RESET_PASSWORD`), `code_hash` (VARCHAR, bcrypt), `expires_at` (DATETIME), `attempts` (INT NOT NULL DEFAULT 0, CHECK attempts >= 0), `consumed_at` (DATETIME, nullable), `created_at` (DATETIME). Index `(email, purpose)`.
+    > Không có khóa ngoại tới `users` vì lúc đăng ký tài khoản chưa tồn tại. `code_hash` lưu bản băm bcrypt của mã OTP, không lưu mã gốc. `consumed_at` là NULL khi mã chưa dùng.
 
 ### Nhóm 2 — Sân bãi & Bảng giá
 
