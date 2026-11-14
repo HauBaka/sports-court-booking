@@ -2,7 +2,7 @@
 # pyright: reportAttributeAccessIssue=false
 from datetime import date, datetime, time, timedelta, timezone
 from typing import cast
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -218,3 +218,118 @@ def update_court(
     except Exception:
         db.rollback()
         raise
+
+
+# ==============================================================================
+# 3.1 Xem sơ đồ khung giờ trống theo ngày của sân con (Public)
+# ==============================================================================
+@router.get("/courts/{court_id}/slots", summary="Xem sơ đồ khung giờ trống theo ngày của sân con")
+def get_court_slots_by_date(
+    court_id: int,
+    date_str: str = Query(..., alias="date", description="Ngày cần tra cứu (YYYY-MM-DD)"),
+    db: Session = Depends(get_db),
+):
+    # Validate định dạng ngày: Thiếu hoặc sai date trả 422
+    try:
+        query_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        raise BusinessException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            code="VALIDATION_ERROR",
+            message="Tham số 'date' không hợp lệ. Định dạng ngày bắt buộc là YYYY-MM-DD.",
+            details=[{"field": "date", "issue": "Định dạng ngày phải là YYYY-MM-DD (ví dụ: 2026-11-10)."}],
+        )
+
+    # Kiểm tra sân con tồn tại và đang hoạt động
+    court = db.query(Court).filter(Court.id == court_id).first()
+    if not court or not cast(bool, court.is_active) or not (court.facility and cast(bool, court.facility.is_active)):
+        raise BusinessException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="COURT_NOT_FOUND",
+            message=f"Sân con với ID {court_id} không tồn tại hoặc đã tạm dừng hoạt động.",
+        )
+
+    # Lấy danh sách toàn bộ khung giờ hoạt động của sân, sắp xếp theo start_time tăng dần
+    court_slots = (
+        db.query(CourtSlot)
+        .join(TimeSlot, TimeSlot.id == CourtSlot.time_slot_id)
+        .filter(
+            CourtSlot.court_id == court_id,
+            CourtSlot.is_active == True,
+        )
+        .order_by(TimeSlot.start_time)
+        .all()
+    )
+
+    # Lấy các booking_slots trong ngày query_date của sân con
+    booking_slots = (
+        db.query(BookingSlot)
+        .join(Booking, Booking.id == BookingSlot.booking_id)
+        .filter(
+            BookingSlot.court_id == court_id,
+            BookingSlot.play_date == query_date,
+        )
+        .all()
+    )
+
+    # Nhóm booking_slots theo time_slot_id
+    slots_by_ts: dict[int, list[BookingSlot]] = {}
+    for bs in booking_slots:
+        slots_by_ts.setdefault(cast(int, bs.time_slot_id), []).append(bs)
+
+    now_utc = datetime.now(timezone.utc)
+
+    slots_data = []
+    for cs in court_slots:
+        ts_id = cast(int, cs.time_slot_id)
+        assigned = slots_by_ts.get(ts_id, [])
+
+        slot_status = "AVAILABLE"
+
+        # 1. Kiểm tra trạng thái BOOKED: booking_slots.released_at IS NULL VÀ bookings.status = 'DEPOSITED'
+        is_booked = any(
+            bs.released_at is None and bs.booking and bs.booking.status == "DEPOSITED"
+            for bs in assigned
+        )
+
+        if is_booked:
+            slot_status = "BOOKED"
+        else:
+            # 2. Kiểm tra trạng thái HOLDING: booking_slots.released_at IS NULL VÀ bookings.status = 'PENDING_DEPOSIT' VÀ bookings.hold_expires_at > :now
+            is_holding = False
+            for bs in assigned:
+                if bs.released_at is None and bs.booking and bs.booking.status == "PENDING_DEPOSIT":
+                    exp = bs.booking.hold_expires_at
+                    if exp:
+                        if exp.tzinfo is not None:
+                            is_active_hold = exp > now_utc
+                        else:
+                            is_active_hold = exp > now_utc.replace(tzinfo=None)
+                        if is_active_hold:
+                            is_holding = True
+                            break
+            if is_holding:
+                slot_status = "HOLDING"
+            else:
+                # 3. AVAILABLE: Chưa có, hoặc đã released_at IS NOT NULL, hoặc PENDING_DEPOSIT nhưng hold_expires_at <= :now
+                slot_status = "AVAILABLE"
+
+        slots_data.append(
+            {
+                "time_slot_id": cs.time_slot_id,
+                "start_time": format_time(cs.time_slot.start_time),
+                "end_time": format_time(cs.time_slot.end_time),
+                "base_price": int(cast(int, cs.base_price)),
+                "status": slot_status,
+            }
+        )
+
+    return {
+        "success": True,
+        "message": "Lấy lịch khung giờ thành công.",
+        "data": {
+            "court_id": court_id,
+            "date": query_date.strftime("%Y-%m-%d"),
+            "slots": slots_data,
+        },
+    }

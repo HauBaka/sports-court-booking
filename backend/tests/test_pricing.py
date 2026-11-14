@@ -4,7 +4,15 @@ from decimal import Decimal
 import pytest
 from pydantic import ValidationError
 
-from app.core.pricing import PricingRuleIn, RuleType, resolve_multiplier
+from app.core.pricing import (
+    PricingRuleIn,
+    RuleType,
+    ServicePricingInput,
+    SlotPricingInput,
+    calculate_booking_price,
+    resolve_applied_rule_name,
+    resolve_multiplier,
+)
 
 
 def peak(multiplier="1.30", start=time(17, 0), end=time(21, 0)):
@@ -169,3 +177,148 @@ class TestKichBanSeed:
     def test_ngay_le_tet_1_50_thang_gio_cao_diem_va_cuoi_tuan(self):
         assert slot_price(TUESDAY, time(10, 0), holiday_ids={1}) == 150_000
         assert slot_price(SATURDAY, time(18, 0), holiday_ids={1}) == 150_000  # 1,50 lớn hơn 1,40 và 1,30
+
+
+class TestCalculateBookingPrice:
+    """Test cho hàm tính tiền đơn dùng chung (SCB-140) theo các quy chuẩn GIA-02, GIA-05, GIA-06, GIA-10, QĐ4."""
+
+    def test_scb_140_thu_ba_18h_19h_cao_diem(self):
+        """
+        Yêu cầu SCB-140:
+        Thứ Ba 18:00–19:00, cao điểm 1,30: tiền sân 130.000đ, cọc 39.000đ, còn lại 91.000đ.
+        """
+        slots = [
+            SlotPricingInput(
+                time_slot_id=1,
+                start_time=time(18, 0),
+                end_time=time(19, 0),
+                base_price=100_000,
+            )
+        ]
+        result = calculate_booking_price(
+            play_date=TUESDAY,
+            slots=slots,
+            rules=SEED_RULES,
+            holiday_ids=set(),
+        )
+
+        assert len(result.slots_breakdown) == 1
+        slot = result.slots_breakdown[0]
+        assert slot.base_price == 100_000
+        assert slot.multiplier == Decimal("1.30")
+        assert slot.applied_rule == "Giờ vàng"
+        assert slot.final_price == 130_000
+
+        assert result.subtotal == 130_000
+        assert result.service_total == 0
+        assert result.grand_total_amount == 130_000
+        assert result.deposit_percentage == 30
+        assert result.deposit_amount_required == 39_000
+        assert result.remaining_amount_due_at_court == 91_000
+        assert result.time_range == "18:00 - 19:00 (1 khung giờ)"
+
+    def test_gia_05_don_nhieu_khung_tinh_he_so_rieng_tung_khung(self):
+        """
+        GIA-05: Đơn nhiều khung giờ -> Hệ số tính riêng từng khung, tổng tiền bằng tổng các khung.
+        Ví dụ: Khung 1 (16:00-17:00, thường x1.00 -> 100k) và Khung 2 (17:00-18:00, cao điểm x1.30 -> 130k).
+        Tổng tiền sân: 230.000đ.
+        """
+        slots = [
+            SlotPricingInput(
+                time_slot_id=1,
+                start_time=time(16, 0),
+                end_time=time(17, 0),
+                base_price=100_000,
+            ),
+            SlotPricingInput(
+                time_slot_id=2,
+                start_time=time(17, 0),
+                end_time=time(18, 0),
+                base_price=100_000,
+            ),
+        ]
+        result = calculate_booking_price(
+            play_date=TUESDAY,
+            slots=slots,
+            rules=SEED_RULES,
+            holiday_ids=set(),
+        )
+
+        assert len(result.slots_breakdown) == 2
+        assert result.slots_breakdown[0].multiplier == Decimal("1.00")
+        assert result.slots_breakdown[0].applied_rule == "Giá giờ thường"
+        assert result.slots_breakdown[0].final_price == 100_000
+
+        assert result.slots_breakdown[1].multiplier == Decimal("1.30")
+        assert result.slots_breakdown[1].applied_rule == "Giờ vàng"
+        assert result.slots_breakdown[1].final_price == 130_000
+
+        assert result.subtotal == 230_000
+        assert result.deposit_amount_required == 69_000  # 30% của 230k
+        assert result.remaining_amount_due_at_court == 161_000
+        assert result.time_range == "16:00 - 18:00 (2 khung giờ)"
+
+    def test_gia_06_khung_bat_dau_dung_gio_ket_thuc_cao_diem(self):
+        """
+        GIA-06: Khung bắt đầu đúng giờ mở cao điểm tính cao điểm,
+        khung bắt đầu đúng giờ kết thúc cao điểm thì không tính cao điểm.
+        Cao điểm: 17:00 - 21:00.
+        Khung 17:00 - 18:00: tính cao điểm (x1.30).
+        Khung 21:00 - 22:00: bắt đầu đúng 21:00 -> không tính cao điểm (x1.00).
+        """
+        slots = [
+            SlotPricingInput(
+                time_slot_id=1,
+                start_time=time(17, 0),
+                end_time=time(18, 0),
+                base_price=100_000,
+            ),
+            SlotPricingInput(
+                time_slot_id=2,
+                start_time=time(21, 0),
+                end_time=time(22, 0),
+                base_price=100_000,
+            ),
+        ]
+        result = calculate_booking_price(
+            play_date=TUESDAY,
+            slots=slots,
+            rules=SEED_RULES,
+            holiday_ids=set(),
+        )
+
+        assert result.slots_breakdown[0].multiplier == Decimal("1.30")
+        assert result.slots_breakdown[1].multiplier == Decimal("1.00")
+        assert result.slots_breakdown[1].applied_rule == "Giá giờ thường"
+        assert result.subtotal == 230_000
+
+    def test_gia_10_kem_dich_vu_tinh_tong_va_coc_30(self):
+        """
+        GIA-10: Dịch vụ đi kèm do server tính toán độc lập.
+        Tổng dịch vụ được cộng vào grand_total, cọc 30% tính trên grand_total.
+        Ví dụ: Tiền sân 230.000đ, 2 chai nước 20.000đ = 40.000đ.
+        Grand total: 270.000đ.
+        Cọc 30%: 81.000đ.
+        Còn lại tại sân: 189.000đ.
+        (Khớp 100% với ví dụ trong api-endpoints.md mục 3.2).
+        """
+        slots = [
+            SlotPricingInput(time_slot_id=1, start_time=time(16, 0), end_time=time(17, 0), base_price=100_000),
+            SlotPricingInput(time_slot_id=2, start_time=time(17, 0), end_time=time(18, 0), base_price=100_000),
+        ]
+        services = [
+            ServicePricingInput(service_id=1, name="Nước tăng lực", unit_price=20_000, quantity=2)
+        ]
+        result = calculate_booking_price(
+            play_date=TUESDAY,
+            slots=slots,
+            rules=SEED_RULES,
+            holiday_ids=set(),
+            services=services,
+        )
+
+        assert result.subtotal == 230_000
+        assert result.service_total == 40_000
+        assert result.grand_total_amount == 270_000
+        assert result.deposit_amount_required == 81_000
+        assert result.remaining_amount_due_at_court == 189_000
