@@ -207,6 +207,8 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
   - `409 Conflict`: `AUTH_EMAIL_EXISTS` (Email đã tồn tại khi gửi OTP đăng ký).
   - `429 Too Many Requests`: `AUTH_OTP_TOO_SOON` (Gửi lại quá sớm khi chưa hết 60 giây giãn cách).
   - `422 Unprocessable Entity`: `VALIDATION_ERROR` (Sai định dạng email, `purpose` không hợp lệ).
+  - `502 Bad Gateway`: `EMAIL_SEND_FAILED` (Nhà cung cấp email lỗi hoặc quá thời gian chờ). Hệ thống bỏ mã vừa tạo nên người dùng gọi lại ngay được, không bị tính cooldown.
+* **Mã cố định khi phát triển:** Khi `EMAIL_BACKEND=console` và `ENVIRONMENT` khác `production`, mã OTP luôn là `123456` (dùng cho test, CI và Postman local). Ở `production` mã luôn ngẫu nhiên, kể cả khi `EMAIL_BACKEND=console`. Mã chỉ lưu dạng băm HMAC-SHA256 trong bảng `email_otps`.
 
 #### 1.6 Đặt lại mật khẩu
 * **Endpoint:** `POST /api/v1/auth/password/reset`

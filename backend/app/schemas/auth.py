@@ -1,9 +1,30 @@
 import re
-from typing import Optional
+from typing import Literal, Optional
 from pydantic import BaseModel, Field, field_validator
 
 # Regex kiểm tra định dạng email tiêu chuẩn
 EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+
+
+def normalize_email(v: str) -> str:
+    cleaned = v.strip().lower()
+    if not cleaned or not EMAIL_REGEX.match(cleaned):
+        raise ValueError("Địa chỉ email không đúng định dạng.")
+    return cleaned
+
+
+def check_password_strength(v: str) -> str:
+    if len(v) < 8:
+        raise ValueError("Mật khẩu phải chứa ít nhất 8 ký tự.")
+    if not re.search(r"[A-Z]", v):
+        raise ValueError("Mật khẩu phải chứa ít nhất 1 chữ cái in hoa.")
+    if not re.search(r"[a-z]", v):
+        raise ValueError("Mật khẩu phải chứa ít nhất 1 chữ cái in thường.")
+    if not re.search(r"\d", v):
+        raise ValueError("Mật khẩu phải chứa ít nhất 1 chữ số.")
+    if not re.search(r"[^A-Za-z0-9]", v):
+        raise ValueError("Mật khẩu phải chứa ít nhất 1 ký tự đặc biệt.")
+    return v
 
 
 class UserRegisterRequest(BaseModel):
@@ -12,6 +33,7 @@ class UserRegisterRequest(BaseModel):
     phone: str = Field(..., description="Số điện thoại gồm 10 chữ số")
     password: str = Field(..., min_length=8, description="Mật khẩu bảo mật tối thiểu 8 ký tự")
     role: str = Field(..., description="Vai trò người dùng: 'customer' hoặc 'owner'")
+    otp_code: str = Field(..., pattern=r"^\d{6}$", description="Mã OTP 6 chữ số nhận qua email (POST /auth/otp)")
 
     @field_validator("name")
     @classmethod
@@ -24,10 +46,7 @@ class UserRegisterRequest(BaseModel):
     @field_validator("email")
     @classmethod
     def validate_email(cls, v: str) -> str:
-        cleaned = v.strip().lower()
-        if not cleaned or not EMAIL_REGEX.match(cleaned):
-            raise ValueError("Địa chỉ email không đúng định dạng.")
-        return cleaned
+        return normalize_email(v)
 
     @field_validator("phone")
     @classmethod
@@ -44,17 +63,7 @@ class UserRegisterRequest(BaseModel):
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str) -> str:
-        if len(v) < 8:
-            raise ValueError("Mật khẩu phải chứa ít nhất 8 ký tự.")
-        if not re.search(r"[A-Z]", v):
-            raise ValueError("Mật khẩu phải chứa ít nhất 1 chữ cái in hoa.")
-        if not re.search(r"[a-z]", v):
-            raise ValueError("Mật khẩu phải chứa ít nhất 1 chữ cái in thường.")
-        if not re.search(r"\d", v):
-            raise ValueError("Mật khẩu phải chứa ít nhất 1 chữ số.")
-        if not re.search(r"[^A-Za-z0-9]", v):
-            raise ValueError("Mật khẩu phải chứa ít nhất 1 ký tự đặc biệt.")
-        return v
+        return check_password_strength(v)
 
     @field_validator("role")
     @classmethod
@@ -67,6 +76,32 @@ class UserRegisterRequest(BaseModel):
         if role_lower not in ("customer", "owner"):
             raise ValueError("Vai trò không hợp lệ. Chỉ chấp nhận 'customer' hoặc 'owner'.")
         return role_lower
+
+
+class OtpRequest(BaseModel):
+    email: str = Field(..., max_length=255, description="Email nhận mã OTP")
+    purpose: Literal["REGISTER", "RESET_PASSWORD"] = Field(..., description="Mục đích: REGISTER hoặc RESET_PASSWORD")
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return normalize_email(v)
+
+
+class PasswordResetRequest(BaseModel):
+    email: str = Field(..., max_length=255, description="Email của tài khoản")
+    otp_code: str = Field(..., pattern=r"^\d{6}$", description="Mã OTP 6 chữ số")
+    new_password: str = Field(..., description="Mật khẩu mới")
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return normalize_email(v)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, v: str) -> str:
+        return check_password_strength(v)
 
 
 class UserRegisterResponseData(BaseModel):
