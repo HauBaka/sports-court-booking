@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     BCRYPT_ROUNDS: int = 12
 
+    # Email (Brevo). EMAIL_BACKEND=console chỉ ghi ra log, dùng ở máy cá nhân và CI.
+    EMAIL_BACKEND: str = "console"  # "console" | "brevo"
+    BREVO_API_KEY: Optional[str] = None
+    EMAIL_FROM: str = "no-reply@example.com"
+    EMAIL_FROM_NAME: str = "Sports Court Booking"
+
     # Thư mục bản build frontend. Có giá trị thì backend phục vụ luôn frontend ở "/"
     FRONTEND_DIST: Optional[str] = None
 

@@ -119,11 +119,11 @@ Cột "Cấp" là nơi nên kiểm: Unit (hàm tính, không cần CSDL), DB (r�
 
 ## 4. Kịch bản xác thực và phân quyền - Epic 1 (SCB-67)
 
-Endpoint xem ở `docs/api-endpoints.md` mục 1.1 đến 1.4 và 2.3. Dữ liệu dùng chung lấy từ seed `database/seeds/S1__sample_data.sql`, tài khoản và mật khẩu xem ở `database/README.md`. Dùng Khách A (`customer.a@scb.vn`, số điện thoại `0900000003`, mật khẩu `TestPass123@`). Test chạy trên CSDL test đã nạp seed. Người đăng ký mới trong AUTH-01 dùng email `new.user@scb.vn` và số điện thoại `0900000010`, không có trong seed.
+Endpoint xem ở `docs/api-endpoints.md` mục 1.1 đến 1.6 và 2.3. Mọi bước đăng ký gọi `POST /auth/otp` (1.5) trước rồi gửi `otp_code` = `123456` (CSDL test chạy `EMAIL_BACKEND=console`, không phải production). Dữ liệu dùng chung lấy từ seed `database/seeds/S1__sample_data.sql`, tài khoản và mật khẩu xem ở `database/README.md`. Dùng Khách A (`customer.a@scb.vn`, số điện thoại `0900000003`, mật khẩu `TestPass123@`). Test chạy trên CSDL test đã nạp seed. Người đăng ký mới trong AUTH-01 dùng email `new.user@scb.vn` và số điện thoại `0900000010`, không có trong seed.
 
 | Mã | Story | QĐ | Điều kiện trước | Các bước | Kết quả mong đợi |
 | --- | --- | --- | --- | --- | --- |
-| AUTH-01 | Đăng ký tài khoản | QĐ6 | Seed đã nạp, chưa có `new.user@scb.vn` | 1. `POST /auth/register` với email `new.user@scb.vn`, phone `0900000010`, role `customer`<br>2. Đăng nhập rồi `GET /auth/me` | Bước 1: 201, `role` = `customer`, có `wallet_id`, `balance` = 0<br>Bước 2: `wallet.balance` = 0đ, không có giao dịch ví<br>Phản hồi không chứa mật khẩu |
+| AUTH-01 | Đăng ký tài khoản | QĐ6 | Seed đã nạp, chưa có `new.user@scb.vn` | 1. `POST /auth/otp` (`REGISTER`) cho `new.user@scb.vn`<br>2. `POST /auth/register` với email `new.user@scb.vn`, phone `0900000010`, role `customer`, `otp_code` `123456`<br>3. Đăng nhập rồi `GET /auth/me` | Bước 2: 201, `role` = `customer`, có `wallet_id`, `balance` = 0<br>Bước 3: `wallet.balance` = 0đ, không có giao dịch ví<br>Phản hồi không chứa mật khẩu |
 | AUTH-02 | Đăng ký trùng email | | Seed đã nạp | `POST /auth/register` với email `customer.a@scb.vn`, phone `0900000010` | 409 `AUTH_EMAIL_EXISTS`<br>Không tạo user, không tạo ví |
 | AUTH-03 | Đăng ký trùng số điện thoại | | Seed đã nạp | `POST /auth/register` với email `new.user@scb.vn`, phone `0900000003` | 409 `AUTH_PHONE_EXISTS`<br>Không tạo user, không tạo ví |
 | AUTH-04 | Đăng nhập sai mật khẩu | | Seed đã nạp | `POST /auth/login` với email `customer.a@scb.vn`, mật khẩu `SaiMatKhau123@` | 401 `AUTH_INVALID_CREDENTIALS`<br>Không có `access_token` |

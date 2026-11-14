@@ -39,6 +39,7 @@ exec bash deploy/start.sh
 | --- | --- | --- |
 | `BRANCH` | Tab Startup, ô nhánh có sẵn | `dev` |
 | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | File `/home/container/backend/.env` | Lấy ở tab Databases |
+| `EMAIL_BACKEND`, `BREVO_API_KEY`, `EMAIL_FROM` | File `/home/container/backend/.env` | Bản thử/prod đặt `EMAIL_BACKEND=brevo` và khóa API Brevo thật. `EMAIL_FROM` phải là người gửi đã xác minh ở Brevo |
 | `ENVIRONMENT`, `DEBUG` | Không cần đặt | `start.sh` mặc định `production` và `False` |
 
 Các ô khác của egg (link repo, file chạy, file requirements) không còn được dùng vì Startup Command đã thay bằng lệnh ở mục 2. `SERVER_PORT` do panel cấp, `backend/main.py` tự đọc. Tên biến của backend xem `backend/.env.example`.

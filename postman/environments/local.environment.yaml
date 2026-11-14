@@ -6,6 +6,9 @@ values:
   - key: user_email
     value: ''
     enabled: true
+  - key: otp_code
+    value: '123456'
+    enabled: true
   - key: user_password
     value: ''
     type: secret
