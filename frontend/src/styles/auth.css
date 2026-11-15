@@ -24,7 +24,7 @@
 .auth-card h1 { margin: 0 0 20px; font-size: 20px; }
 
 .field { margin-bottom: 14px; }
-.field > label:not(.check) { display: block; margin-bottom: 6px; font-size: 13px; color: var(--text-soft); }
+.field > label:not(.check), .field-label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--text-soft); }
 .input { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background: #fff; color: var(--text); }
 .input:focus, .otp-box:focus { outline: 2px solid var(--primary); outline-offset: 1px; border-color: var(--primary); }
 .input.invalid, .otp-box.invalid { border-color: var(--danger); }
@@ -38,15 +38,21 @@
 .btn-block { width: 100%; }
 .btn-nowrap { white-space: nowrap; }
 .link-btn { padding: 0; border: 0; background: none; color: var(--primary); font-size: 12px; font-weight: 600; text-decoration: underline; cursor: pointer; }
+@media (pointer: coarse) { .link-btn { min-height: 44px; } }
 .link-btn:disabled { color: #9ca3af; cursor: not-allowed; }
 
 .otp { display: flex; gap: 8px; }
 .otp-box { flex: 1; min-width: 0; max-width: 52px; height: 48px; text-align: center; font-size: 18px; border: 1px solid var(--border); border-radius: 6px; color: var(--text); }
+.otp-lead { margin: 0 0 16px; font-size: 14px; line-height: 1.5; color: var(--text-soft); overflow-wrap: anywhere; }
+.otp-lead strong { color: var(--text); }
+.field-label { margin-top: 0; }
+.intro { margin: -8px 0 16px; font-size: 14px; line-height: 1.5; color: var(--text-soft); }
 .otp-meta { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: var(--muted); }
 
 .check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-soft); }
 .check input { accent-color: var(--primary); }
 .between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-size: 13px; }
+.between-end { justify-content: flex-end; }
 
 .notice { margin: 0 0 14px; padding: 10px 12px; border-radius: 6px; font-size: 13px; }
 .notice.error { background: #fef2f2; color: var(--danger); }
