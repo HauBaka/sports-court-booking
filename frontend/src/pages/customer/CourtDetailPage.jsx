@@ -1,9 +1,20 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { getFacility } from "../../services/facilityService";
 import { getCourtSlots } from "../../services/courtService";
 import { formatTime } from "../../utils/format";
 import "../../styles/court-detail.css";
+
+// Fix icon Leaflet bị vỡ khi bundle bằng Vite
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
 
 // ─────────────────────────────────────────────────────────────────
 //  Helpers ngày
@@ -280,6 +291,29 @@ export default function CourtDetailPage() {
           )}
         </div>
       </div>
+
+      {/* ── Bản đồ nhỏ ── */}
+      {facility.latitude != null && facility.longitude != null && (
+        <div className="cd-map-wrap">
+          <MapContainer
+            center={[facility.latitude, facility.longitude]}
+            zoom={15}
+            className="cd-map"
+            scrollWheelZoom={false}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'
+            />
+            <Marker position={[facility.latitude, facility.longitude]}>
+              <Popup>
+                <strong>{facility.name}</strong><br />
+                {facility.address}
+              </Popup>
+            </Marker>
+          </MapContainer>
+        </div>
+      )}
 
       {/* ── Khu vực đặt sân ── */}
       <div className="cd-booking-area">

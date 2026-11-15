@@ -1,8 +1,19 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { listFacilities } from "../../services/facilityService";
 import { formatVnd } from "../../utils/format";
 import "../../styles/find-courts.css";
+
+// ── Fix icon mặc định của Leaflet bị vỡ khi bundle bằng Vite ────
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
 
 // ── Dữ liệu tĩnh cho bộ lọc ─────────────────────────────────────
 const DISTRICTS = [
@@ -169,60 +180,70 @@ export default function FindCourtsPage() {
       </div>
 
       {/* ── Nội dung chính ── */}
-      <div className="fc-main">
-        {status === "loading" && (
-          <div className="fc-state-box">
-            <div className="fc-spinner" />
-            <p>Đang tải danh sách sân...</p>
-          </div>
-        )}
+      <div className="fc-body">
 
-        {status === "error" && (
-          <div className="fc-state-box">
-            <p className="fc-error-msg">{errorMsg}</p>
-            <button className="fc-btn-search" type="button" onClick={() => fetchFacilities(appliedParams)}>
-              Thử lại
-            </button>
-          </div>
-        )}
-
-        {status === "ready" && (
-          <>
-            {/* Thanh kết quả + sắp xếp */}
-            <div className="fc-result-bar">
-              <span className="fc-result-count">
-                <strong>{displayed.length}</strong> sân phù hợp
-              </span>
-              <div className="fc-sort">
-                <label className="fc-sort-label">Sắp xếp:</label>
-                <select
-                  className="fc-select fc-select-sm"
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                >
-                  {SORT_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-              </div>
+        {/* ── Cột trái: danh sách ── */}
+        <div className="fc-main">
+          {status === "loading" && (
+            <div className="fc-state-box">
+              <div className="fc-spinner" />
+              <p>Đang tải danh sách sân...</p>
             </div>
+          )}
 
-            {/* Danh sách sân */}
-            {displayed.length === 0 ? (
-              <div className="fc-empty">
-                <div className="fc-empty-icon">🏟️</div>
-                <p>Không tìm thấy sân phù hợp.</p>
-                <p className="fc-empty-sub">Thử thay đổi bộ lọc để xem thêm kết quả.</p>
+          {status === "error" && (
+            <div className="fc-state-box">
+              <p className="fc-error-msg">{errorMsg}</p>
+              <button className="fc-btn-search" type="button" onClick={() => fetchFacilities(appliedParams)}>
+                Thử lại
+              </button>
+            </div>
+          )}
+
+          {status === "ready" && (
+            <>
+              {/* Thanh kết quả + sắp xếp */}
+              <div className="fc-result-bar">
+                <span className="fc-result-count">
+                  <strong>{displayed.length}</strong> sân phù hợp
+                </span>
+                <div className="fc-sort">
+                  <label className="fc-sort-label">Sắp xếp:</label>
+                  <select
+                    className="fc-select fc-select-sm"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                  >
+                    {SORT_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            ) : (
-              <ul className="fc-list">
-                {displayed.map((facility, idx) => (
-                  <CourtCard key={facility.id} facility={facility} index={idx} />
-                ))}
-              </ul>
-            )}
-          </>
-        )}
+
+              {/* Danh sách sân */}
+              {displayed.length === 0 ? (
+                <div className="fc-empty">
+                  <div className="fc-empty-icon">🏟️</div>
+                  <p>Không tìm thấy sân phù hợp.</p>
+                  <p className="fc-empty-sub">Thử thay đổi bộ lọc để xem thêm kết quả.</p>
+                </div>
+              ) : (
+                <ul className="fc-list">
+                  {displayed.map((facility, idx) => (
+                    <CourtCard key={facility.id} facility={facility} index={idx} />
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* ── Cột phải: bản đồ ── */}
+        <div className="fc-map-col">
+          <FacilitiesMap facilities={displayed} />
+        </div>
+
       </div>
     </div>
   );
@@ -280,5 +301,62 @@ function CourtCard({ facility, index }) {
         </div>
       </div>
     </li>
+  );
+}
+
+// ── Bản đồ ───────────────────────────────────────────────────────
+// Trung tâm mặc định: TP.HCM
+const DEFAULT_CENTER = [10.7769, 106.7009];
+const DEFAULT_ZOOM = 12;
+
+function FacilitiesMap({ facilities }) {
+  // Chỉ lấy cơ sở có toạ độ hợp lệ
+  const pinned = facilities.filter(
+    (f) => f.latitude != null && f.longitude != null
+  );
+
+  // Tính center từ danh sách ghim, fallback về HCM
+  const center =
+    pinned.length > 0
+      ? [
+          pinned.reduce((s, f) => s + f.latitude, 0) / pinned.length,
+          pinned.reduce((s, f) => s + f.longitude, 0) / pinned.length,
+        ]
+      : DEFAULT_CENTER;
+
+  return (
+    <MapContainer
+      center={center}
+      zoom={DEFAULT_ZOOM}
+      className="fc-map"
+      // key buộc re-mount khi center thay đổi đáng kể (danh sách mới)
+      key={center.join(",")}
+    >
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'
+      />
+      {pinned.map((f) => (
+        <Marker key={f.id} position={[f.latitude, f.longitude]}>
+          <Popup>
+            <div className="fc-map-popup">
+              <strong className="fc-map-popup-name">{f.name}</strong>
+              <p className="fc-map-popup-addr">{f.address}</p>
+              {[f.district, f.city].filter(Boolean).length > 0 && (
+                <p className="fc-map-popup-addr">
+                  {[f.district, f.city].filter(Boolean).join(", ")}
+                </p>
+              )}
+              <a
+                className="fc-map-popup-link"
+                href={`/courts/${f.id}`}
+              >
+                Xem chi tiết →
+              </a>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+    </MapContainer>
   );
 }

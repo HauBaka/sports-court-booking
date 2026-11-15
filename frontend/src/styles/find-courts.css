@@ -190,11 +190,63 @@
 }
 
 /* ── Main area ──────────────────────────────────────────────── */
-.fc-main {
-  max-width: 900px;
-  margin: 24px auto;
-  padding: 0 24px 48px;
+.fc-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  min-height: calc(100vh - 180px);
 }
+
+/* Cột trái: danh sách */
+.fc-main {
+  flex: 0 0 480px;
+  max-width: 480px;
+  padding: 20px 20px 48px;
+  overflow-y: auto;
+  max-height: calc(100vh - 130px);
+  position: sticky;
+  top: 57px; /* chiều cao filter bar */
+}
+
+/* Cột phải: bản đồ */
+.fc-map-col {
+  flex: 1;
+  position: sticky;
+  top: 57px;
+  height: calc(100vh - 130px);
+}
+
+.fc-map {
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* Popup bản đồ */
+.fc-map-popup { min-width: 180px; }
+.fc-map-popup-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+.fc-map-popup-addr {
+  margin: 0 0 2px;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+.fc-map-popup-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #15803d;
+  text-decoration: none;
+}
+.fc-map-popup-link:hover { text-decoration: underline; }
 
 /* ── Loading / error states ─────────────────────────────────── */
 .fc-state-box {
@@ -479,9 +531,20 @@
   .fc-filter-group {
     min-width: 140px;
   }
+  .fc-body {
+    flex-direction: column;
+  }
   .fc-main {
-    padding: 0 16px 40px;
-    margin-top: 16px;
+    flex: none;
+    max-width: 100%;
+    max-height: none;
+    position: static;
+    padding: 16px 16px 24px;
+  }
+  .fc-map-col {
+    position: static;
+    height: 320px;
+    width: 100%;
   }
   .fc-card-img {
     width: 100px;

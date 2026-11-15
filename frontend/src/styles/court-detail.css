@@ -195,6 +195,22 @@
   line-height: 1.6;
 }
 
+/* ── Bản đồ nhỏ ────────────────────────────────────────────── */
+.cd-map-wrap {
+  max-width: 1000px;
+  margin: 12px auto 0;
+  padding: 0 24px;
+  border-radius: var(--cd-radius);
+  overflow: hidden;
+}
+.cd-map {
+  width: 100%;
+  height: 220px;
+  border-radius: var(--cd-radius);
+  border: 1.5px solid var(--cd-border);
+  z-index: 0;
+}
+
 /* ── Booking area ───────────────────────────────────────────── */
 .cd-booking-area {
   max-width: 1000px;
