@@ -512,7 +512,7 @@ def expire_holds_job(db: Session, now: Optional[datetime] = None) -> dict:
         return {
             "total_expired_bookings_cancelled": 0,
             "total_slots_released": 0,
-            "executed_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "executed_at": _format_utc_timestamp(now),
         }
 
     expired_booking_ids = [b.id for b in expired_bookings]
@@ -552,7 +552,7 @@ def expire_holds_job(db: Session, now: Optional[datetime] = None) -> dict:
     return {
         "total_expired_bookings_cancelled": updated_bookings_count,
         "total_slots_released": updated_slots_count,
-        "executed_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "executed_at": _format_utc_timestamp(now),
     }
 
 

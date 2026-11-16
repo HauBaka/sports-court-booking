@@ -485,7 +485,7 @@ def test_admin_expire_holds_success(client, customer_headers, admin_headers):
     # Đơn 1 bị hết hạn, đơn 2 còn hạn
     db = TestingSessionLocal()
     b1 = db.query(Booking).filter(Booking.id == b1_id).first()
-    b1.hold_expires_at = datetime.now() - timedelta(minutes=2)
+    b1.hold_expires_at = datetime.now(VN_TZ).replace(tzinfo=None) - timedelta(minutes=2)
     db.commit()
     db.close()
 
@@ -532,7 +532,7 @@ def test_expire_holds_job_function(client, customer_headers):
 
     db = TestingSessionLocal()
     b = db.query(Booking).filter(Booking.id == b_id).first()
-    b.hold_expires_at = datetime.now() - timedelta(minutes=1)
+    b.hold_expires_at = datetime.now(VN_TZ).replace(tzinfo=None) - timedelta(minutes=1)
     db.commit()
 
     # Gọi expire_holds_job
@@ -545,3 +545,26 @@ def test_expire_holds_job_function(client, customer_headers):
     assert result2["total_expired_bookings_cancelled"] == 0
     assert result2["total_slots_released"] == 0
     db.close()
+
+
+@pytest.mark.parametrize("has_expired_booking", [False, True])
+def test_expire_holds_job_returns_utc_timestamp(
+    client, customer_headers, monkeypatch, has_expired_booking,
+):
+    from app.api.v1.endpoints import bookings
+
+    simulated_now = datetime(2026, 11, 20, 0, 5, tzinfo=VN_TZ)
+    monkeypatch.setattr(bookings, "now_vn", lambda: simulated_now)
+    with TestingSessionLocal() as db:
+        if has_expired_booking:
+            res = client.post("/api/v1/bookings", json={
+                "court_id": 101, "play_date": "2026-11-20", "time_slot_ids": [1],
+            }, headers=customer_headers)
+            assert res.status_code == 201
+            booking = db.get(Booking, res.json()["data"]["booking_id"])
+            booking.hold_expires_at = simulated_now.replace(tzinfo=None) - timedelta(minutes=1)
+            db.commit()
+
+        result = expire_holds_job(db)
+        assert result["executed_at"] == "2026-11-19T17:05:00Z"
+        assert result["total_expired_bookings_cancelled"] == int(has_expired_booking)
