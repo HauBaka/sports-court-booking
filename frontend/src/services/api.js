@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const PUBLIC_PATHS = ["/auth/login", "/auth/register"];
+const PUBLIC_PATHS = ["/auth/login", "/auth/register", "/auth/otp", "/auth/password/reset"];
 // Chỉ các lỗi này mới nghĩa là phiên hỏng. Sai mật khẩu cũng là 401 nhưng phải hiện lỗi tại form.
 const TOKEN_ERRORS = ["AUTH_TOKEN_EXPIRED", "AUTH_TOKEN_INVALID", "AUTH_UNAUTHORIZED"];
 

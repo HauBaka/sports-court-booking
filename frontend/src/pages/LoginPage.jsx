@@ -57,6 +57,9 @@ export default function LoginPage() {
       {location.state?.registered && (
         <p className="notice success">Đăng ký thành công. Hãy đăng nhập để tiếp tục.</p>
       )}
+      {location.state?.passwordReset && (
+        <p className="notice success">Đặt lại mật khẩu thành công. Hãy đăng nhập bằng mật khẩu mới.</p>
+      )}
       {params.get("expired") && (
         <p className="notice info">Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.</p>
       )}
@@ -88,6 +91,10 @@ export default function LoginPage() {
           onChange={set("password")}
         />
       </Field>
+
+      <p className="between between-end">
+        <Link to="/forgot-password">Quên mật khẩu?</Link>
+      </p>
 
       <button className="btn btn-block" type="submit" disabled={submitting}>
         {submitting ? "Đang đăng nhập..." : "Đăng nhập"}

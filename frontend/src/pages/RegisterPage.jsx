@@ -2,7 +2,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Field from "../components/Field";
 import PasswordInput from "../components/PasswordInput";
+import OtpVerify from "../components/OtpVerify";
+import useOtpChallenge from "../hooks/useOtpChallenge";
 import { register } from "../services/authService";
+import { isOtpDead, isOtpError, otpErrorMessage, validateOtpCode } from "../utils/otp";
+import { validateNewPassword } from "../utils/password";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Tên field backend trả trong details của VALIDATION_ERROR
@@ -13,11 +17,16 @@ function validate(f) {
   if (!f.name.trim()) e.name = "Vui lòng nhập họ và tên.";
   if (!/^\d{10}$/.test(f.phone)) e.phone = "Số điện thoại phải có 10 chữ số.";
   if (!EMAIL_RE.test(f.email.trim())) e.email = "Email không hợp lệ.";
-  if (f.password.length < 8) e.password = "Mật khẩu tối thiểu 8 ký tự.";
+  const passwordError = validateNewPassword(f.password);
+  if (passwordError) e.password = passwordError;
   if (f.confirm !== f.password) e.confirm = "Mật khẩu nhập lại không khớp.";
   if (!f.agree) e.agree = "Bạn cần đồng ý Điều khoản sử dụng.";
   return e;
 }
+
+// 422 mà lỗi nằm ở ô otp_code (không đúng 6 chữ số)
+const otpFieldInvalid = (err) =>
+  err.code === "VALIDATION_ERROR" && Array.isArray(err.details) && err.details.some((d) => d.field === "otp_code");
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -33,6 +42,9 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // "form": nhập thông tin; "otp": nhập mã xác nhận gửi qua email
+  const [step, setStep] = useState("form");
+  const otp = useOtpChallenge("REGISTER");
 
   const set = (key) => (e) =>
     setForm((f) => ({ ...f, [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
@@ -53,12 +65,42 @@ export default function RegisterPage() {
     return setApiError(err.message || "Đăng ký thất bại. Vui lòng thử lại.");
   };
 
+  // Bước 1: kiểm tra form rồi gửi OTP tới email
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate(form);
     setErrors(errs);
     setApiError("");
     if (Object.keys(errs).length) return;
+
+    setSubmitting(true);
+    const err = await otp.send(form.email);
+    setSubmitting(false);
+    if (!err) return setStep("otp");
+    // Vừa gửi mã cách đây chưa tới 60 giây: người dùng có thể đã có mã trong hộp thư.
+    if (err.code === "AUTH_OTP_TOO_SOON") {
+      otp.setError(otpErrorMessage(err));
+      return setStep("otp");
+    }
+    showApiError(err);
+  };
+
+  const handleResend = async () => {
+    const err = await otp.send(form.email, { resend: true });
+    if (err) otp.setError(otpErrorMessage(err));
+  };
+
+  const backToForm = () => {
+    otp.reset();
+    setStep("form");
+  };
+
+  // Bước 2: gửi thông tin đăng ký kèm mã OTP
+  const handleConfirm = async (e) => {
+    e.preventDefault();
+    const codeError = validateOtpCode(otp.code);
+    otp.setError(codeError);
+    if (codeError) return;
 
     setSubmitting(true);
     try {
@@ -68,16 +110,50 @@ export default function RegisterPage() {
         email: form.email,
         password: form.password,
         role: form.role,
+        otp_code: otp.code,
       });
       navigate("/login", { state: { registered: true } });
     } catch (err) {
-      showApiError(err);
+      if (isOtpError(err) || otpFieldInvalid(err)) {
+        otp.setError(otpErrorMessage(err));
+        if (isOtpDead(err)) otp.setCode("");
+      } else {
+        // Lỗi thuộc về thông tin ở bước 1 (trùng số điện thoại, sai định dạng...): quay lại form để sửa.
+        otp.reset();
+        setStep("form");
+        showApiError(err);
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
   const cls = (key) => `input${errors[key] ? " invalid" : ""}`;
+
+  if (step === "otp") {
+    return (
+      <form className="auth-card" onSubmit={handleConfirm} noValidate>
+        <h1>Xác nhận email</h1>
+
+        <OtpVerify
+          lead="Mã gồm 6 chữ số đã được gửi tới"
+          email={form.email.trim()}
+          code={otp.code}
+          onCodeChange={otp.setCode}
+          error={otp.error}
+          notice={otp.notice}
+          seconds={otp.seconds}
+          sending={otp.sending}
+          onResend={handleResend}
+          onChangeEmail={backToForm}
+        />
+
+        <button className="btn btn-block" type="submit" disabled={submitting}>
+          {submitting ? "Đang đăng ký..." : "Xác nhận và đăng ký"}
+        </button>
+      </form>
+    );
+  }
 
   return (
     <form className="auth-card" onSubmit={handleSubmit} noValidate>
@@ -168,7 +244,7 @@ export default function RegisterPage() {
       </div>
 
       <button className="btn btn-block" type="submit" disabled={submitting}>
-        {submitting ? "Đang đăng ký..." : "Đăng ký"}
+        {submitting ? "Đang gửi mã..." : "Đăng ký"}
       </button>
 
       <p className="auth-foot">
