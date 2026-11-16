@@ -737,13 +737,14 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 
 ### 🟢 EPIC 3: LỊCH TRỐNG, TÍNH TIỀN, ĐẶT SÂN & QUẢN LÝ GIỮ CHỖ
 
-#### 3.1 Xem sơ đồ khung giờ trống theo ngày của sân con (Quy tắc lọc Hold quá hạn)
+#### 3.1 Xem sơ đồ khung giờ trống theo ngày của sân con (Quy tắc lọc Hold quá hạn & Khung giờ đã qua)
 * **Endpoint:** `GET /api/v1/courts/{court_id}/slots`
 * **Mô tả:** Lấy danh sách toàn bộ các khung giờ trong ngày chỉ định (`date=YYYY-MM-DD`). 
-* **Quy tắc phân loại trạng thái khung giờ (Gắn kết thời gian thực `:now`):**
-  * **`BOOKED` (Đã đặt cọc):** Tồn tại `booking_slots.released_at IS NULL` VÀ `bookings.status = 'DEPOSITED'`.
-  * **`HOLDING` (Đang giữ chỗ chờ cọc):** Tồn tại `booking_slots.released_at IS NULL` VÀ `bookings.status = 'PENDING_DEPOSIT'` VÀ `bookings.hold_expires_at > :now`.
-  * **`AVAILABLE` (Trống):** 
+* **Quy tắc phân loại trạng thái khung giờ (Gắn kết thời gian thực `:now` theo giờ Việt Nam UTC+7):**
+  * **`BOOKED` (Đã đặt cọc):** Tồn tại `booking_slots.released_at IS NULL` VÀ `bookings.status = 'DEPOSITED'` (áp dụng cho cả khung giờ trong quá khứ lẫn tương lai).
+  * **`UNAVAILABLE` (Không khả dụng / Đã qua giờ):** Khung giờ nằm trong quá khứ hoặc đang diễn ra (`ngày chơi < hôm nay` hoặc `ngày chơi = hôm nay và start_time <= giờ hiện tại theo giờ Việt Nam`), chưa có ai đặt cọc (`BOOKED`). Khung này không thể đặt được nữa.
+  * **`HOLDING` (Đang giữ chỗ chờ cọc):** Khung giờ trong tương lai, tồn tại `booking_slots.released_at IS NULL` VÀ `bookings.status = 'PENDING_DEPOSIT'` VÀ `bookings.hold_expires_at > :now`.
+  * **`AVAILABLE` (Trống - có thể đặt):** Khung giờ trong tương lai, VÀ:
     - Chưa có bản ghi `booking_slots` nào, HOẶC
     - `booking_slots.released_at IS NOT NULL` (đã nhả), HOẶC
     - Thuộc đơn `PENDING_DEPOSIT` nhưng **`bookings.hold_expires_at <= :now`** (đã hết hạn giữ chỗ 10 phút, coi là trống ngay lập tức trên UI).
