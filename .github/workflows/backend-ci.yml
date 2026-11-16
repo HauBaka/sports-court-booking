@@ -64,6 +64,7 @@ jobs:
           DB_USER: "root"
           DB_PASSWORD: "secret"
           DB_NAME: "sports_court_booking"
+          EMAIL_BACKEND: "console"  # không gửi mail thật, mã OTP cố định 123456 (SCB-136)
         run: |
           pytest tests_scenarios/ -v -ra
 

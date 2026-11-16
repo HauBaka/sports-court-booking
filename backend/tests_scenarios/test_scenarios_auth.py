@@ -6,13 +6,7 @@ import pytest
 from sqlalchemy import text
 
 from app.core.database import engine
-
-
-API = "/api/v1"
-PASSWORD = "TestPass123@"  # mật khẩu tài khoản seed, xem database/README.md
-
-
-OTP_CODE = "123456"  # EMAIL_BACKEND=console và ENVIRONMENT khác production thì OTP luôn là 123456
+from .helpers import API, OTP_CODE, PASSWORD, login, register
 
 
 def register_body(email, phone):
@@ -24,16 +18,11 @@ def request_otp(client, email, purpose="REGISTER"):
     return client.post(f"{API}/auth/otp", json={"email": email, "purpose": purpose})
 
 
-def login(client, email, password=PASSWORD):
-    return client.post(f"{API}/auth/login", json={"email": email, "password": password})
-
-
 def test_auth_01_dang_ky_thanh_cong_vi_so_du_0(client):
     # Email và số điện thoại ngẫu nhiên để chạy lại được trên cùng CSDL
     email = f"new.{uuid.uuid4().hex[:8]}@scb.vn"
     phone = "09" + "".join(random.choices("0123456789", k=8))
-    assert request_otp(client, email).status_code == 200
-    res = client.post(f"{API}/auth/register", json=register_body(email, phone))
+    res = register(client, email, phone)
     assert res.status_code == 201
     data = res.json()["data"]
     assert data["role"] == "customer"
@@ -54,9 +43,7 @@ def test_auth_02_trung_email(client):
 
 
 def test_auth_03_trung_so_dien_thoai(client):
-    email = f"other.{uuid.uuid4().hex[:8]}@scb.vn"
-    assert request_otp(client, email).status_code == 200
-    res = client.post(f"{API}/auth/register", json=register_body(email, "0900000003"))
+    res = register(client, f"other.{uuid.uuid4().hex[:8]}@scb.vn", "0900000004")
     assert res.status_code == 409
     assert res.json()["error"]["code"] == "AUTH_PHONE_EXISTS"
 

@@ -7,6 +7,8 @@ from sqlalchemy import text
 
 from app.core.database import engine
 
+from .helpers import register
+
 
 API = "/api/v1"
 PASSWORD = "TestPass123@"
@@ -47,11 +49,7 @@ def court_name(court_id):
 def test_san_06_sua_san_cua_chu_khac(client):
     name_before = court_name(1)
     # Chạy lại thì tài khoản đã có: 1.5 và 1.1 trả 409, bỏ qua
-    client.post(f"{API}/auth/otp", json={"email": "owner.b@scb.vn", "purpose": "REGISTER"})
-    client.post(f"{API}/auth/register", json={
-        "name": "Chủ Sân B", "email": "owner.b@scb.vn", "phone": "0900000020", "password": PASSWORD, "role": "owner",
-        "otp_code": "123456",
-    })
+    register(client, "owner.b@scb.vn", "0900000020", role="owner", name="Chủ Sân B")
     res = client.patch(f"{API}/courts/1", json={"name": "Sân bị đổi tên trái phép"}, headers=auth(client, "owner.b@scb.vn"))
     assert res.status_code == 403
     assert res.json()["error"]["code"] == "AUTH_FORBIDDEN"

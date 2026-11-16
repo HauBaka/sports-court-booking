@@ -1,4 +1,0 @@
-$kind: http-request
-method: POST
-url: '{{base_url}}/bookings/{{booking_id}}/complete'
-order: 3000
