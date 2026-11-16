@@ -20,6 +20,8 @@ from app.models.pricing import PricingRule
 from app.models.user import Role, User, UserRole
 from app.models.wallet import Wallet
 
+VN_TZ = timezone(timedelta(hours=7))
+
 @compiles(BigInteger, "sqlite")
 def _bigint_as_integer(type_, compiler, **kw):
     return "INTEGER"
@@ -271,11 +273,75 @@ def test_create_booking_hold_expires_at_cannot_exceed_start_at(client, customer_
     res = client.post("/api/v1/bookings", json=payload, headers=customer_headers)
     assert res.status_code == 201
     data = res.json()["data"]
-    # start_at = 2026-11-20T08:00:00Z
-    # now + 10 phút = 08:05:00Z > start_at
-    # Do đó hold_expires_at bắt buộc phải bằng start_at
-    assert data["start_at"] == "2026-11-20T08:00:00Z"
-    assert data["hold_expires_at"] == "2026-11-20T08:00:00Z"
+    # 08:00 giờ Việt Nam là 01:00 UTC; hạn giữ chỗ không vượt quá giờ chơi.
+    assert data["start_at"] == "2026-11-20T01:00:00Z"
+    assert data["hold_expires_at"] == "2026-11-20T01:00:00Z"
+
+
+def test_create_booking_utc_response_across_midnight(client, customer_headers, monkeypatch):
+    from app.api.v1.endpoints import bookings
+
+    simulated_now = datetime(2026, 11, 20, 0, 5, tzinfo=VN_TZ)
+    monkeypatch.setattr(bookings, "now_vn", lambda: simulated_now)
+    res = client.post("/api/v1/bookings", json={
+        "court_id": 101, "play_date": "2026-11-20", "time_slot_ids": [1],
+    }, headers=customer_headers)
+
+    assert res.status_code == 201
+    data = res.json()["data"]
+    assert data["play_date"] == "2026-11-20"
+    assert data["start_at"] == "2026-11-20T01:00:00Z"
+    assert data["hold_expires_at"] == "2026-11-19T17:15:00Z"
+    hold_expires_at = datetime.fromisoformat(data["hold_expires_at"].replace("Z", "+00:00"))
+    assert hold_expires_at - simulated_now == timedelta(minutes=10)
+
+
+@pytest.mark.parametrize("schedule_model", [Court, Facility], ids=["court", "facility"])
+@pytest.mark.parametrize("open_time, close_time, slot_ids", [
+    (time(10), time(23), [1]),       # Khung hoàn toàn trước giờ mở cửa.
+    (time(8, 30), time(23), [1]),    # Khung vắt qua giờ mở cửa.
+    (time(6), time(8), [1]),        # Khung bắt đầu khi đã đóng cửa.
+    (time(6), time(9, 30), [1, 2]), # Chỉ khung thứ hai vắt qua giờ đóng cửa.
+])
+def test_create_booking_rejects_slots_outside_opening_hours(
+    client, customer_headers, schedule_model, open_time, close_time, slot_ids,
+):
+    with TestingSessionLocal() as db:
+        schedule = db.query(schedule_model).filter(schedule_model.id == (101 if schedule_model is Court else 1)).one()
+        schedule.open_time = open_time
+        schedule.close_time = close_time
+        db.commit()
+        assert all(cs.is_active for cs in db.query(CourtSlot).filter(CourtSlot.court_id == 101))
+
+    res = client.post("/api/v1/bookings", json={
+        "court_id": 101,
+        "play_date": (datetime.now(VN_TZ).date() + timedelta(days=3)).isoformat(),
+        "time_slot_ids": slot_ids,
+    }, headers=customer_headers)
+
+    assert res.status_code == 400
+    assert res.json()["error"]["code"] == "INVALID_BOOKING_TIME"
+    with TestingSessionLocal() as db:
+        assert db.query(Booking).count() == 0
+        assert db.query(BookingSlot).count() == 0
+        assert db.query(BookingService).count() == 0
+        assert db.query(Wallet).filter(Wallet.user_id == 12).one().balance == 500000
+
+
+@pytest.mark.parametrize("schedule_model", [Court, Facility], ids=["court", "facility"])
+def test_create_booking_accepts_exact_opening_and_closing_boundaries(client, customer_headers, schedule_model):
+    with TestingSessionLocal() as db:
+        schedule = db.query(schedule_model).filter(schedule_model.id == (101 if schedule_model is Court else 1)).one()
+        schedule.open_time = time(8)
+        schedule.close_time = time(10)
+        db.commit()
+
+    res = client.post("/api/v1/bookings", json={
+        "court_id": 101,
+        "play_date": (datetime.now(VN_TZ).date() + timedelta(days=3)).isoformat(),
+        "time_slot_ids": [1, 2],
+    }, headers=customer_headers)
+    assert res.status_code == 201
 
 
 def test_create_booking_unauthorized(client):
@@ -383,7 +449,7 @@ def test_lazy_release_expired_hold_on_create(client, customer_headers, customer_
     # Giả lập đơn Khách A bị quá hạn 10 phút
     db = TestingSessionLocal()
     b = db.query(Booking).filter(Booking.id == booking_id).first()
-    past_expire = datetime.now() - timedelta(minutes=5)
+    past_expire = datetime.now(VN_TZ).replace(tzinfo=None) - timedelta(minutes=5)
     b.hold_expires_at = past_expire
     db.commit()
     db.close()

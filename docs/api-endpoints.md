@@ -861,6 +861,7 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 #### 3.3 Tạo lịch đặt sân và giữ chỗ tạm (Luồng 1 CSDL - `PENDING_DEPOSIT` & Lazy Release)
 * **Endpoint:** `POST /api/v1/bookings`
 * **Mô tả:** Tạo đơn đặt sân tạm thời và khóa giữ chỗ trong 10 phút. Chưa trừ tiền ví, chưa ghi sổ cái `wallet_transactions`.
+* **Múi giờ:** `play_date` và giờ của slot được hiểu theo giờ Việt Nam (UTC+7). Response chuyển `start_at`, `hold_expires_at` sang UTC trước khi gắn `Z`: ví dụ 08:00 giờ Việt Nam là 01:00Z; ngày của timestamp UTC có thể khác `play_date`.
 * **Quyền truy cập:** Đã đăng nhập (`customer`).
 * **Database Transaction:** **BẮT BUỘC (ACID TRANSACTION VỚI LAZY RELEASE VÀ ROW LOCKING)**
   * **Bước 1 (Dọn dẹp lười giữ chỗ quá hạn - Opportunistic / Lazy Release):**
@@ -882,7 +883,7 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
   * **Bước 2 (Kiểm tra xung đột bằng `SELECT ... FOR UPDATE`):**
     Khóa và kiểm tra xem còn bản ghi nào trong `booking_slots` có `active_key = 1` trên các khung giờ này hay không. Nếu còn dòng ➔ Nghĩa là khung giờ đang bị giữ bởi đơn `DEPOSITED` hoặc đơn `PENDING_DEPOSIT` còn hạn. Rollback và báo lỗi `409 Conflict` (`SLOT_ALREADY_BOOKED`).
   * **Bước 3 (Kiểm tra điều kiện mở cửa sân):**
-    Kiểm tra toàn bộ `time_slot_id` thuộc `court_slots` của sân và nằm trong khoảng `open_time` - `close_time`. Tính `start_at = play_date + MIN(start_time)`. Từ chối nếu `start_at <= :now` (mã lỗi `INVALID_BOOKING_TIME`).
+    Kiểm tra toàn bộ `time_slot_id` thuộc `court_slots` của sân. Mỗi slot phải bắt đầu từ giờ mở cửa và kết thúc trước hoặc đúng giờ đóng cửa của cả sân lẫn cơ sở, kể cả khi `court_slots.is_active = true`. Tính `start_at = play_date + MIN(start_time)`. Từ chối slot ngoài giờ hoạt động hoặc `start_at <= :now` bằng mã lỗi `400 INVALID_BOOKING_TIME`.
   * **Bước 4 (Tính tiền & Thiết lập thời hạn giữ chỗ):**
     Tính toán chi phí, đặt `hold_expires_at = MIN(:now + 10 phút, start_at)`.
   * **Bước 5 (Tạo đơn và chi tiết slot):**

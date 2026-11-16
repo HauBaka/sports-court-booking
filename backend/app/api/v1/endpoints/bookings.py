@@ -35,6 +35,13 @@ def now_vn() -> datetime:
     return datetime.now(VN_TZ)
 
 
+def _format_utc_timestamp(value: datetime) -> str:
+    """Đổi DATETIME giờ Việt Nam trong booking sang UTC trước khi gắn hậu tố Z."""
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=VN_TZ)
+    return value.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def _prepare_pricing(
     db: Session,
     court: Court,
@@ -301,6 +308,19 @@ def create_booking(
             ],
         )
 
+    # Kiểm tra cả giờ sân và giờ cơ sở, kể cả khi court_slots còn active sau khi đổi lịch.
+    open_time = max(court.open_time, court.facility.open_time)
+    close_time = min(court.close_time, court.facility.close_time)
+    if any(
+        not (open_time <= cs.time_slot.start_time < cs.time_slot.end_time <= close_time)
+        for cs in court_slots
+    ):
+        raise BusinessException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="INVALID_BOOKING_TIME",
+            message="Toàn bộ khung giờ đặt phải nằm trong giờ mở cửa của sân và cơ sở.",
+        )
+
     # Bước 3: Kiểm tra thời gian bắt đầu chơi (DAT-04)
     min_start_time = min(cs.time_slot.start_time for cs in court_slots)
     start_at = datetime.combine(body.play_date, min_start_time)
@@ -448,8 +468,8 @@ def create_booking(
         )
 
     # Bước 6: Trả về kết quả 201 Created
-    start_at_str = start_at.strftime("%Y-%m-%dT%H:%M:%SZ")
-    hold_expires_at_str = hold_expires_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+    start_at_str = _format_utc_timestamp(start_at)
+    hold_expires_at_str = _format_utc_timestamp(hold_expires_at)
 
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
