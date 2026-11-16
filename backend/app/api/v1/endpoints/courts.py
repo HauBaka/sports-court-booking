@@ -19,8 +19,13 @@ router = APIRouter()
 VN_TZ = timezone(timedelta(hours=7))
 
 
+def now_vn() -> datetime:
+    """Trả về thời gian hiện tại theo múi giờ Việt Nam (UTC+7). Có thể mock trong unit test."""
+    return datetime.now(VN_TZ)
+
+
 def today_vn() -> date:
-    return datetime.now(VN_TZ).date()
+    return now_vn().date()
 
 
 def format_time(t) -> str:
@@ -277,7 +282,8 @@ def get_court_slots_by_date(
     for bs in booking_slots:
         slots_by_ts.setdefault(cast(int, bs.time_slot_id), []).append(bs)
 
-    now_utc = datetime.now(timezone.utc)
+    current_vn = now_vn()
+    now_utc = current_vn.astimezone(timezone.utc)
 
     slots_data = []
     for cs in court_slots:
@@ -295,24 +301,31 @@ def get_court_slots_by_date(
         if is_booked:
             slot_status = "BOOKED"
         else:
-            # 2. Kiểm tra trạng thái HOLDING: booking_slots.released_at IS NULL VÀ bookings.status = 'PENDING_DEPOSIT' VÀ bookings.hold_expires_at > :now
-            is_holding = False
-            for bs in assigned:
-                if bs.released_at is None and bs.booking and bs.booking.status == "PENDING_DEPOSIT":
-                    exp = bs.booking.hold_expires_at
-                    if exp:
-                        if exp.tzinfo is not None:
-                            is_active_hold = exp > now_utc
-                        else:
-                            is_active_hold = exp > now_utc.replace(tzinfo=None)
-                        if is_active_hold:
-                            is_holding = True
-                            break
-            if is_holding:
-                slot_status = "HOLDING"
+            # 2. Khung giờ đã qua hoặc đang diễn ra (start_time <= giờ hiện tại theo giờ VN):
+            # Không có đơn đặt cọc hợp lệ thì là UNAVAILABLE (không khả dụng để đặt)
+            slot_start_dt = datetime.combine(query_date, cs.time_slot.start_time, tzinfo=VN_TZ)
+            if slot_start_dt <= current_vn:
+                slot_status = "UNAVAILABLE"
             else:
-                # 3. AVAILABLE: Chưa có, hoặc đã released_at IS NOT NULL, hoặc PENDING_DEPOSIT nhưng hold_expires_at <= :now
-                slot_status = "AVAILABLE"
+                # 3. Khung giờ trong tương lai: Kiểm tra trạng thái HOLDING:
+                # booking_slots.released_at IS NULL VÀ bookings.status = 'PENDING_DEPOSIT' VÀ bookings.hold_expires_at > :now
+                is_holding = False
+                for bs in assigned:
+                    if bs.released_at is None and bs.booking and bs.booking.status == "PENDING_DEPOSIT":
+                        exp = bs.booking.hold_expires_at
+                        if exp:
+                            if exp.tzinfo is not None:
+                                is_active_hold = exp > now_utc
+                            else:
+                                is_active_hold = exp > now_utc.replace(tzinfo=None)
+                            if is_active_hold:
+                                is_holding = True
+                                break
+                if is_holding:
+                    slot_status = "HOLDING"
+                else:
+                    # 4. AVAILABLE: Khung giờ trong tương lai chưa có ai đặt, hoặc đã nhả, hoặc hold đã hết hạn
+                    slot_status = "AVAILABLE"
 
         slots_data.append(
             {

@@ -39,6 +39,16 @@ def override_get_db():
         db.close()
 
 
+FIXED_NOW_VN = datetime(2026, 11, 10, 15, 0, 0, tzinfo=timezone(timedelta(hours=7)))
+FIXED_NOW_UTC = datetime(2026, 11, 10, 8, 0, 0, tzinfo=timezone.utc)
+
+
+@pytest.fixture(autouse=True)
+def mock_fixed_clock(monkeypatch):
+    """Cố định thời gian hiện tại là 15:00:00 ngày 2026-11-10 (giờ VN)."""
+    monkeypatch.setattr("app.api.v1.endpoints.courts.now_vn", lambda: FIXED_NOW_VN)
+
+
 @pytest.fixture(autouse=True)
 def setup_database():
     """Tự động tạo mới database và override get_db trước mỗi test, dọn dẹp sau khi xong."""
@@ -87,8 +97,10 @@ def setup_database():
     db.add(court)
     db.commit()
 
-    # TimeSlots: slot 1 (16:00-17:00), slot 2 (17:00-18:00), slot 3 (18:00-19:00), slot 4 (19:00-20:00), slot 5 (20:00-21:00)
+    # TimeSlots: slot 6 (08:00-09:00, đã qua so với 15:00)
+    # slot 1 (16:00-17:00), slot 2 (17:00-18:00), slot 3 (18:00-19:00), slot 4 (19:00-20:00), slot 5 (20:00-21:00)
     ts_list = [
+        TimeSlot(id=6, start_time=time(8, 0), end_time=time(9, 0), duration_minutes=60, label="08:00 - 09:00"),
         TimeSlot(id=1, start_time=time(16, 0), end_time=time(17, 0), duration_minutes=60, label="16:00 - 17:00"),
         TimeSlot(id=2, start_time=time(17, 0), end_time=time(18, 0), duration_minutes=60, label="17:00 - 18:00"),
         TimeSlot(id=3, start_time=time(18, 0), end_time=time(19, 0), duration_minutes=60, label="18:00 - 19:00"),
@@ -100,6 +112,7 @@ def setup_database():
 
     # CourtSlots
     cs_list = [
+        CourtSlot(id=6, court_id=101, time_slot_id=6, base_price=100000, is_active=True),
         CourtSlot(id=1, court_id=101, time_slot_id=1, base_price=100000, is_active=True),
         CourtSlot(id=2, court_id=101, time_slot_id=2, base_price=100000, is_active=True),
         CourtSlot(id=3, court_id=101, time_slot_id=3, base_price=100000, is_active=True),
@@ -111,7 +124,7 @@ def setup_database():
 
     # Dữ liệu tạo tay cho các trạng thái mục 3.1 trong ngày 2026-11-10:
     target_date = date(2026, 11, 10)
-    now_utc = datetime.now(timezone.utc)
+    now_utc = FIXED_NOW_UTC
 
     # Đơn 1: Đã đặt cọc (DEPOSITED) cho slot 2 (17:00-18:00) -> BOOKED
     booking_deposited = Booking(
@@ -287,7 +300,12 @@ def test_ca_ba_trang_thai_va_hold_het_han(client):
 
     slots = {s["time_slot_id"]: s for s in data["data"]["slots"]}
 
-    # Slot 1: Không có ai đặt -> AVAILABLE
+    # Slot 6: Khung giờ 08:00 - 09:00 đã qua so với mốc 15:00 hôm nay -> UNAVAILABLE
+    assert slots[6]["status"] == "UNAVAILABLE"
+    assert slots[6]["start_time"] == "08:00:00"
+    assert slots[6]["end_time"] == "09:00:00"
+
+    # Slot 1: Không có ai đặt và ở tương lai (16:00 > 15:00) -> AVAILABLE
     assert slots[1]["status"] == "AVAILABLE"
     assert slots[1]["start_time"] == "16:00:00"
     assert slots[1]["end_time"] == "17:00:00"
@@ -311,3 +329,64 @@ def test_ca_ba_trang_thai_va_hold_het_han(client):
     assert slots[5]["status"] == "AVAILABLE"
     assert slots[5]["start_time"] == "20:00:00"
     assert slots[5]["end_time"] == "21:00:00"
+
+
+def test_khung_gio_da_qua_tra_ve_unavailable(client):
+    """Khung giờ trong ngày hôm nay nhưng giờ bắt đầu đã qua (hoặc đang diễn ra) -> UNAVAILABLE."""
+    res = client.get("/api/v1/courts/101/slots?date=2026-11-10")
+    assert res.status_code == 200
+    slots = {s["time_slot_id"]: s for s in res.json()["data"]["slots"]}
+
+    # Mốc thời gian mock là 15:00:00 ngày 2026-11-10
+    # Khung 08:00 - 09:00 (slot 6) đã qua giờ bắt đầu -> UNAVAILABLE
+    assert slots[6]["status"] == "UNAVAILABLE"
+
+
+def test_tra_cuu_ngay_qua_khu_tra_ve_unavailable_va_booked(client):
+    """
+    Tra cứu ngày trong quá khứ (ví dụ hôm qua):
+    - Khung không có đặt cọc -> UNAVAILABLE (không khả dụng để đặt).
+    - Khung đã đặt cọc trong quá khứ -> BOOKED.
+    """
+    past_date = date(2026, 11, 9)
+    db = TestingSessionLocal()
+    booking_past = Booking(
+        id=205,
+        user_id=2,
+        court_id=101,
+        play_date=past_date,
+        start_at=datetime(2026, 11, 9, 10, 0),
+        status="DEPOSITED",
+        subtotal=100000,
+        total_amount=100000,
+        deposit_amount=30000,
+    )
+    db.add(booking_past)
+    db.commit()
+    db.add(
+        BookingSlot(
+            id=305,
+            booking_id=205,
+            court_id=101,
+            play_date=past_date,
+            time_slot_id=2,
+            base_price=100000,
+            final_price=100000,
+            released_at=None,
+        )
+    )
+    db.commit()
+    db.close()
+
+    res = client.get("/api/v1/courts/101/slots?date=2026-11-09")
+    assert res.status_code == 200
+    slots = {s["time_slot_id"]: s for s in res.json()["data"]["slots"]}
+
+    # Khung 2 có đơn đặt cọc -> BOOKED
+    assert slots[2]["status"] == "BOOKED"
+    # Toàn bộ các khung còn lại không có cọc trong ngày quá khứ -> UNAVAILABLE
+    assert slots[1]["status"] == "UNAVAILABLE"
+    assert slots[3]["status"] == "UNAVAILABLE"
+    assert slots[4]["status"] == "UNAVAILABLE"
+    assert slots[5]["status"] == "UNAVAILABLE"
+    assert slots[6]["status"] == "UNAVAILABLE"
