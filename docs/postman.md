@@ -20,7 +20,9 @@ File JSON trong `docs/postman-export/` là nguồn chính. Sửa request trong P
 | `local` | Máy cá nhân | `http://localhost:8000/api/v1` |
 | `dev` | Môi trường thử | Điền URL của môi trường thử |
 
-Các biến `user_email`, `user_password`, `access_token`, `otp_code`, `server_token` để trống trong Git. Mỗi người tự điền ở máy mình (dùng Current value, không dùng Initial value). Không commit mật khẩu hay token thật.
+Biến `otp_code`: `local` đặt sẵn `123456` (console, không production nên mã luôn thế). `dev` chạy production nên mã ngẫu nhiên: gọi 1.5, đọc mã trong email rồi điền vào `otp_code` trước khi gọi 1.1 hoặc 1.6.
+
+Các biến `user_email`, `user_password`, `access_token`, `server_token` để trống trong Git. Mỗi người tự điền ở máy mình (dùng Current value, không dùng Initial value). Không commit mật khẩu hay token thật.
 
 `access_token` tự được lưu sau khi chạy request 1.2 Đăng nhập. Các biến `facility_id`, `court_id`, `booking_id`... điền theo dữ liệu đang test.
 

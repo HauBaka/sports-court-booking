@@ -3,8 +3,19 @@ import random
 import uuid
 
 import pytest
+from sqlalchemy import text
 
-from .helpers import API, login, register
+from app.core.database import engine
+from .helpers import API, OTP_CODE, PASSWORD, login, register
+
+
+def register_body(email, phone):
+    return {"name": "Nguyễn Văn A", "email": email, "phone": phone, "password": PASSWORD, "role": "customer",
+            "otp_code": OTP_CODE}
+
+
+def request_otp(client, email, purpose="REGISTER"):
+    return client.post(f"{API}/auth/otp", json={"email": email, "purpose": purpose})
 
 
 def test_auth_01_dang_ky_thanh_cong_vi_so_du_0(client):
@@ -24,9 +35,9 @@ def test_auth_01_dang_ky_thanh_cong_vi_so_du_0(client):
     assert me.json()["data"]["wallet"]["balance"] == 0
 
 
-@pytest.mark.skip(reason="Chờ SCB-136: POST /auth/otp")
 def test_auth_02_trung_email(client):
-    res = client.post(f"{API}/auth/otp", json={"email": "customer.a@scb.vn", "purpose": "REGISTER"})
+    assert request_otp(client, "customer.a@scb.vn").status_code == 409  # 1.5 cũng chặn email đã đăng ký
+    res = client.post(f"{API}/auth/register", json=register_body("customer.a@scb.vn", "0900000011"))
     assert res.status_code == 409
     assert res.json()["error"]["code"] == "AUTH_EMAIL_EXISTS"
 
@@ -60,3 +71,33 @@ def test_auth_06_khach_goi_api_chu_san(client):
     res = client.post(f"{API}/facilities", json=body, headers={"Authorization": f"Bearer {token}"})
     assert res.status_code == 403
     assert res.json()["error"]["code"] == "AUTH_FORBIDDEN"
+
+
+def test_auth_07_dat_lai_mat_khau_voi_otp(client):
+    """1.5 + 1.6: đặt lại xong, mật khẩu cũ 401, mật khẩu mới đăng nhập được."""
+    email = f"reset.{uuid.uuid4().hex[:8]}@scb.vn"
+    phone = "09" + "".join(random.choices("0123456789", k=8))
+    assert request_otp(client, email).status_code == 200
+    assert client.post(f"{API}/auth/register", json=register_body(email, phone)).status_code == 201
+
+    # Vừa xin mã đăng ký nên phải qua 60 giây mới xin được mã đặt lại. Xóa dòng OTP để khỏi chờ.
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM email_otps WHERE email = :e"), {"e": email})
+    assert request_otp(client, email, "RESET_PASSWORD").status_code == 200
+    new_password = "MatKhauMoi456#"
+    res = client.post(f"{API}/auth/password/reset",
+                      json={"email": email, "otp_code": OTP_CODE, "new_password": new_password})
+    assert res.status_code == 200
+    assert login(client, email, PASSWORD).status_code == 401
+    assert login(client, email, new_password).status_code == 200
+
+
+def test_auth_08_dang_ky_sai_otp_khong_tao_user(client):
+    email = f"wrong.{uuid.uuid4().hex[:8]}@scb.vn"
+    assert request_otp(client, email).status_code == 200
+    body = register_body(email, "09" + "".join(random.choices("0123456789", k=8)))
+    body["otp_code"] = "000000"
+    res = client.post(f"{API}/auth/register", json=body)
+    assert res.status_code == 400
+    assert res.json()["error"]["code"] == "AUTH_OTP_INVALID"
+    assert login(client, email).status_code == 401  # không có user nào được tạo

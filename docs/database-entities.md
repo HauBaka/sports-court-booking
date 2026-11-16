@@ -27,6 +27,7 @@
 | 16 | `reviews` | Đánh giá sân sau khi chơi. | 5 | – | **[PHÁC THẢO]** |
 | 17 | `team_posts` | Bài đăng tìm đồng đội. | 4 | – | **[PHÁC THẢO]** |
 | 18 | `team_post_applications` | Lượt đăng ký tham gia ghép đội. | 4 | – | **[PHÁC THẢO]** |
+| 19 | `email_otps` | Mã OTP gửi qua email để xác thực (đăng ký, quên mật khẩu). | 1 | – | Chính thức |
 
 ### 1.2 Bảng quan hệ thực thể
 
@@ -80,6 +81,9 @@
     | FORFEIT | ví hệ thống | ví chủ sân | NULL | booking id |
     | SETTLE | ví hệ thống | ví chủ sân | NULL | booking id |
 
+*   **`email_otps`**: `id` (BIGINT PK), `email` (VARCHAR), `purpose` (ENUM: `REGISTER`, `RESET_PASSWORD`), `code_hash` (VARCHAR, bcrypt), `expires_at` (DATETIME), `attempts` (INT NOT NULL DEFAULT 0, CHECK attempts >= 0), `consumed_at` (DATETIME, nullable), `created_at` (DATETIME). Index `(email, purpose)`.
+    > Không có khóa ngoại tới `users` vì lúc đăng ký tài khoản chưa tồn tại. `code_hash` lưu bản băm bcrypt của mã OTP, không lưu mã gốc. `consumed_at` là NULL khi mã chưa dùng.
+
 ### Nhóm 2 — Sân bãi & Bảng giá
 
 *   **`sports`**: `id` (INT PK), `name` (VARCHAR UNIQUE), `icon_url` (VARCHAR).
@@ -116,6 +120,11 @@
     *Ràng buộc:* `UNIQUE (id, court_id, play_date)`, `CHECK (DATE(start_at) = play_date)`, `CHECK ((status = 'CANCELLED') = (cancelled_at IS NOT NULL))`.
 *   **`booking_slots`**: `id` (BIGINT PK), `booking_id` (BIGINT), `court_id` (BIGINT), `play_date` (DATE), `time_slot_id` (INT), `base_price`, `final_price` (BIGINT), `multiplier` (DECIMAL(4,2), CHECK BETWEEN 1.00 AND 1.50), `released_at` (DATETIME, nullable), `active_key` (TINYINT GENERATED ALWAYS AS (`IF(released_at IS NULL, 1, NULL)`) STORED).
     *Ràng buộc:* Khóa ngoại ghép với `bookings(id, court_id, play_date)` và `court_slots(court_id, time_slot_id)`, `UNIQUE (court_id, play_date, time_slot_id, active_key)`. (Khóa ngoại ghép đã đảm bảo `court_id` và `play_date` khớp booking cha cả INSERT lẫn UPDATE — không cần trigger riêng.)
+
+### Nhóm 3b — Xác thực email
+
+*   **`email_otps`**: `id` (BIGINT PK), `email` (VARCHAR(255)), `purpose` (VARCHAR(20), CHECK IN (`REGISTER`, `RESET_PASSWORD`)), `code_hash` (CHAR(64), HMAC-SHA256, không lưu mã thô), `attempts` (INT DEFAULT 0), `created_at` (DATETIME), `expires_at` (DATETIME, +5 phút), `consumed_at` (DATETIME, nullable — đã dùng hoặc đã bị hủy do sai đủ 5 lần).
+    *Ràng buộc:* `UNIQUE (email, purpose)` (mã mới ghi đè mã cũ). Không có khóa ngoại tới `users` để `RESET_PASSWORD` với email lạ vẫn có dòng và áp cooldown 60 giây như email thật. Migration: `V3__create_email_otps.sql` (tạo bảng) và `V4__add_unique_constraint_email_otps.sql` (thêm UNIQUE).
 
 ### Nhóm 4 — Phác thảo (CN 4, 5)
 

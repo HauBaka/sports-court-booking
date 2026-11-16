@@ -38,14 +38,21 @@ mysql -h <host> -P <port> -u <user> -p'<password>' <database> \
 
 > Script seed tự TRUNCATE toàn bộ bảng trước khi chèn, có thể chạy lại nhiều lần.
 
-### 3. Thông tin tài khoản seed
+### 3. Thông tin tài khoản seed (sau khi chạy S2 và S3)
 
-| Email | Vai trò | Mật khẩu |
-|---|---|---|
-| `admin@scb.vn` | Admin | `TestPass123@` |
-| `owner@scb.vn` | Owner | `TestPass123@` |
-| `customer.a@scb.vn` | Customer | `TestPass123@` |
-| `customer.b@scb.vn` | Customer | `TestPass123@` |
+| Email | Vai trò | Mật khẩu | Số dư ví |
+|---|---|---|---|
+| `system@internal.scb` | Hệ thống (giữ cọc) | `TestPass123@` | 100.000đ |
+| `admin@scb.vn` | Admin | `TestPass123@` | 0đ |
+| `owner1@scb.vn` | Owner (Cơ sở 1) | `TestPass123@` | 0đ |
+| `owner2@scb.vn` | Owner (Cơ sở 2) | `TestPass123@` | 0đ |
+| `customer.a@scb.vn` | Customer | `TestPass123@` | 500.000đ |
+| `customer.b@scb.vn` | Customer | `TestPass123@` | 200.000đ |
+
+Đơn mẫu: 1 đơn `DEPOSITED` của `customer.b@scb.vn`, Sân Cầu Lông 1, ngày mai 08:00 đến 10:00, tổng 200.000đ, cọc 100.000đ.
+
+> - Đơn mẫu và OTP còn hạn tính theo ngày giờ lúc nạp seed. Nạp lại S3 trước mỗi lần test để có dữ liệu đúng ngày.
+> - Thứ tự chạy: migrations, rồi S2, rồi S3. S3 dựa vào user, ví, sân và khung giờ của S2. S1 là dữ liệu cũ, bị S2 xóa và nạp lại.
 
 ## Lưu ý
 

@@ -55,4 +55,9 @@ describe("LoginPage", () => {
     // AUTH_INVALID_CREDENTIALS hien loi tai field password
     expect(await screen.findByText("Email hoặc mật khẩu không chính xác.")).toBeTruthy();
   });
+
+  it("có link Quên mật khẩu trỏ tới /forgot-password", () => {
+    setup();
+    expect(screen.getByRole("link", { name: "Quên mật khẩu?" }).getAttribute("href")).toBe("/forgot-password");
+  });
 });

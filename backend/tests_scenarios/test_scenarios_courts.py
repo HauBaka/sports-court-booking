@@ -48,6 +48,7 @@ def court_name(court_id):
 
 def test_san_06_sua_san_cua_chu_khac(client):
     name_before = court_name(1)
+    # Chạy lại thì tài khoản đã có: 1.5 và 1.1 trả 409, bỏ qua
     register(client, "owner.b@scb.vn", "0900000020", role="owner", name="Chủ Sân B")
     res = client.patch(f"{API}/courts/1", json={"name": "Sân bị đổi tên trái phép"}, headers=auth(client, "owner.b@scb.vn"))
     assert res.status_code == 403

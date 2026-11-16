@@ -70,6 +70,16 @@ def client():
         yield test_client
 
 
+OTP_CODE = "123456"  # EMAIL_BACKEND=console và ENVIRONMENT khác production thì OTP luôn là 123456
+
+
+def register(client: TestClient, payload: dict):
+    """Gọi 1.5 lấy OTP rồi gọi 1.1 kèm 123456. Kết quả 1.5 bỏ qua: email sai định dạng hoặc đã tồn tại
+    thì 1.5 báo lỗi và chính 1.1 phải trả lỗi tương ứng."""
+    client.post("/api/v1/auth/otp", json={"email": payload["email"], "purpose": "REGISTER"})
+    return client.post("/api/v1/auth/register", json={**payload, "otp_code": OTP_CODE})
+
+
 # ==============================================================================
 # 1. TEST ĐĂNG KÝ THÀNH CÔNG VỚI VAI TRÒ CUSTOMER VÀ OWNER
 # ==============================================================================
@@ -89,7 +99,7 @@ def test_register_customer_success(client: TestClient):
         "role": "customer",
     }
 
-    response = client.post("/api/v1/auth/register", json=payload)
+    response = register(client, payload)
     assert response.status_code == 201
 
     res_data = response.json()
@@ -144,7 +154,7 @@ def test_register_owner_success(client: TestClient):
         "role": "owner",
     }
 
-    response = client.post("/api/v1/auth/register", json=payload)
+    response = register(client, payload)
     assert response.status_code == 201
 
     res_data = response.json()
@@ -181,7 +191,7 @@ def test_register_role_admin_rejected(client: TestClient):
         "role": "admin",
     }
 
-    response = client.post("/api/v1/auth/register", json=payload)
+    response = register(client, payload)
     assert response.status_code == 422
 
     res_data = response.json()
@@ -205,7 +215,7 @@ def test_register_invalid_role_rejected(client: TestClient):
         "role": "manager",
     }
 
-    response = client.post("/api/v1/auth/register", json=payload)
+    response = register(client, payload)
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
 
@@ -228,7 +238,7 @@ def test_register_duplicate_email_returns_409(client: TestClient):
         "password": "Password123@",
         "role": "customer",
     }
-    res1 = client.post("/api/v1/auth/register", json=payload1)
+    res1 = register(client, payload1)
     assert res1.status_code == 201
 
     # 2. Đăng ký tài khoản thứ hai với cùng email nhưng khác số điện thoại
@@ -239,7 +249,7 @@ def test_register_duplicate_email_returns_409(client: TestClient):
         "password": "Password456@",
         "role": "customer",
     }
-    res2 = client.post("/api/v1/auth/register", json=payload2)
+    res2 = register(client, payload2)
     assert res2.status_code == 409
 
     res_data = res2.json()
@@ -261,7 +271,7 @@ def test_register_duplicate_phone_returns_409(client: TestClient):
         "password": "Password123@",
         "role": "customer",
     }
-    res1 = client.post("/api/v1/auth/register", json=payload1)
+    res1 = register(client, payload1)
     assert res1.status_code == 201
 
     # 2. Đăng ký tài khoản thứ hai với cùng số điện thoại nhưng khác email
@@ -272,7 +282,7 @@ def test_register_duplicate_phone_returns_409(client: TestClient):
         "password": "Password456@",
         "role": "owner",
     }
-    res2 = client.post("/api/v1/auth/register", json=payload2)
+    res2 = register(client, payload2)
     assert res2.status_code == 409
 
     res_data = res2.json()
@@ -295,7 +305,7 @@ def test_register_phone_normalization_and_duplicate(client: TestClient):
         "password": "Password123@",
         "role": "customer",
     }
-    res1 = client.post("/api/v1/auth/register", json=payload1)
+    res1 = register(client, payload1)
     assert res1.status_code == 201
     data1 = res1.json()["data"]
     # Số điện thoại trả về đã được chuẩn hóa về '0901234567'
@@ -316,7 +326,7 @@ def test_register_phone_normalization_and_duplicate(client: TestClient):
         "password": "Password123@",
         "role": "customer",
     }
-    res2 = client.post("/api/v1/auth/register", json=payload2)
+    res2 = register(client, payload2)
     assert res2.status_code == 409
     assert res2.json()["error"]["code"] == "AUTH_PHONE_EXISTS"
 
@@ -341,7 +351,7 @@ def test_register_weak_password_returns_422(client: TestClient, invalid_password
         "password": invalid_password,
         "role": "customer",
     }
-    response = client.post("/api/v1/auth/register", json=payload)
+    response = register(client, payload)
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
 
@@ -362,7 +372,7 @@ def test_register_invalid_email_returns_422(client: TestClient, invalid_email: s
         "password": "Password123@",
         "role": "customer",
     }
-    response = client.post("/api/v1/auth/register", json=payload)
+    response = register(client, payload)
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
 
@@ -382,7 +392,7 @@ def test_register_invalid_phone_returns_422(client: TestClient, invalid_phone: s
         "password": "Password123@",
         "role": "customer",
     }
-    response = client.post("/api/v1/auth/register", json=payload)
+    response = register(client, payload)
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
 
@@ -424,7 +434,7 @@ def test_rollback_on_wallet_creation_failure(client: TestClient):
         return original_add(self, instance, *args, **kwargs)
 
     with patch.object(Session, "add", side_effect=mock_add, autospec=True):
-        response = client.post("/api/v1/auth/register", json=payload)
+        response = register(client, payload)
         # Server phải trả về mã lỗi 500 với format chuẩn của hệ thống
         assert response.status_code == 500
         res_data = response.json()

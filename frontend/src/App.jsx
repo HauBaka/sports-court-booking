@@ -10,6 +10,7 @@ import UnauthorizedPage from "./pages/UnauthorizedPage";
 import AuthLayout from "./layouts/AuthLayout";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import RequireRole from "./components/RequireRole";
 import MyFacilitiesPage from "./pages/owner/MyFacilitiesPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -51,6 +52,7 @@ export default function App() {
           <Route element={<AuthLayout />}>
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
+            <Route path="forgot-password" element={<ForgotPasswordPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
