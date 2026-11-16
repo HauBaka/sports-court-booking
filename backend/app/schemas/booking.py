@@ -74,3 +74,9 @@ class BookingCreateResponseData(BaseModel):
     total_amount: int
     deposit_amount_required: int
     hold_expires_at: str
+
+
+class ExpireHoldsResponseData(BaseModel):
+    total_expired_bookings_cancelled: int
+    total_slots_released: int
+    executed_at: str

@@ -10,6 +10,7 @@ from sqlalchemy.pool import StaticPool
 
 import app.models  # Đảm bảo nạp toàn bộ metadata
 from app.api.deps import get_db
+from app.api.v1.endpoints.bookings import expire_holds_job
 from app.core.database import Base
 from app.core.security import create_access_token, hash_password
 from app.main import app
@@ -55,6 +56,7 @@ def setup_database():
     db.add_all([
         Role(id=1, name="CUSTOMER", description="Khách hàng"),
         Role(id=2, name="OWNER", description="Chủ sân"),
+        Role(id=3, name="ADMIN", description="Quản trị viên"),
     ])
     db.commit()
 
@@ -77,12 +79,22 @@ def setup_database():
         password_hash=pwd_hash,
         is_active=True,
     )
-    db.add_all([customer, customer_b])
+    # User Admin (ID 99)
+    admin = User(
+        id=99,
+        name="Quản Trị Viên",
+        email="admin@example.com",
+        phone="0901234599",
+        password_hash=pwd_hash,
+        is_active=True,
+    )
+    db.add_all([customer, customer_b, admin])
     db.commit()
 
     db.add_all([
         UserRole(user_id=12, role_id=1),
         UserRole(user_id=13, role_id=1),
+        UserRole(user_id=99, role_id=3),
     ])
     db.commit()
 
@@ -191,6 +203,12 @@ def customer_headers():
 @pytest.fixture
 def customer_b_headers():
     token = create_access_token(data={"sub": "13", "user_id": 13, "roles": ["customer"]})
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def admin_headers():
+    token = create_access_token(data={"sub": "99", "user_id": 99, "roles": ["admin"]})
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -380,4 +398,84 @@ def test_lazy_release_expired_hold_on_create(client, customer_headers, customer_
     assert old_booking.status == "CANCELLED"
     assert old_booking.cancelled_at is not None
     assert old_booking.slots[0].released_at is not None
+    db.close()
+
+
+# ==============================================================================
+# TESTS FOR SCB-146: POST /api/v1/admin/bookings/expire-holds & expire_holds_job
+# ==============================================================================
+
+def test_admin_expire_holds_success(client, customer_headers, admin_headers):
+    """DAT-02: Admin kích hoạt dọn dẹp các đơn hết hạn giữ chỗ thành công."""
+    future_date = (date.today() + timedelta(days=3)).strftime("%Y-%m-%d")
+    # Tạo 2 đơn
+    res1 = client.post("/api/v1/bookings", json={"court_id": 101, "play_date": future_date, "time_slot_ids": [1]}, headers=customer_headers)
+    res2 = client.post("/api/v1/bookings", json={"court_id": 101, "play_date": future_date, "time_slot_ids": [2]}, headers=customer_headers)
+    assert res1.status_code == 201
+    assert res2.status_code == 201
+    b1_id = res1.json()["data"]["booking_id"]
+    b2_id = res2.json()["data"]["booking_id"]
+
+    # Đơn 1 bị hết hạn, đơn 2 còn hạn
+    db = TestingSessionLocal()
+    b1 = db.query(Booking).filter(Booking.id == b1_id).first()
+    b1.hold_expires_at = datetime.now() - timedelta(minutes=2)
+    db.commit()
+    db.close()
+
+    # Admin gọi endpoint dọn dẹp
+    res_expire = client.post("/api/v1/admin/bookings/expire-holds", headers=admin_headers)
+    assert res_expire.status_code == 200
+    body = res_expire.json()
+    assert body["success"] is True
+    assert body["data"]["total_expired_bookings_cancelled"] == 1
+    assert body["data"]["total_slots_released"] == 1
+
+    # Kiểm tra CSDL
+    db = TestingSessionLocal()
+    b1_check = db.query(Booking).filter(Booking.id == b1_id).first()
+    assert b1_check.status == "CANCELLED"
+    assert b1_check.cancelled_at is not None
+    assert b1_check.slots[0].released_at is not None
+
+    b2_check = db.query(Booking).filter(Booking.id == b2_id).first()
+    assert b2_check.status == "PENDING_DEPOSIT"  # Đơn 2 còn hạn nên không bị hủy
+    db.close()
+
+
+def test_admin_expire_holds_forbidden_for_non_admin(client, customer_headers):
+    """Người dùng không phải Admin gọi trả về 403 Forbidden."""
+    res = client.post("/api/v1/admin/bookings/expire-holds", headers=customer_headers)
+    assert res.status_code == 403
+    assert res.json()["error"]["code"] == "AUTH_FORBIDDEN"
+
+
+def test_admin_expire_holds_unauthorized(client):
+    """Chưa đăng nhập gọi trả về 401 Unauthorized."""
+    res = client.post("/api/v1/admin/bookings/expire-holds")
+    assert res.status_code == 401
+    assert res.json()["error"]["code"] == "AUTH_UNAUTHORIZED"
+
+
+def test_expire_holds_job_function(client, customer_headers):
+    """Kiểm tra trực tiếp hàm nghiệp vụ expire_holds_job."""
+    future_date = (date.today() + timedelta(days=3)).strftime("%Y-%m-%d")
+    res = client.post("/api/v1/bookings", json={"court_id": 101, "play_date": future_date, "time_slot_ids": [3]}, headers=customer_headers)
+    assert res.status_code == 201
+    b_id = res.json()["data"]["booking_id"]
+
+    db = TestingSessionLocal()
+    b = db.query(Booking).filter(Booking.id == b_id).first()
+    b.hold_expires_at = datetime.now() - timedelta(minutes=1)
+    db.commit()
+
+    # Gọi expire_holds_job
+    result = expire_holds_job(db)
+    assert result["total_expired_bookings_cancelled"] == 1
+    assert result["total_slots_released"] == 1
+
+    # Gọi lại lần 2 -> không còn đơn nào quá hạn
+    result2 = expire_holds_job(db)
+    assert result2["total_expired_bookings_cancelled"] == 0
+    assert result2["total_slots_released"] == 0
     db.close()

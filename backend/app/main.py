@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Any
 from contextlib import asynccontextmanager
@@ -19,6 +20,28 @@ logging.basicConfig(
 logger = logging.getLogger("sports-court-booking")
 
 
+async def run_expire_holds_worker():
+    """Tiến trình nền chạy mỗi 60 giây dọn dẹp các đơn giữ chỗ hết hạn (SCB-146)."""
+    logger.info("Khởi động tiến trình nền dọn dẹp giữ chỗ hết hạn (chu kỳ 60s)...")
+    while True:
+        try:
+            await asyncio.sleep(60)
+            from app.core.database import SessionLocal
+            from app.api.v1.endpoints.bookings import expire_holds_job
+            with SessionLocal() as db:
+                res = expire_holds_job(db)
+                if res["total_expired_bookings_cancelled"] > 0:
+                    logger.info(
+                        f"Tiến trình nền đã dọn dẹp: {res['total_expired_bookings_cancelled']} đơn, "
+                        f"{res['total_slots_released']} khung giờ."
+                    )
+        except asyncio.CancelledError:
+            logger.info("Dừng tiến trình nền dọn dẹp giữ chỗ.")
+            break
+        except Exception as exc:
+            logger.error(f"Lỗi trong tiến trình nền dọn dẹp giữ chỗ: {exc}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifecycle events for FastAPI application."""
@@ -31,7 +54,13 @@ async def lifespan(app: FastAPI):
             f"Could not connect to MySQL database on startup: {db_status['error']}. "
             "Backend will still run and retry connections on requests."
         )
+    worker_task = asyncio.create_task(run_expire_holds_worker())
     yield
+    worker_task.cancel()
+    try:
+        await worker_task
+    except asyncio.CancelledError:
+        pass
     logger.info("Shutting down application...")
 
 

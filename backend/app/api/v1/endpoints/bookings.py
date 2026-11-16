@@ -8,7 +8,7 @@ from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_db
+from app.api.deps import get_current_user, get_db, require_role
 from app.core.exceptions import BusinessException
 from app.core.pricing import (
     OrderPricingResult,
@@ -469,3 +469,86 @@ def create_booking(
             },
         },
     )
+
+
+# ==============================================================================
+# 3.7 Dọn dẹp và nhả giữ chỗ hết hạn (SCB-146)
+# ==============================================================================
+def expire_holds_job(db: Session, now: Optional[datetime] = None) -> dict:
+    """Hàm quét và dọn dẹp các đơn PENDING_DEPOSIT hết hạn giữ chỗ (dùng cho Cron và Endpoint Admin)."""
+    if now is None:
+        now = now_vn().replace(tzinfo=None)
+
+    # 1. Tìm các đơn PENDING_DEPOSIT có hold_expires_at <= now
+    expired_bookings = (
+        db.query(Booking)
+        .filter(
+            Booking.status == "PENDING_DEPOSIT",
+            Booking.hold_expires_at <= now,
+        )
+        .all()
+    )
+    if not expired_bookings:
+        return {
+            "total_expired_bookings_cancelled": 0,
+            "total_slots_released": 0,
+            "executed_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+
+    expired_booking_ids = [b.id for b in expired_bookings]
+
+    # 2. Cập nhật bookings sang CANCELLED
+    updated_bookings_count = (
+        db.query(Booking)
+        .filter(
+            Booking.id.in_(expired_booking_ids),
+            Booking.status == "PENDING_DEPOSIT",
+        )
+        .update(
+            {
+                Booking.status: "CANCELLED",
+                Booking.cancelled_at: now,
+                Booking.cancel_reason: "Hết hạn giữ chỗ 10 phút",
+            },
+            synchronize_session=False,
+        )
+    )
+
+    # 3. Cập nhật booking_slots sang released_at = now
+    updated_slots_count = (
+        db.query(BookingSlot)
+        .filter(
+            BookingSlot.booking_id.in_(expired_booking_ids),
+            BookingSlot.released_at.is_(None),
+        )
+        .update(
+            {BookingSlot.released_at: now},
+            synchronize_session=False,
+        )
+    )
+
+    db.commit()
+
+    return {
+        "total_expired_bookings_cancelled": updated_bookings_count,
+        "total_slots_released": updated_slots_count,
+        "executed_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+
+
+@router.post(
+    "/admin/bookings/expire-holds",
+    summary="Dọn dẹp và nhả giữ chỗ hết hạn (Admin / Test)",
+    tags=["Bookings"],
+)
+def trigger_expire_holds(
+    current_user: User = Depends(require_role("admin")),
+    db: Session = Depends(get_db),
+):
+    """Endpoint cho phép Admin hoặc kịch bản kiểm thử CI/CD kích hoạt dọn dẹp giữ chỗ hết hạn ngay lập tức."""
+    result = expire_holds_job(db)
+    return {
+        "success": True,
+        "message": "Quét và dọn dẹp các lịch giữ chỗ hết hạn thành công.",
+        "data": result,
+    }
