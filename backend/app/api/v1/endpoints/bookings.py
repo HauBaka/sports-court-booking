@@ -1,28 +1,33 @@
 # pyright: reportAttributeAccessIssue=false, reportArgumentType=false
 import logging
-from datetime import datetime, timezone
-from decimal import Decimal
 from typing import cast
 
+# pyright: reportAttributeAccessIssue=false
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
+from typing import Optional, cast
 from fastapi import APIRouter, BackgroundTasks, Depends, status
+from fastapi.responses import JSONResponse
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db, require_role
 from app.core.exceptions import BusinessException
 from app.core.pricing import (
+    OrderPricingResult,
     PricingRuleIn,
     RuleType,
     ServicePricingInput,
     SlotPricingInput,
     calculate_booking_price,
 )
-from app.models.booking import Booking
+from app.models.booking import Booking, BookingService, BookingSlot
 from app.models.facility import Court, CourtSlot, Service, TimeSlot
 from app.models.pricing import Holiday, PricingRule
 from app.models.user import User
 from app.models.wallet import Wallet
-from app.schemas.booking import BookingCalculatePriceIn
+from app.schemas.booking import BookingCalculatePriceIn, BookingCreateIn
 from app.services.booking_email import build_deposit_confirmation_email, send_email_safely
 from app.services.wallet_service import get_system_wallet, get_wallet_by_user, lock_wallets, transfer
 
@@ -34,6 +39,7 @@ def _utcnow() -> datetime:
 
 router = APIRouter()
 
+VN_TZ = timezone(timedelta(hours=7))
 
 
 # ==============================================================================
@@ -54,36 +60,30 @@ def calculate_booking_price_preview(
             message=f"Sân con với ID {body.court_id} không tồn tại hoặc đã tạm dừng hoạt động.",
         )
 
-    # 2. Kiểm tra khung giờ: Khung không thuộc sân trả 422 (Yêu cầu SCB-142)
-    court_slots = (
-        db.query(CourtSlot)
-        .join(TimeSlot, TimeSlot.id == CourtSlot.time_slot_id)
-        .filter(
-            CourtSlot.court_id == body.court_id,
-            CourtSlot.time_slot_id.in_(body.time_slot_ids),
-            CourtSlot.is_active == True,
-        )
-        .all()
-    )
-    found_ts_ids = {cs.time_slot_id for cs in court_slots}
-    invalid_ts_ids = [ts_id for ts_id in body.time_slot_ids if ts_id not in found_ts_ids]
-    if invalid_ts_ids:
-        raise BusinessException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            code="VALIDATION_ERROR",
-            message=f"Khung giờ với ID {invalid_ts_ids} không thuộc sân hoặc đang không hoạt động.",
-            details=[
-                {
-                    "field": "time_slot_ids",
-                    "issue": f"Khung giờ với ID {invalid_ts_ids} không thuộc sân {body.court_id}.",
-                }
-            ],
-        )
+def now_vn() -> datetime:
+    """Trả về thời gian hiện tại theo múi giờ Việt Nam (UTC+7)."""
+    return datetime.now(VN_TZ)
 
-    # 3. Kiểm tra dịch vụ đi kèm (nếu có): dịch vụ phải thuộc cùng cơ sở và đang hoạt động
+
+def _format_utc_timestamp(value: datetime) -> str:
+    """Đổi DATETIME giờ Việt Nam trong booking sang UTC trước khi gắn hậu tố Z."""
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=VN_TZ)
+    return value.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _prepare_pricing(
+    db: Session,
+    court: Court,
+    play_date: date,
+    court_slots: list[CourtSlot],
+    services_in: Optional[list] = None,
+) -> tuple[OrderPricingResult, list[ServicePricingInput]]:
+    """Helper tính giá dùng chung giữa xem trước (3.2) và tạo đơn (3.3)."""
+    # 1. Dịch vụ đi kèm
     service_inputs: list[ServicePricingInput] = []
-    if body.services:
-        svc_ids = [s.service_id for s in body.services]
+    if services_in:
+        svc_ids = [s.service_id for s in services_in]
         services_db = (
             db.query(Service)
             .filter(
@@ -108,7 +108,7 @@ def calculate_booking_price_preview(
                 ],
             )
 
-        for s_in in body.services:
+        for s_in in services_in:
             svc_entity = services_map[s_in.service_id]
             service_inputs.append(
                 ServicePricingInput(
@@ -119,7 +119,7 @@ def calculate_booking_price_preview(
                 )
             )
 
-    # 4. Lấy quy tắc định giá (Pricing Rules) áp dụng cho cơ sở hoặc toàn hệ thống
+    # 2. Quy tắc định giá
     rules_db = (
         db.query(PricingRule)
         .filter(
@@ -144,18 +144,18 @@ def calculate_booking_price_preview(
         for r in rules_db
     ]
 
-    # 5. Lấy danh sách ngày lễ (Holidays) khớp với play_date
+    # 3. Danh sách ngày lễ
     holidays_db = db.query(Holiday).all()
     holiday_ids: set[int] = set()
     for h in holidays_db:
-        if h.holiday_date == body.play_date:
+        if h.holiday_date == play_date:
             holiday_ids.add(h.id)
         elif cast(bool, h.recurring_yearly) and (
-            h.holiday_date.month == body.play_date.month and h.holiday_date.day == body.play_date.day
+            h.holiday_date.month == play_date.month and h.holiday_date.day == play_date.day
         ):
             holiday_ids.add(h.id)
 
-    # 6. Chuẩn bị SlotPricingInput
+    # 4. SlotPricingInput
     slot_inputs: list[SlotPricingInput] = [
         SlotPricingInput(
             time_slot_id=cs.time_slot_id,
@@ -166,16 +166,72 @@ def calculate_booking_price_preview(
         for cs in court_slots
     ]
 
-    # 7. Gọi hàm tính tiền đơn dùng chung (SCB-140)
+    # 5. Gọi hàm tính tiền
     result = calculate_booking_price(
-        play_date=body.play_date,
+        play_date=play_date,
         slots=slot_inputs,
         rules=pricing_rules,
         holiday_ids=holiday_ids,
         services=service_inputs,
     )
+    return result, service_inputs
 
-    # 8. Lấy số dư ví người dùng để kiểm tra điều kiện đặt cọc
+
+# ==============================================================================
+# 3.2 Xem trước tính tiền đặt sân và tiền cọc (Frontend Zero-Math)
+# ==============================================================================
+@router.post("/bookings/calculate-price", summary="Xem trước tính tiền đặt sân và tiền cọc")
+def calculate_booking_price_preview(
+    body: BookingCalculatePriceIn,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # 1. Kiểm tra sân con tồn tại và đang hoạt động
+    court = db.query(Court).filter(Court.id == body.court_id).first()
+    if not court or not cast(bool, court.is_active) or not (court.facility and cast(bool, court.facility.is_active)):
+        raise BusinessException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="COURT_NOT_FOUND",
+            message=f"Sân con với ID {body.court_id} không tồn tại hoặc đã tạm dừng hoạt động.",
+        )
+
+    # 2. Kiểm tra khung giờ: Khung không thuộc sân trả 422
+    court_slots = (
+        db.query(CourtSlot)
+        .join(TimeSlot, TimeSlot.id == CourtSlot.time_slot_id)
+        .filter(
+            CourtSlot.court_id == body.court_id,
+            CourtSlot.time_slot_id.in_(body.time_slot_ids),
+            CourtSlot.is_active == True,
+        )
+        .order_by(TimeSlot.start_time)
+        .all()
+    )
+    found_ts_ids = {cs.time_slot_id for cs in court_slots}
+    invalid_ts_ids = [ts_id for ts_id in body.time_slot_ids if ts_id not in found_ts_ids]
+    if invalid_ts_ids:
+        raise BusinessException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            code="VALIDATION_ERROR",
+            message=f"Khung giờ với ID {invalid_ts_ids} không thuộc sân hoặc đang không hoạt động.",
+            details=[
+                {
+                    "field": "time_slot_ids",
+                    "issue": f"Khung giờ với ID {invalid_ts_ids} không thuộc sân {body.court_id}.",
+                }
+            ],
+        )
+
+    # 3. Tính tiền
+    result, _ = _prepare_pricing(
+        db=db,
+        court=court,
+        play_date=body.play_date,
+        court_slots=court_slots,
+        services_in=body.services,
+    )
+
+    # 4. Lấy số dư ví người dùng để kiểm tra điều kiện đặt cọc
     wallet = db.query(Wallet).filter(Wallet.user_id == current_user.id).first()
     current_balance = int(cast(int, wallet.balance)) if wallet else 0
     is_balance_sufficient = current_balance >= result.deposit_amount_required
@@ -303,4 +359,320 @@ def pay_deposit(
             "wallet_balance_remaining": tx.balance_after,
             "transaction_type": "DEPOSIT",
         },
+# 3.3 Tạo lịch đặt sân và giữ chỗ tạm (SCB-145)
+# ==============================================================================
+@router.post("/bookings", summary="Tạo lịch đặt sân và giữ chỗ tạm")
+def create_booking(
+    body: BookingCreateIn,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Quy trình 6 bước tạo đơn giữ chỗ tạm thời trong Database Transaction (ACID):
+    - Bước 1: Dọn dẹp lười (Lazy release) các đơn PENDING_DEPOSIT đã quá hạn trên các khung đang đặt.
+    - Bước 2: Khóa dòng và kiểm tra xung đột (SELECT ... FOR UPDATE). Trả 409 SLOT_ALREADY_BOOKED nếu trùng.
+    - Bước 3: Kiểm tra điều kiện mở cửa và thời gian bắt đầu chơi (start_at <= :now -> 400 INVALID_BOOKING_TIME).
+    - Bước 4: Tính tiền bằng SCB-140, thiết lập hold_expires_at = MIN(:now + 10 phút, start_at).
+    - Bước 5: Tạo đơn bookings (PENDING_DEPOSIT), booking_slots và booking_services.
+    - Bước 6: Commit Transaction. Chưa trừ tiền ví, chưa có giao dịch ví.
+    """
+    # Kiểm tra sân con tồn tại và đang hoạt động
+    court = db.query(Court).filter(Court.id == body.court_id).first()
+    if not court or not cast(bool, court.is_active) or not (court.facility and cast(bool, court.facility.is_active)):
+        raise BusinessException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="COURT_NOT_FOUND",
+            message=f"Sân con với ID {body.court_id} không tồn tại hoặc đã tạm dừng hoạt động.",
+        )
+
+    # Lấy các khung giờ thuộc sân con
+    court_slots = (
+        db.query(CourtSlot)
+        .join(TimeSlot, TimeSlot.id == CourtSlot.time_slot_id)
+        .filter(
+            CourtSlot.court_id == body.court_id,
+            CourtSlot.time_slot_id.in_(body.time_slot_ids),
+            CourtSlot.is_active == True,
+        )
+        .order_by(TimeSlot.start_time)
+        .all()
+    )
+    found_ts_ids = {cs.time_slot_id for cs in court_slots}
+    invalid_ts_ids = [ts_id for ts_id in body.time_slot_ids if ts_id not in found_ts_ids]
+    if invalid_ts_ids:
+        raise BusinessException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            code="VALIDATION_ERROR",
+            message=f"Khung giờ với ID {invalid_ts_ids} không thuộc sân hoặc đang không hoạt động.",
+            details=[
+                {
+                    "field": "time_slot_ids",
+                    "issue": f"Khung giờ với ID {invalid_ts_ids} không thuộc sân {body.court_id}.",
+                }
+            ],
+        )
+
+    # Kiểm tra cả giờ sân và giờ cơ sở, kể cả khi court_slots còn active sau khi đổi lịch.
+    open_time = max(court.open_time, court.facility.open_time)
+    close_time = min(court.close_time, court.facility.close_time)
+    if any(
+        not (open_time <= cs.time_slot.start_time < cs.time_slot.end_time <= close_time)
+        for cs in court_slots
+    ):
+        raise BusinessException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="INVALID_BOOKING_TIME",
+            message="Toàn bộ khung giờ đặt phải nằm trong giờ mở cửa của sân và cơ sở.",
+        )
+
+    # Bước 3: Kiểm tra thời gian bắt đầu chơi (DAT-04)
+    min_start_time = min(cs.time_slot.start_time for cs in court_slots)
+    start_at = datetime.combine(body.play_date, min_start_time)
+    current_vn = now_vn()
+    current_time = current_vn.replace(tzinfo=None)
+
+    if start_at <= current_time:
+        raise BusinessException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="INVALID_BOOKING_TIME",
+            message="Thời gian bắt đầu chơi phải ở tương lai, không thể đặt khung giờ đã qua hoặc đang diễn ra.",
+        )
+
+    # BẮT ĐẦU TRANSACTION KIỂM SOÁT ĐỒNG THỜI VÀ LAZY RELEASE
+    # Bước 1: Dọn dẹp lười (Lazy release) các đơn PENDING_DEPOSIT đã quá hạn trên chính các khung giờ này
+    expired_slots = (
+        db.query(BookingSlot)
+        .join(Booking, Booking.id == BookingSlot.booking_id)
+        .filter(
+            BookingSlot.court_id == body.court_id,
+            BookingSlot.play_date == body.play_date,
+            BookingSlot.time_slot_id.in_(body.time_slot_ids),
+            Booking.status == "PENDING_DEPOSIT",
+            Booking.hold_expires_at <= current_time,
+            BookingSlot.released_at.is_(None),
+        )
+        .all()
+    )
+    if expired_slots:
+        exp_booking_ids = list({s.booking_id for s in expired_slots})
+        db.query(Booking).filter(
+            Booking.id.in_(exp_booking_ids),
+            Booking.status == "PENDING_DEPOSIT",
+            Booking.hold_expires_at <= current_time,
+        ).update(
+            {
+                Booking.status: "CANCELLED",
+                Booking.cancelled_at: current_time,
+                Booking.cancel_reason: "Hết hạn giữ chỗ 10 phút",
+            },
+            synchronize_session=False,
+        )
+        db.query(BookingSlot).filter(
+            BookingSlot.booking_id.in_(exp_booking_ids),
+            BookingSlot.released_at.is_(None),
+        ).update(
+            {BookingSlot.released_at: current_time},
+            synchronize_session=False,
+        )
+        db.flush()
+
+    # Bước 2: Khóa dòng và kiểm tra xung đột (SELECT ... FOR UPDATE)
+    # Khóa các dòng court_slots theo thứ tự time_slot_id để serialize concurrent requests và chống race condition
+    db.query(CourtSlot).filter(
+        CourtSlot.court_id == body.court_id,
+        CourtSlot.time_slot_id.in_(body.time_slot_ids),
+    ).order_by(CourtSlot.time_slot_id).with_for_update().all()
+
+    # Kiểm tra xem có khung giờ nào đang bị giữ hoặc đã đặt cọc hay không
+    conflicting_slots = (
+        db.query(BookingSlot)
+        .filter(
+            BookingSlot.court_id == body.court_id,
+            BookingSlot.play_date == body.play_date,
+            BookingSlot.time_slot_id.in_(body.time_slot_ids),
+            BookingSlot.released_at.is_(None),
+        )
+        .with_for_update()
+        .all()
+    )
+    if conflicting_slots:
+        raise BusinessException(
+            status_code=status.HTTP_409_CONFLICT,
+            code="SLOT_ALREADY_BOOKED",
+            message="Một hoặc nhiều khung giờ đã có người đặt cọc hoặc đang trong thời gian giữ chỗ hợp lệ.",
+        )
+
+    # Bước 4: Tính tiền & thiết lập thời hạn giữ chỗ
+    result, service_inputs = _prepare_pricing(
+        db=db,
+        court=court,
+        play_date=body.play_date,
+        court_slots=court_slots,
+        services_in=body.services,
+    )
+
+    # hold_expires_at không vượt quá start_at (DAT-03)
+    hold_expires_at = min(current_time + timedelta(minutes=10), start_at)
+
+    # Bước 5: Tạo bản ghi bookings và booking_slots
+    try:
+        booking = Booking(
+            user_id=current_user.id,
+            court_id=body.court_id,
+            play_date=body.play_date,
+            start_at=start_at,
+            status="PENDING_DEPOSIT",
+            subtotal=result.subtotal,
+            service_total=result.service_total,
+            total_amount=result.grand_total_amount,
+            deposit_amount=result.deposit_amount_required,
+            deposit_percent=result.deposit_percentage,
+            hold_expires_at=hold_expires_at,
+            cancelled_at=None,
+            cancel_reason=None,
+        )
+        db.add(booking)
+        db.flush()
+
+        slots_map = {sb.time_slot_id: sb for sb in result.slots_breakdown}
+        for ts_id in body.time_slot_ids:
+            sb = slots_map[ts_id]
+            db.add(
+                BookingSlot(
+                    booking_id=booking.id,
+                    court_id=body.court_id,
+                    play_date=body.play_date,
+                    time_slot_id=ts_id,
+                    base_price=sb.base_price,
+                    final_price=sb.final_price,
+                    multiplier=Decimal(str(sb.multiplier)),
+                    released_at=None,
+                )
+            )
+
+        if service_inputs:
+            for s_in in service_inputs:
+                db.add(
+                    BookingService(
+                        booking_id=booking.id,
+                        service_id=s_in.service_id,
+                        quantity=s_in.quantity,
+                        unit_price=s_in.unit_price,
+                        total_price=s_in.quantity * s_in.unit_price,
+                    )
+                )
+
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise BusinessException(
+            status_code=status.HTTP_409_CONFLICT,
+            code="SLOT_ALREADY_BOOKED",
+            message="Một hoặc nhiều khung giờ đã có người đặt cọc hoặc đang trong thời gian giữ chỗ hợp lệ.",
+        )
+
+    # Bước 6: Trả về kết quả 201 Created
+    start_at_str = _format_utc_timestamp(start_at)
+    hold_expires_at_str = _format_utc_timestamp(hold_expires_at)
+
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content={
+            "success": True,
+            "message": "Giữ chỗ tạm thời thành công. Vui lòng thanh toán cọc trong vòng 10 phút.",
+            "data": {
+                "booking_id": booking.id,
+                "court_id": court.id,
+                "court_name": court.name,
+                "play_date": body.play_date.strftime("%Y-%m-%d"),
+                "start_at": start_at_str,
+                "status": "PENDING_DEPOSIT",
+                "total_amount": booking.total_amount,
+                "deposit_amount_required": booking.deposit_amount,
+                "hold_expires_at": hold_expires_at_str,
+            },
+        },
+    )
+
+
+# ==============================================================================
+# 3.7 Dọn dẹp và nhả giữ chỗ hết hạn (SCB-146)
+# ==============================================================================
+def expire_holds_job(db: Session, now: Optional[datetime] = None) -> dict:
+    """Hàm quét và dọn dẹp các đơn PENDING_DEPOSIT hết hạn giữ chỗ (dùng cho Cron và Endpoint Admin)."""
+    if now is None:
+        now = now_vn().replace(tzinfo=None)
+
+    # 1. Tìm các đơn PENDING_DEPOSIT có hold_expires_at <= now
+    expired_bookings = (
+        db.query(Booking)
+        .filter(
+            Booking.status == "PENDING_DEPOSIT",
+            Booking.hold_expires_at <= now,
+        )
+        .all()
+    )
+    if not expired_bookings:
+        return {
+            "total_expired_bookings_cancelled": 0,
+            "total_slots_released": 0,
+            "executed_at": _format_utc_timestamp(now),
+        }
+
+    expired_booking_ids = [b.id for b in expired_bookings]
+
+    # 2. Cập nhật bookings sang CANCELLED
+    updated_bookings_count = (
+        db.query(Booking)
+        .filter(
+            Booking.id.in_(expired_booking_ids),
+            Booking.status == "PENDING_DEPOSIT",
+        )
+        .update(
+            {
+                Booking.status: "CANCELLED",
+                Booking.cancelled_at: now,
+                Booking.cancel_reason: "Hết hạn giữ chỗ 10 phút",
+            },
+            synchronize_session=False,
+        )
+    )
+
+    # 3. Cập nhật booking_slots sang released_at = now
+    updated_slots_count = (
+        db.query(BookingSlot)
+        .filter(
+            BookingSlot.booking_id.in_(expired_booking_ids),
+            BookingSlot.released_at.is_(None),
+        )
+        .update(
+            {BookingSlot.released_at: now},
+            synchronize_session=False,
+        )
+    )
+
+    db.commit()
+
+    return {
+        "total_expired_bookings_cancelled": updated_bookings_count,
+        "total_slots_released": updated_slots_count,
+        "executed_at": _format_utc_timestamp(now),
+    }
+
+
+@router.post(
+    "/admin/bookings/expire-holds",
+    summary="Dọn dẹp và nhả giữ chỗ hết hạn (Admin / Test)",
+    tags=["Bookings"],
+)
+def trigger_expire_holds(
+    current_user: User = Depends(require_role("admin")),
+    db: Session = Depends(get_db),
+):
+    """Endpoint cho phép Admin hoặc kịch bản kiểm thử CI/CD kích hoạt dọn dẹp giữ chỗ hết hạn ngay lập tức."""
+    result = expire_holds_job(db)
+    return {
+        "success": True,
+        "message": "Quét và dọn dẹp các lịch giữ chỗ hết hạn thành công.",
+        "data": result,
     }

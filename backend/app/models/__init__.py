@@ -1,7 +1,7 @@
 from app.models.user import Role, User, UserRole
 from app.models.wallet import Wallet, WalletTransaction
 from app.models.facility import Facility, Court, Sport, TimeSlot, CourtSlot, Service
-from app.models.booking import Booking, BookingSlot
+from app.models.booking import Booking, BookingSlot, BookingService
 from app.models.pricing import Holiday, PricingRule
 from app.models.email_otp import EmailOtp
 
@@ -19,6 +19,7 @@ __all__ = [
     "Service",
     "Booking",
     "BookingSlot",
+    "BookingService",
     "Holiday",
     "PricingRule",
     "EmailOtp",
