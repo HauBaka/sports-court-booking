@@ -33,6 +33,7 @@ class Booking(Base):
 
     court = relationship("Court", back_populates="bookings")
     slots = relationship("BookingSlot", back_populates="booking", cascade="all, delete-orphan")
+    services = relationship("BookingService", back_populates="booking", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Booking id={self.id} court_id={self.court_id} status={self.status} play_date={self.play_date}>"
@@ -57,3 +58,20 @@ class BookingSlot(Base):
 
     def __repr__(self) -> str:
         return f"<BookingSlot id={self.id} booking_id={self.booking_id} time_slot_id={self.time_slot_id}>"
+
+
+class BookingService(Base):
+    __tablename__ = "booking_services"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    booking_id = Column(BigInteger, ForeignKey("bookings.id"), nullable=False)
+    service_id = Column(Integer, ForeignKey("services.id"), nullable=False)
+    quantity = Column(Integer, nullable=False)
+    unit_price = Column(BigInteger, nullable=False)
+    total_price = Column(BigInteger, nullable=False)
+
+    booking = relationship("Booking", back_populates="services")
+    service = relationship("Service")
+
+    def __repr__(self) -> str:
+        return f"<BookingService id={self.id} booking_id={self.booking_id} service_id={self.service_id}>"
