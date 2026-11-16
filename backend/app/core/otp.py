@@ -7,7 +7,6 @@ import hashlib
 import hmac
 import logging
 import secrets
-import datetime
 from datetime import datetime
 from datetime import timedelta
 from typing import Optional

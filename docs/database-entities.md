@@ -124,7 +124,7 @@
 ### Nhóm 3b — Xác thực email
 
 *   **`email_otps`**: `id` (BIGINT PK), `email` (VARCHAR(255)), `purpose` (VARCHAR(20), CHECK IN (`REGISTER`, `RESET_PASSWORD`)), `code_hash` (CHAR(64), HMAC-SHA256, không lưu mã thô), `attempts` (INT DEFAULT 0), `created_at` (DATETIME), `expires_at` (DATETIME, +5 phút), `consumed_at` (DATETIME, nullable — đã dùng hoặc đã bị hủy do sai đủ 5 lần).
-    *Ràng buộc:* `UNIQUE (email, purpose)` (mã mới ghi đè mã cũ). Không có khóa ngoại tới `users` để `RESET_PASSWORD` với email lạ vẫn có dòng và áp cooldown 60 giây như email thật. Migration: `V3__create_email_otps.sql`.
+    *Ràng buộc:* `UNIQUE (email, purpose)` (mã mới ghi đè mã cũ). Không có khóa ngoại tới `users` để `RESET_PASSWORD` với email lạ vẫn có dòng và áp cooldown 60 giây như email thật. Migration: `V3__create_email_otps.sql` (tạo bảng) và `V4__add_unique_constraint_email_otps.sql` (thêm UNIQUE).
 
 ### Nhóm 4 — Phác thảo (CN 4, 5)
 
