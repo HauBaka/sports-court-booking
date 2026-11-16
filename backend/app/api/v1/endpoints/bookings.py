@@ -1,9 +1,10 @@
 # pyright: reportAttributeAccessIssue=false, reportArgumentType=false
+import logging
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import cast
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, BackgroundTasks, Depends, status
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -22,7 +23,10 @@ from app.models.pricing import Holiday, PricingRule
 from app.models.user import User
 from app.models.wallet import Wallet
 from app.schemas.booking import BookingCalculatePriceIn
+from app.services.booking_email import build_deposit_confirmation_email, send_email_safely
 from app.services.wallet_service import get_system_wallet, get_wallet_by_user, lock_wallets, transfer
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -226,6 +230,7 @@ def calculate_booking_price_preview(
 @router.post("/bookings/{id}/deposit", summary="Thanh toán tiền cọc qua ví nội bộ")
 def pay_deposit(
     id: int,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(require_role("customer")),
     db: Session = Depends(get_db),
 ):
@@ -272,6 +277,14 @@ def pay_deposit(
         raise
 
     db.refresh(booking)
+
+    # FR-25: gửi mail sau commit. Soạn nội dung ngay (session còn mở), gửi nền; lỗi nào cũng chỉ ghi log.
+    try:
+        subject, html = build_deposit_confirmation_email(booking, current_user)
+        background_tasks.add_task(send_email_safely, current_user.email, subject, html)
+    except Exception:  # noqa: BLE001
+        logger.exception("Không soạn được email xác nhận cọc cho đơn %s", booking.id)
+
     return {
         "success": True,
         "message": "Thanh toán cọc 30% thành công. Đơn đặt sân đã được xác nhận.",
