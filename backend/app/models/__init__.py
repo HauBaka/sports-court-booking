@@ -1,5 +1,5 @@
 from app.models.user import Role, User, UserRole
-from app.models.wallet import Wallet
+from app.models.wallet import Wallet, WalletTransaction
 from app.models.facility import Facility, Court, Sport, TimeSlot, CourtSlot, Service
 from app.models.booking import Booking, BookingSlot, BookingService
 from app.models.pricing import Holiday, PricingRule
@@ -10,6 +10,7 @@ __all__ = [
     "User",
     "UserRole",
     "Wallet",
+    "WalletTransaction",
     "Facility",
     "Court",
     "Sport",
