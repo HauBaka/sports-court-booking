@@ -6,12 +6,15 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
 from app.core.exceptions import BusinessException
+from app.core.otp import PURPOSE_REGISTER, PURPOSE_RESET_PASSWORD, request_otp, verify_otp
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import Role, User, UserRole
 from app.models.wallet import Wallet
 from app.schemas.auth import (
     LoginRequest,
     LoginResponseData,
+    OtpRequest,
+    PasswordResetRequest,
     UserBrief,
     UserProfileResponseData,
     UserRegisterRequest,
@@ -42,13 +45,14 @@ def register(
     """
     Quy trình đăng ký tài khoản mới:
     1. Kiểm tra tính trùng lặp của Email và Số điện thoại (trả về HTTP 409 nếu trùng).
-    2. Mã hóa mật khẩu bảo mật bằng thuật toán Bcrypt.
-    3. Mở Database Transaction nguyên tử:
+    2. Kiểm tra otp_code (POST /auth/otp, purpose REGISTER) trước khi tạo bất kỳ bản ghi nào.
+    3. Mã hóa mật khẩu bảo mật bằng thuật toán Bcrypt.
+    4. Mở Database Transaction nguyên tử:
        - Tạo bản ghi mới trong bảng 'users'.
        - Gán vai trò chỉ định ('CUSTOMER' hoặc 'OWNER') trong bảng 'user_roles'.
        - Khởi tạo ví nội bộ trong bảng 'wallets' với balance = 0.
-       - Commit toàn bộ thay đổi.
-    4. Nếu có lỗi ở bất kỳ bước nào (ví dụ lỗi tạo ví), toàn bộ transaction sẽ rollback
+       - Đánh dấu OTP đã dùng và commit toàn bộ thay đổi.
+    5. Nếu có lỗi ở bất kỳ bước nào (ví dụ lỗi tạo ví), toàn bộ transaction sẽ rollback
        và không để lại bản ghi rác nào trong CSDL.
     """
     # 1. Kiểm tra email đã tồn tại
@@ -69,7 +73,11 @@ def register(
             message="Số điện thoại đã được đăng ký trong hệ thống.",
         )
 
-    # 3. Lấy hoặc tạo vai trò tương ứng trong hệ thống
+    # 3. Kiểm OTP. Sai thì verify_otp commit riêng số lần thử rồi ném 400, chưa tạo bản ghi nào.
+    #    Đúng thì mã chỉ được đánh dấu đã dùng, commit cùng transaction tạo user bên dưới.
+    verify_otp(db, payload.email, PURPOSE_REGISTER, payload.otp_code)
+
+    # 4. Lấy hoặc tạo vai trò tương ứng trong hệ thống
     target_role_name = payload.role.upper()
     role_record = db.query(Role).filter(Role.name == target_role_name).first()
     if not role_record:
@@ -80,10 +88,10 @@ def register(
         db.add(role_record)
         db.flush()
 
-    # 4. Hash mật khẩu bằng Bcrypt
+    # 5. Hash mật khẩu bằng Bcrypt
     password_hash = hash_password(payload.password)
 
-    # 5. Thực thi Transaction nguyên tử
+    # 6. Thực thi Transaction nguyên tử
     try:
         new_user = User(
             name=payload.name,
@@ -145,6 +153,71 @@ def register(
             wallet_id=wallet.id,
             balance=wallet.balance,
         ),
+    )
+
+
+@router.post(
+    "/otp",
+    status_code=status.HTTP_200_OK,
+    response_model=SingleResponse[None],
+    summary="Gửi mã xác thực OTP qua email",
+    description="Tạo mã OTP 6 số (hạn 5 phút, gửi lại sau 60 giây) và gửi qua email cho REGISTER hoặc RESET_PASSWORD.",
+)
+def send_otp(
+    payload: OtpRequest,
+    db: Session = Depends(get_db),
+):
+    request_otp(db, payload.email, payload.purpose)
+    return SingleResponse(
+        success=True,
+        message="Mã xác thực OTP đã được gửi đến email của bạn.",
+        data=None,
+    )
+
+
+@router.post(
+    "/password/reset",
+    status_code=status.HTTP_200_OK,
+    response_model=SingleResponse[None],
+    summary="Đặt lại mật khẩu",
+    description="Kiểm mã OTP (RESET_PASSWORD) rồi đổi password_hash trong cùng một transaction.",
+)
+def reset_password(
+    payload: PasswordResetRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    1. verify_otp: sai thì commit riêng số lần thử rồi trả 400.
+    2. Đúng thì đổi password_hash và đánh dấu OTP đã dùng trong cùng một commit.
+    Email không có tài khoản trả AUTH_OTP_INVALID như mã sai, để không lộ email nào đã đăng ký.
+    """
+    verify_otp(db, payload.email, PURPOSE_RESET_PASSWORD, payload.otp_code)
+
+    user = db.query(User).filter(User.email == payload.email).first()
+    if user is None:
+        db.rollback()
+        raise BusinessException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="AUTH_OTP_INVALID",
+            message="Mã OTP không chính xác hoặc đã bị hủy.",
+        )
+
+    try:
+        user.password_hash = hash_password(payload.new_password)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        logger.error(f"Error during password reset: {exc}", exc_info=True)
+        raise BusinessException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code="INTERNAL_SERVER_ERROR",
+            message="Đặt lại mật khẩu thất bại do lỗi hệ thống.",
+        ) from exc
+
+    return SingleResponse(
+        success=True,
+        message="Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại với mật khẩu mới.",
+        data=None,
     )
 
 

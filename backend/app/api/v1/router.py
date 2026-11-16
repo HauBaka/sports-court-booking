@@ -3,13 +3,13 @@ from app.api.v1.endpoints import (
     admin,
     auth,
     bookings,
-    wallets,
     courts,
     facilities,
     health,
     holidays,
     pricing_rules,
     services,
+    wallets,
 )
 
 api_router = APIRouter()
