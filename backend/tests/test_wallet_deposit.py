@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
+from app.api.v1.endpoints import bookings as bookings_ep
 from app.core.security import hash_password
 from app.models.booking import Booking
 from app.models.user import Role, User, UserRole
@@ -54,7 +55,7 @@ def wallets(client):
 
 def make_booking(user_id=CUSTOMER_ID, status="PENDING_DEPOSIT", deposit=39_000, hold_minutes=10):
     db = TestingSessionLocal()
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = bookings_ep.now_vn().replace(tzinfo=None)  # bookings lưu giờ VN, khớp 3.3/3.7
     b = Booking(
         user_id=user_id, court_id=1, play_date=date.today() + timedelta(days=3),
         start_at=now + timedelta(days=3), status=status, subtotal=130_000, total_amount=130_000,
@@ -251,10 +252,8 @@ class TestRaceRegression:
 
     def test_het_han_trong_luc_cho_khoa_thi_tu_choi(self, client, monkeypatch):
         from datetime import timedelta
-        from app.api.v1.endpoints import bookings as bookings_ep
-
         real_lock = bookings_ep.lock_wallets
-        real_now = bookings_ep._utcnow
+        real_now = bookings_ep.now_vn
         state = {"waited": False}
 
         def slow_lock(db, ids):
@@ -264,7 +263,7 @@ class TestRaceRegression:
 
         monkeypatch.setattr(bookings_ep, "lock_wallets", slow_lock)
         monkeypatch.setattr(
-            bookings_ep, "_utcnow", lambda: real_now() + timedelta(minutes=30) if state["waited"] else real_now()
+            bookings_ep, "now_vn", lambda: real_now() + timedelta(minutes=30) if state["waited"] else real_now()
         )
         bid = make_booking(hold_minutes=10)
         r = deposit(client, bid)

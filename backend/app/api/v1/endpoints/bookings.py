@@ -1,8 +1,5 @@
-# pyright: reportAttributeAccessIssue=false, reportArgumentType=false
-import logging
-from typing import cast
-
 # pyright: reportAttributeAccessIssue=false
+import logging
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Optional, cast
@@ -33,32 +30,10 @@ from app.services.wallet_service import get_system_wallet, get_wallet_by_user, l
 
 logger = logging.getLogger(__name__)
 
-
-def _utcnow() -> datetime:
-    return datetime.now(timezone.utc).replace(tzinfo=None)
-
 router = APIRouter()
 
 VN_TZ = timezone(timedelta(hours=7))
 
-
-# ==============================================================================
-# 3.2 Xem trước tính tiền đặt sân và tiền cọc (Frontend Zero-Math)
-# ==============================================================================
-@router.post("/bookings/calculate-price", summary="Xem trước tính tiền đặt sân và tiền cọc")
-def calculate_booking_price_preview(
-    body: BookingCalculatePriceIn,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    # 1. Kiểm tra sân con tồn tại và đang hoạt động
-    court = db.query(Court).filter(Court.id == body.court_id).first()
-    if not court or not cast(bool, court.is_active) or not (court.facility and cast(bool, court.facility.is_active)):
-        raise BusinessException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            code="COURT_NOT_FOUND",
-            message=f"Sân con với ID {body.court_id} không tồn tại hoặc đã tạm dừng hoạt động.",
-        )
 
 def now_vn() -> datetime:
     """Trả về thời gian hiện tại theo múi giờ Việt Nam (UTC+7)."""
@@ -310,7 +285,7 @@ def pay_deposit(
 
         # Lấy giờ SAU khi có khóa: chờ khóa có thể kéo dài qua hold_expires_at,
         # dùng giờ lấy trước đó sẽ cho cọc nhầm đơn đã hết hạn.
-        now = _utcnow()
+        now = now_vn().replace(tzinfo=None)  # bookings lưu giờ VN (UTC+7), cùng quy ước với 3.3/3.7
 
         # Bước 2: chuyển trạng thái có điều kiện; rowcount = 0 → hết hạn / đã đổi trạng thái / gửi trùng.
         updated = (
@@ -359,6 +334,9 @@ def pay_deposit(
             "wallet_balance_remaining": tx.balance_after,
             "transaction_type": "DEPOSIT",
         },
+    }
+
+# ==============================================================================
 # 3.3 Tạo lịch đặt sân và giữ chỗ tạm (SCB-145)
 # ==============================================================================
 @router.post("/bookings", summary="Tạo lịch đặt sân và giữ chỗ tạm")
