@@ -15,9 +15,18 @@ body:
       "email": "new.user@scb.vn",
       "phone": "0900000003",
       "password": "{{user_password}}",
-      "role": "customer"
+      "role": "customer",
+      "otp_code": "{{otp_code}}"
     }
 scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      // 1.5: xin OTP trước. Local và CI (console, không production) mã luôn là 123456.
+      pm.sendRequest({url: pm.environment.get("base_url") + "/auth/otp", method: "POST",
+        header: {"Content-Type": "application/json"},
+        body: {mode: "raw", raw: JSON.stringify({email: "new.user@scb.vn", purpose: "REGISTER"})}
+      }, () => {});
   - type: afterResponse
     language: text/javascript
     code: |-

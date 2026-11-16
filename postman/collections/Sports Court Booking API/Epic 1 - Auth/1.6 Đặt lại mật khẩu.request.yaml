@@ -1,0 +1,17 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/auth/password/reset'
+order: 6000
+auth:
+  type: noauth
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "customer@example.com",
+      "otp_code": "{{otp_code}}",
+      "new_password": "NewSecurePassword123@"
+    }

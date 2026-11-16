@@ -26,6 +26,8 @@ Cần cài `pyyaml`. Không sửa tay các file JSON.
 | `local` | Máy cá nhân | `http://localhost:8000/api/v1` |
 | `dev` | Môi trường thử | Điền URL của môi trường thử |
 
+Biến `otp_code`: `local` đặt sẵn `123456` (console, không production nên mã luôn thế). `dev` chạy production nên mã ngẫu nhiên: gọi 1.5, đọc mã trong email rồi điền vào `otp_code` trước khi gọi 1.1 hoặc 1.6.
+
 Các biến `user_email`, `user_password`, `access_token`, `server_token` để trống trong Git. Mỗi người tự điền ở máy mình (dùng Current value, không dùng Initial value). Không commit mật khẩu hay token thật.
 
 `access_token` tự được lưu sau khi chạy request 1.2 Đăng nhập. Các biến `facility_id`, `court_id`, `booking_id`... điền theo dữ liệu đang test.
@@ -44,6 +46,6 @@ Request kịch bản đặt tên `<tên request> - <mã kịch bản>`, ví dụ
 
 - Chạy trên CSDL vừa nạp seed. `user_email`, `user_password` điền tài khoản seed (xem `database/README.md`), `facility_id` = 1, `court_id` = 1 (SAN-08 dùng sân 2).
 - Đăng nhập (1.2) bằng đúng tài khoản trước khi chạy: AUTH-06 dùng Khách A, SAN-04, 05, 07, 08 dùng Chủ sân A, SAN-06 dùng Chủ sân B.
-- AUTH-01 đăng ký `new.user@scb.vn`, chạy lại phải nạp lại seed.
+- AUTH-01 đăng ký `new.user@scb.vn`, chạy lại phải nạp lại seed. AUTH-01 đến 03 tự gọi 1.5 trước (pre-request script) rồi gửi `{{otp_code}}`; mỗi email chỉ xin mã được 1 lần mỗi 60 giây.
 - SAN-07 cần đơn "Đã đặt cọc" của sân 1 khung 22:00 đến 23:00 ngày mai, tạo trước khi chạy.
 - SAN-01 đến 03 kiểm hàm hệ số bằng unit test, không có request Postman.

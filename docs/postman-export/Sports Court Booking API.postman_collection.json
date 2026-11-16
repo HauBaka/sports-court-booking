@@ -30,7 +30,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"customer@example.com\",\n  \"phone\": \"0901234567\",\n  \"password\": \"SecurePassword123@\",\n  \"role\": \"customer\"\n}",
+              "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"customer@example.com\",\n  \"phone\": \"0901234567\",\n  \"password\": \"SecurePassword123@\",\n  \"role\": \"customer\",\n  \"otp_code\": \"{{otp_code}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -40,7 +40,22 @@
             "auth": {
               "type": "noauth"
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 1.5: xin OTP trước. Local và CI (console, không production) mã luôn là 123456.",
+                  "pm.sendRequest({url: pm.environment.get(\"base_url\") + \"/auth/otp\", method: \"POST\",",
+                  "  header: {\"Content-Type\": \"application/json\"},",
+                  "  body: {mode: \"raw\", raw: JSON.stringify({email: \"customer@example.com\", purpose: \"REGISTER\"})}",
+                  "}, () => {});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "1.2 Đăng nhập hệ thống",
@@ -124,6 +139,75 @@
           }
         },
         {
+          "name": "1.5 Gửi mã xác thực OTP qua email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "otp"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"purpose\": \"REGISTER\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "1.6 Đặt lại mật khẩu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/password/reset",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "password",
+                "reset"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"otp_code\": \"{{otp_code}}\",\n  \"new_password\": \"NewSecurePassword123@\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
           "name": "Test",
           "item": [
             {
@@ -148,7 +232,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"new.user@scb.vn\",\n  \"phone\": \"0900000010\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\"\n}",
+                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"new.user@scb.vn\",\n  \"phone\": \"0900000010\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\",\n  \"otp_code\": \"{{otp_code}}\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -160,6 +244,19 @@
                 }
               },
               "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 1.5: xin OTP trước. Local và CI (console, không production) mã luôn là 123456.",
+                      "pm.sendRequest({url: pm.environment.get(\"base_url\") + \"/auth/otp\", method: \"POST\",",
+                      "  header: {\"Content-Type\": \"application/json\"},",
+                      "  body: {mode: \"raw\", raw: JSON.stringify({email: \"new.user@scb.vn\", purpose: \"REGISTER\"})}",
+                      "}, () => {});"
+                    ]
+                  }
+                },
                 {
                   "listen": "test",
                   "script": {
@@ -213,7 +310,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"{{user_email}}\",\n  \"phone\": \"0900000010\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\"\n}",
+                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"{{user_email}}\",\n  \"phone\": \"0900000010\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\",\n  \"otp_code\": \"{{otp_code}}\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -225,6 +322,19 @@
                 }
               },
               "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 1.5: xin OTP trước. Local và CI (console, không production) mã luôn là 123456.",
+                      "pm.sendRequest({url: pm.environment.get(\"base_url\") + \"/auth/otp\", method: \"POST\",",
+                      "  header: {\"Content-Type\": \"application/json\"},",
+                      "  body: {mode: \"raw\", raw: JSON.stringify({email: pm.environment.get(\"user_email\"), purpose: \"REGISTER\"})}",
+                      "}, () => {});"
+                    ]
+                  }
+                },
                 {
                   "listen": "test",
                   "script": {
@@ -259,7 +369,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"new.user@scb.vn\",\n  \"phone\": \"0900000003\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\"\n}",
+                  "raw": "{\n  \"name\": \"Nguyễn Văn A\",\n  \"email\": \"new.user@scb.vn\",\n  \"phone\": \"0900000003\",\n  \"password\": \"{{user_password}}\",\n  \"role\": \"customer\",\n  \"otp_code\": \"{{otp_code}}\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -271,6 +381,19 @@
                 }
               },
               "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 1.5: xin OTP trước. Local và CI (console, không production) mã luôn là 123456.",
+                      "pm.sendRequest({url: pm.environment.get(\"base_url\") + \"/auth/otp\", method: \"POST\",",
+                      "  header: {\"Content-Type\": \"application/json\"},",
+                      "  body: {mode: \"raw\", raw: JSON.stringify({email: \"new.user@scb.vn\", purpose: \"REGISTER\"})}",
+                      "}, () => {});"
+                    ]
+                  }
+                },
                 {
                   "listen": "test",
                   "script": {
