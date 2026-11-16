@@ -28,6 +28,10 @@ from app.services.wallet_service import get_system_wallet, get_wallet_by_user, l
 
 logger = logging.getLogger(__name__)
 
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
 router = APIRouter()
 
 
@@ -242,12 +246,15 @@ def pay_deposit(
             status.HTTP_403_FORBIDDEN, "AUTH_FORBIDDEN", "Bạn không có quyền thanh toán cọc cho đơn này."
         )
 
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
     try:
         # Bước 1: khóa ví khách + ví hệ thống theo wallet.id tăng dần.
         customer_wallet = get_wallet_by_user(db, current_user.id)
         system_wallet = get_system_wallet(db)
         lock_wallets(db, [customer_wallet.id, system_wallet.id])
+
+        # Lấy giờ SAU khi có khóa: chờ khóa có thể kéo dài qua hold_expires_at,
+        # dùng giờ lấy trước đó sẽ cho cọc nhầm đơn đã hết hạn.
+        now = _utcnow()
 
         # Bước 2: chuyển trạng thái có điều kiện; rowcount = 0 → hết hạn / đã đổi trạng thái / gửi trùng.
         updated = (
