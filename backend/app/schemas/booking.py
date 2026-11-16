@@ -55,3 +55,28 @@ class BookingCalculatePriceResponseData(BaseModel):
     pricing_summary: PricingSummarySchema
     deposit_policy: DepositPolicySchema
     user_wallet_status: UserWalletStatusSchema
+
+
+class BookingCreateIn(BaseModel):
+    court_id: int = Field(..., description="ID sân con cần đặt")
+    play_date: date = Field(..., description="Ngày chơi (YYYY-MM-DD)")
+    time_slot_ids: List[int] = Field(..., min_length=1, description="Danh sách ID các khung giờ chọn đặt (tối thiểu 1 khung)")
+    services: Optional[List[BookingServiceItem]] = Field(default=[], description="Danh sách dịch vụ đi kèm")
+
+
+class BookingCreateResponseData(BaseModel):
+    booking_id: int
+    court_id: int
+    court_name: str
+    play_date: str
+    start_at: str
+    status: str
+    total_amount: int
+    deposit_amount_required: int
+    hold_expires_at: str
+
+
+class ExpireHoldsResponseData(BaseModel):
+    total_expired_bookings_cancelled: int
+    total_slots_released: int
+    executed_at: str
