@@ -54,7 +54,7 @@ Ràng buộc kỹ thuật của hệ thống thật: Frontend React, Backend Fas
 
 ## Brand Commitments
 
-- Tên sản phẩm: **Sport Court Booking (SCB)**. Bản mẫu hiện dùng tên "Sân Chung"; đây chưa phải tên đã chốt và lệch với tên SCB, cần thống nhất khi làm tiếp.
+- Tên sản phẩm: **Sport Court Booking (SCB)**. Logo và giao diện ghi "SCB"; tiêu đề trang ghi đủ "SCB: Sport Court Booking".
 - Mọi nội dung bằng tiếng Việt. Câu ngắn, mộc, không giọng AI, không câu sáo.
 
 ## Evidence on Hand

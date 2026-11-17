@@ -37,7 +37,7 @@ export const FACILITIES = [
     photos: [PHOTOS.badmintonHall, PHOTOS.racket, PHOTOS.shuttle], map: { x: 42, y: 38 },
     rating: 4.8, reviews: 126, amenities: ["Bãi đỗ xe", "Phòng thay đồ", "Nước uống", "Đèn chiếu sáng"],
     description: "Nhà thi đấu 4 sân cầu lông thảm PVC, trần cao 9 m, đèn LED không chói. Gần sân bay, có chỗ để ô tô.",
-    courts: [court("tc-1", "Sân 1", "badminton", 120000), court("tc-2", "Sân 2", "badminton", 120000), court("tc-3", "Sân 3", "badminton", 100000), court("tc-4", "Sân 4", "badminton", 100000, { active: false })],
+    courts: [court("tc-1", "Sân 1", "badminton", 120000), court("tc-2", "Sân 2", "badminton", 120000), court("tc-3", "Sân 3", "badminton", 100000, { locks: { "12:00": "Bảo trì" } }), court("tc-4", "Sân 4", "badminton", 100000, { active: false })],
     services: [
       { id: "s1", name: "Thuê vợt", unit: "cây", price: 20000, active: true },
       { id: "s2", name: "Nước suối", unit: "chai", price: 10000, active: true },
@@ -154,6 +154,9 @@ export const BOOKINGS = [
   { id: "SC-24755", userId: "u-cus", facilityId: "phu-tho", courtId: "pt-1", date: d(-4), slots: ["19:00", "20:00"], services: [{ id: "s1", qty: 1 }], status: "COMPLETED", createdAt: d(-8) },
   { id: "SC-24702", userId: "u-cus", facilityId: "thanh-cong", courtId: "tc-3", date: d(-9), slots: ["07:00"], services: [], status: "CANCELLED", createdAt: d(-12), refund: { pct: 80, amount: 24000 } },
   { id: "SC-24688", userId: "u-cus", facilityId: "hoang-long", courtId: "hl-1", date: d(-14), slots: ["18:00", "19:00"], services: [], status: "COMPLETED", createdAt: d(-16), reviewed: true },
+  // chủ sân Hoàng Long cũng đặt sân như khách, ở cơ sở của chủ khác
+  { id: "SC-24826", userId: "u-owner", facilityId: "hoang-long", courtId: "hl-1", date: d(3), slots: ["06:00", "07:00"], services: [], status: "DEPOSITED", createdAt: d(-1) },
+  { id: "SC-24741", userId: "u-owner", facilityId: "hoang-long", courtId: "hl-2", date: d(-6), slots: ["06:00"], services: [], status: "COMPLETED", createdAt: d(-9) },
   // đơn của khách khác tại cơ sở của chủ sân Hoàng Long
   { id: "SC-24820", userId: "u-c3", facilityId: "thanh-cong", courtId: "tc-1", date: d(0), slots: ["17:00"], services: [], status: "PENDING_DEPOSIT", createdAt: d(0) },
   { id: "SC-24812", userId: "u-c2", facilityId: "thanh-cong", courtId: "tc-2", date: d(0), slots: ["18:00"], services: [{ id: "s2", qty: 4 }], status: "DEPOSITED", createdAt: d(-2) },
@@ -165,6 +168,8 @@ export const BOOKINGS = [
 ];
 
 export const TRANSACTIONS = [
+  { id: "T-9020", userId: "u-owner", type: "DEPOSIT", amount: -84000, at: d(-1) + "T09:05", note: "Cọc đơn SC-24826" },
+  { id: "T-8952", userId: "u-owner", type: "DEPOSIT", amount: -42000, at: d(-9) + "T20:40", note: "Cọc đơn SC-24741" },
   { id: "T-9012", userId: "u-cus", type: "DEPOSIT", amount: -94800, at: d(-1) + "T10:12", note: "Cọc đơn SC-24817" },
   { id: "T-9001", userId: "u-cus", type: "DEPOSIT", amount: -54000, at: d(-3) + "T08:40", note: "Cọc đơn SC-24790" },
   { id: "T-8960", userId: "u-cus", type: "REFUND", amount: 24000, at: d(-10) + "T19:02", note: "Hoàn 80% cọc đơn SC-24702" },

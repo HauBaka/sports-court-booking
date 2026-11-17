@@ -68,7 +68,7 @@ function Row({ c, hours, date, occ, mode, selected, onToggle, onOpen, statusFilt
         let cls = "slot", label = "Trống";
         if (!inHours) { cls += " slot--locked"; label = "Đóng"; }
         else if (taken && o.status === "PENDING_DEPOSIT") { cls += " slot--held"; label = "Đang giữ"; }
-        else if (taken && o.status === "LOCKED") { cls += " slot--locked"; label = "Bảo trì"; }
+        else if (taken && o.status === "LOCKED") { cls += " slot--locked"; label = o.name; }
         else if (taken) { cls += " slot--taken"; label = "Đã cọc"; }
         else if (picked) { cls += " slot--pick"; label = "Đã chọn"; }
         if (past && !picked) cls += " slot--past";

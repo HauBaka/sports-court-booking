@@ -1,5 +1,5 @@
 /*
-  Sân Chung, the ground: one fixed layer behind every section (core.js mounts it in full-page mode).
+  SCB, the ground: one fixed layer behind every section (core.js mounts it in full-page mode).
   It is a single long drawing sheet of a sports complex, one region per section, stacked top to bottom. Going to a
   section moves the camera to its region (a pan, a small turn), while the sheet's colour runs to that section's
   ground, so sections never meet at an edge. Everything is hairline, in the ink of the section on show.

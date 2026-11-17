@@ -39,7 +39,8 @@ export default function App() {
                 <Route path="ho-so" element={<ProfilePage />} />
                 <Route path="vi" element={<WalletRoute />} />
               </Route>
-              <Route element={<RequireRole roles={["customer"]} />}>
+              {/* chủ sân cũng là người dùng: đặt sân như khách (đề xuất mục 3); API 3.3 cần mở quyền cho owner */}
+              <Route element={<RequireRole roles={["customer", "owner"]} />}>
                 <Route path="dat-san" element={<BookingConfirmPage />} />
                 <Route path="dat-san/:id" element={<BookingPayPage />} />
                 <Route path="dat-san/:id/xong" element={<BookingResultPage />} />
