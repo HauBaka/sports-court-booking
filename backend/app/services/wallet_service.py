@@ -41,9 +41,22 @@ def get_system_wallet(db: Session) -> Wallet:
 
 
 def lock_wallets(db: Session, wallet_ids: List[int]) -> Dict[int, Wallet]:
-    """SELECT ... FOR UPDATE theo wallet.id tăng dần (chống deadlock). Trả về {id: Wallet} đã khóa."""
+    """
+    SELECT ... FOR UPDATE theo wallet.id tăng dần (chống deadlock). Trả về {id: Wallet} đã khóa.
+
+    populate_existing(): ví có thể đã nằm trong session từ trước khi khóa (vd. get_wallet_by_user).
+    Không có nó, SQLAlchemy giữ số dư cũ trong bộ nhớ dù FOR UPDATE đọc được số dư mới nhất,
+    và request sau sẽ ghi đè mất tiền của request trước (lost update).
+    """
     ids = sorted(set(wallet_ids))
-    rows = db.query(Wallet).filter(Wallet.id.in_(ids)).order_by(Wallet.id.asc()).with_for_update().all()
+    rows = (
+        db.query(Wallet)
+        .filter(Wallet.id.in_(ids))
+        .order_by(Wallet.id.asc())
+        .with_for_update()
+        .populate_existing()
+        .all()
+    )
     locked = {w.id: w for w in rows}
     for wid in ids:
         if wid not in locked:

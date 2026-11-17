@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
+from app.api.v1.endpoints import bookings as bookings_ep
 from app.core.security import hash_password
 from app.models.booking import Booking
 from app.models.user import Role, User, UserRole
@@ -54,7 +55,7 @@ def wallets(client):
 
 def make_booking(user_id=CUSTOMER_ID, status="PENDING_DEPOSIT", deposit=39_000, hold_minutes=10):
     db = TestingSessionLocal()
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = bookings_ep.now_vn().replace(tzinfo=None)  # bookings lưu giờ VN, khớp 3.3/3.7
     b = Booking(
         user_id=user_id, court_id=1, play_date=date.today() + timedelta(days=3),
         start_at=now + timedelta(days=3), status=status, subtotal=130_000, total_amount=130_000,
@@ -227,3 +228,52 @@ class TestWalletService:
             db.flush()
         db.rollback()
         db.close()
+
+
+class TestRaceRegression:
+    """Hồi quy cho hai lỗi review: số dư cũ trong session và giờ lấy trước khi chờ khóa."""
+
+    def test_so_du_cu_trong_session_khong_ghi_de_giao_dich_khac(self, client):
+        db_a = TestingSessionLocal()
+        wallet_id = wallet_service.get_wallet_by_user(db_a, CUSTOMER_ID).id  # A đã nạp ví (500.000) vào session
+
+        # Request khác (session B) cộng 10.000 và commit trong lúc A chưa khóa
+        db_b = TestingSessionLocal()
+        wallet_service.transfer(db_b, type="TOPUP", amount=10_000, to_wallet_id=wallet_id, created_by=ADMIN_ID)
+        db_b.commit()
+        db_b.close()
+
+        # A nạp thêm 20.000: phải dựa trên số dư mới nhất (510.000), không phải 500.000 cũ
+        wallet_service.transfer(db_a, type="TOPUP", amount=20_000, to_wallet_id=wallet_id, created_by=ADMIN_ID)
+        db_a.commit()
+        db_a.close()
+        assert balance(CUSTOMER_ID) == 530_000
+        assert tx_count("TOPUP") == 2
+
+    def test_het_han_trong_luc_cho_khoa_thi_tu_choi(self, client, monkeypatch):
+        from datetime import timedelta
+        real_lock = bookings_ep.lock_wallets
+        real_now = bookings_ep.now_vn
+        state = {"waited": False}
+
+        def slow_lock(db, ids):
+            result = real_lock(db, ids)
+            state["waited"] = True  # giả lập đã chờ khóa quá hold_expires_at
+            return result
+
+        monkeypatch.setattr(bookings_ep, "lock_wallets", slow_lock)
+        monkeypatch.setattr(
+            bookings_ep, "now_vn", lambda: real_now() + timedelta(minutes=30) if state["waited"] else real_now()
+        )
+        bid = make_booking(hold_minutes=10)
+        r = deposit(client, bid)
+        assert r.status_code == 400
+        assert r.json()["error"]["code"] == "CANNOT_DEPOSIT_EXPIRED_BOOKING"
+        assert booking_status(bid) == "PENDING_DEPOSIT"
+        assert balance(CUSTOMER_ID) == 500_000 and tx_count() == 0
+
+    def test_coc_06_hai_don_tong_vuot_so_du(self, client):
+        b1, b2 = make_booking(deposit=300_000), make_booking(deposit=300_000)
+        codes = sorted([deposit(client, b1).status_code, deposit(client, b2).status_code])
+        assert codes == [200, 402]
+        assert balance(CUSTOMER_ID) == 200_000 and tx_count("DEPOSIT") == 1
