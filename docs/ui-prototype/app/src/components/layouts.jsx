@@ -65,7 +65,7 @@ export function CustomerLayout() {
           <div className="topnav__right">
             {me ? (
               <>
-                {me.role === "customer" && <Link to="/vi" className="wallet-pill"><Icon name="wallet" size={15} />Ví <b><Count value={state.wallets[me.id] ?? 0} /></b></Link>}
+                {me.role !== "admin" && <Link to="/vi" className="wallet-pill"><Icon name="wallet" size={15} />Ví <b><Count value={state.wallets[me.id] ?? 0} /></b></Link>}
                 {me.role !== "customer" && <Link className="btn btn--sm" to={me.role === "owner" ? "/chu-san" : "/admin"}>{me.role === "owner" ? "Trang chủ sân" : "Quản trị"}</Link>}
                 <UserMenu />
               </>
@@ -80,6 +80,12 @@ export function CustomerLayout() {
         </div>
       </header>
       <div className="route" key={loc.pathname}><Outlet /></div>
+      {/* điện thoại: thanh tab ở đáy thay cho menu */}
+      <nav className="tabbar" aria-label="Chính">
+        {[["/tim-san", "search", "Tìm sân"], ["/lich-dat", "calendar", "Lịch đặt"], ["/ghep-doi", "users", "Ghép đội"], ["/vi", "wallet", "Ví"]].map(([to, ic, l]) => (
+          <NavLink key={to} to={to}><Icon name={ic} size={20} />{l}</NavLink>
+        ))}
+      </nav>
     </>
   );
 }
@@ -110,26 +116,33 @@ const SIDE = {
 export function ConsoleLayout({ role }) {
   const { me, state } = useStore();
   const [open, setOpen] = useState(false);
+  // thanh bên thu gọn còn cột biểu tượng, nhớ lựa chọn giữa các lần vào
+  const [mini, setMini] = useState(() => localStorage.getItem("scb-side-mini") === "1");
   const loc = useLocation();
   useEffect(() => { setOpen(false); window.scrollTo(0, 0); }, [loc.pathname]);
+  useEffect(() => { localStorage.setItem("scb-side-mini", mini ? "1" : "0"); }, [mini]);
   const side = SIDE[role];
+  // màn hẹp mở ngăn kéo, màn rộng thu gọn hoặc mở rộng
+  const toggle = () => (matchMedia("(max-width: 1023px)").matches ? setOpen(true) : setMini(!mini));
+  const item = (to, icon, label, end) => <NavLink key={to} to={to} end={end} title={mini ? label : undefined}><Icon name={icon} /><span className="side__txt">{label}</span></NavLink>;
   return (
-    <div className="shell">
+    <div className={"shell" + (mini ? " shell--mini" : "")}>
       <aside className={"side" + (open ? " open" : "")} aria-label={side.title}>
         <Logo to="/tim-san" />
         <div className="side__label">{side.title}</div>
-        {side.items.map((i) => <NavLink key={i.to} to={i.to} end={i.end}><Icon name={i.icon} />{i.label}</NavLink>)}
+        {side.items.map((i) => item(i.to, i.icon, i.label, i.end))}
         <div className="side__label">Khách hàng</div>
-        <NavLink to="/tim-san"><Icon name="search" />Xem trang tìm sân</NavLink>
-        <div className="side__foot small">
-          <div className="muted">Số dư ví</div>
-          <div className="mono" style={{ fontSize: 18, color: "var(--accent)" }}><Count value={state.wallets[me.id] ?? 0} /></div>
+        {item("/tim-san", "search", "Tìm và đặt sân")}
+        {role === "owner" && item("/lich-dat", "calendar", "Lịch tôi đặt")}
+        <div className="side__foot small" title={mini ? "Số dư ví" : undefined}>
+          <div className="muted side__txt">Số dư ví</div>
+          <div className="mono side__bal"><Icon name="wallet" size={16} className="side__ico" /><span className="side__txt"><Count value={state.wallets[me.id] ?? 0} /></span></div>
         </div>
       </aside>
       <div className="main">
         <div className="main__top">
           <div className="row">
-            <button className="icon-btn" style={{ display: "var(--burger, none)" }} onClick={() => setOpen(true)} aria-label="Mở menu"><Icon name="menu" /></button>
+            <button className="icon-btn" onClick={toggle} aria-label={mini ? "Mở rộng thanh bên" : "Thu gọn thanh bên"} aria-expanded={!mini} title={mini ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}><Icon name="panel" /></button>
             <span className="muted small">{side.title} · {me.name}</span>
           </div>
           <UserMenu />

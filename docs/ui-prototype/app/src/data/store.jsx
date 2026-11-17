@@ -4,7 +4,7 @@ import * as M from "./mock";
 import { quote, refundFor, HOLD_MINUTES } from "../lib/pricing";
 import { dateKey } from "../lib/format";
 
-const KEY = "sanchung-prototype-v2";
+const KEY = "sanchung-prototype-v4";   // v4: đơn chủ sân tự đặt, khung giờ khóa; đổi khóa để nạp lại dữ liệu mẫu
 
 function seed() {
   const s = {
@@ -40,8 +40,9 @@ export function occupancy(state, facilityId, date) {
       const slot = `${String(h).padStart(2, "0")}:00`;
       const r = hash(c.id + date + slot);
       const busyHour = h >= 17 && h <= 20 ? 0.45 : h < 8 ? 0.2 : 0.12;
-      if (r < busyHour) map[c.id][slot] = { status: "DEPOSITED", name: NAMES[Math.floor(r * 1000) % NAMES.length] };
-      else if (r > 0.97) map[c.id][slot] = { status: "LOCKED", name: "Bảo trì" };
+      // khung giờ chủ sân khóa (court_slots.is_active = false, lock_reason): áp dụng mọi ngày
+      if (c.locks?.[slot]) map[c.id][slot] = { status: "LOCKED", name: c.locks[slot] };
+      else if (r < busyHour) map[c.id][slot] = { status: "DEPOSITED", name: NAMES[Math.floor(r * 1000) % NAMES.length] };
     }
   }
   for (const b of state.bookings) {

@@ -1,5 +1,5 @@
 /*
-  Sân Chung page motion, shared layer (core.js sets html.sc-ready; without it nothing below hides content).
+  SCB page motion, shared layer (core.js sets html.sc-ready; without it nothing below hides content).
   Contract for the section files (a.*, b.*, c.*, d.*):
     - a section gets .is-in once, the first time it takes the screen; key one-time builds on `html.sc-ready #id.is-in`.
     - .is-active is on the section holding the screen. [data-kin] blocks play in once, on .is-in.

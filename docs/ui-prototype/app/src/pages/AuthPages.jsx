@@ -22,7 +22,6 @@ function AuthShell({ photo, title, line, children }) {
 }
 
 const EMAIL = /^\S+@\S+\.\S+$/;
-const Req = () => <span className="req" aria-hidden="true">*</span>;
 
 export function LoginPage() {
   const { api } = useStore();
@@ -48,13 +47,13 @@ export function LoginPage() {
   const demo = (role) => { api.loginAs(role); nav(next || HOME[role], { replace: true }); };
 
   return (
-    <AuthShell photo={PHOTOS.pickleDoubles} title="Hủy trước 24 giờ, hoàn 80% tiền cọc." line="Quy định hoàn cọc công khai, tính tự động qua ví. Không phải nhắn tin thương lượng với chủ sân.">
+    <AuthShell photo={PHOTOS.pickleDoubles} title="Hủy trước 24 giờ, hoàn 80% tiền cọc." line="Tính tự động qua ví, không phải thương lượng.">
       <h1>Đăng nhập</h1>
       <p className="auth__lead">Chưa có tài khoản? <Link className="link" to="/dang-ky">Tạo tài khoản mới</Link></p>
       <form className="stack" onSubmit={submit} noValidate>
         {err.form && <div className="notice notice--danger"><Icon name="alert" />{err.form}</div>}
-        <div className="field"><label htmlFor="em">Email<Req /></label><input id="em" className="input" type="email" autoComplete="email" placeholder="ten@gmail.com" required value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={!!err.email} />{err.email && <span className="field__err">{err.email}</span>}</div>
-        <div className="field"><label htmlFor="pw">Mật khẩu<Req /></label>
+        <div className="field"><label htmlFor="em">Email</label><input id="em" className="input" type="email" autoComplete="email" placeholder="ten@gmail.com" required value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={!!err.email} />{err.email && <span className="field__err">{err.email}</span>}</div>
+        <div className="field"><label htmlFor="pw">Mật khẩu</label>
           <div className="input-group"><input id="pw" className="input" type={show ? "text" : "password"} autoComplete="current-password" required value={pw} onChange={(e) => setPw(e.target.value)} aria-invalid={!!err.pw} /><button type="button" className="btn btn--ghost btn--sm input-act" onClick={() => setShow(!show)}>{show ? "Ẩn" : "Hiện"}</button></div>
           {err.pw && <span className="field__err">{err.pw}</span>}</div>
         <button className="btn btn--primary btn--lg btn--block">Đăng nhập</button>
@@ -136,20 +135,23 @@ export function RegisterPage() {
   };
 
   return (
-    <AuthShell photo={PHOTOS.futsalNight} title="Một hệ thống chung cho người chơi và chủ sân." line="Người chơi tìm và đặt sân. Chủ sân đăng sân, đặt giá và nhận cọc. Cùng một tài khoản, cùng một ví.">
+    <AuthShell photo={PHOTOS.futsalNight} title="Một hệ thống chung cho người chơi và chủ sân." line="Cùng một tài khoản, cùng một ví.">
       <h1>Tạo tài khoản</h1>
-      <p className="auth__lead">Đã có tài khoản? <Link className="link" to="/dang-nhap">Đăng nhập</Link><span className="form-note" style={{ marginLeft: 12 }}><span className="req">*</span> là ô bắt buộc</span></p>
+      <p className="auth__lead">Đã có tài khoản? <Link className="link" to="/dang-nhap">Đăng nhập</Link></p>
       <form className="reg" onSubmit={submit} noValidate>
         {err.form && <div className="notice notice--danger wide"><Icon name="alert" />{err.form}</div>}
-          <div className="field"><label htmlFor="nm">Họ và tên<Req /></label><input id="nm" className="input" autoComplete="name" placeholder="Nguyễn Văn Minh" required value={form.name} onChange={set("name")} aria-invalid={!!err.name} />{err.name && <span className="field__err">{err.name}</span>}</div>
-          <div className="field"><label htmlFor="ph">Số điện thoại<Req /></label><input id="ph" className="input" inputMode="numeric" autoComplete="tel" placeholder="0901234567" required value={form.phone} onChange={set("phone")} aria-invalid={!!err.phone} />{err.phone && <span className="field__err">{err.phone}</span>}</div>
+        <div className="seg role-seg wide" role="radiogroup" aria-label="Bạn là">
+          {[["customer", "Người chơi"], ["owner", "Chủ sân"]].map(([v, l]) => <button type="button" role="radio" aria-checked={form.role === v} className={form.role === v ? "on" : ""} key={v} onClick={() => setForm({ ...form, role: v })}>{l}</button>)}
+        </div>
+          <div className="field"><label htmlFor="nm">Họ và tên</label><input id="nm" className="input" autoComplete="name" placeholder="Nguyễn Văn Minh" required value={form.name} onChange={set("name")} aria-invalid={!!err.name} />{err.name && <span className="field__err">{err.name}</span>}</div>
+          <div className="field"><label htmlFor="ph">Số điện thoại</label><input id="ph" className="input" inputMode="numeric" autoComplete="tel" placeholder="0901234567" required value={form.phone} onChange={set("phone")} aria-invalid={!!err.phone} />{err.phone && <span className="field__err">{err.phone}</span>}</div>
         <div className="field wide">
-          <div className="row between"><label htmlFor="em2">Email<Req /></label>{isVerified && <span className="verified"><i><Icon name="check" size={12} /></i>Đã xác minh</span>}</div>
+          <div className="row between"><label htmlFor="em2">Email</label>{isVerified && <span className="verified"><i><Icon name="check" size={12} /></i>Đã xác minh</span>}</div>
           <div className="input-group">
-            <input id="em2" className="input" type="email" autoComplete="email" placeholder="ten@gmail.com" required value={form.email} onChange={set("email")} aria-invalid={!!err.email} aria-describedby="em2-h" />
+            <input id="em2" className="input" type="email" autoComplete="email" placeholder="ten@gmail.com" required value={form.email} onChange={set("email")} aria-invalid={!!err.email} />
             {!isVerified && <button type="button" className={"btn btn--sm input-act" + (emailOk ? " btn--primary" : "")} disabled={!emailOk || (codeOpen && left > 0 && tries < 5)} onClick={sendCode}>{codeOpen ? "Đã gửi" : "Gửi mã"}</button>}
           </div>
-          {err.email ? <span className="field__err">{err.email}</span> : !isVerified && !codeOpen && <span className="form-note" id="em2-h">Nhập email đúng định dạng để nhận mã xác minh 6 số.</span>}
+          {err.email ? <span className="field__err">{err.email}</span> : null}
           {codeOpen && (
             <div className="verify">
               <div className="verify__row">
@@ -159,19 +161,15 @@ export function RegisterPage() {
                 <div style={{ textAlign: "right" }}><div className="mono">{left ? text : "Hết hạn"}</div><button type="button" className="link small" onClick={sendCode}>Gửi lại mã</button></div>
               </div>
               {err.otp && <span className="field__err">{err.otp}</span>}
-              <span className="form-note">Mã 6 số đã gửi tới {sentTo}. Bản mẫu không gửi email thật, dùng mã <b className="mono" style={{ color: "var(--accent)" }}>{DEMO_OTP}</b>.</span>
+              <span className="form-note">Đã gửi tới {sentTo}. Mã mẫu: <b className="mono" style={{ color: "var(--accent)" }}>{DEMO_OTP}</b></span>
             </div>
           )}
         </div>
-        <div className="field"><label htmlFor="pw2">Mật khẩu<Req /></label>
+        <div className="field" style={{ gridColumn: "1 / -1" }}><label htmlFor="pw2">Mật khẩu</label>
           <div className="input-group"><input id="pw2" className="input" type={show ? "text" : "password"} autoComplete="new-password" required value={form.password} onChange={set("password")} aria-invalid={!!err.password} /><button type="button" className="btn btn--ghost btn--sm input-act" onClick={() => setShow(!show)}>{show ? "Ẩn" : "Hiện"}</button></div>
           {err.password && <span className="field__err">{err.password}</span>}
           <div className="pw-rules" aria-label="Điều kiện mật khẩu">{RULES.map(([l, t]) => <span key={l} className={t(form.password) ? "ok" : ""}><Icon name={t(form.password) ? "check" : "x"} size={12} />{l}</span>)}</div>
         </div>
-        <div className="field"><span className="label" id="role-l">Bạn là<Req /></span>
-          <div className="role-pick" role="radiogroup" aria-labelledby="role-l">
-            {[["customer", "Người chơi", "Tìm sân, đặt và cọc"], ["owner", "Chủ sân", "Đăng sân, đặt giá, nhận cọc"]].map(([v, l, d]) => <button type="button" role="radio" aria-checked={form.role === v} key={v} onClick={() => setForm({ ...form, role: v })}>{l}<small>{d}</small></button>)}
-          </div></div>
         <button className="btn btn--primary btn--lg btn--block wide">Tạo tài khoản</button>
       </form>
     </AuthShell>

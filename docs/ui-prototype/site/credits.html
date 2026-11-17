@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Sân Chung: photograph credits</title>
-<meta name="description" content="The photographers, licences and source pages of the photographs on the Sân Chung website.">
+<title>SCB: nguồn ảnh</title>
+<meta name="description" content="Tác giả, giấy phép và trang gốc của các ảnh dùng trên trang SCB.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Sân Chung: đặt sân cầu lông, pickleball, bóng đá mini">
+<meta property="og:title" content="SCB: đặt sân cầu lông, pickleball, bóng đá mini">
 <meta property="og:description" content="Lịch trống theo giờ, giá công khai, cọc 30% và hoàn cọc theo mốc giờ.">
 <meta property="og:image" content="share.jpg">
 <meta name="twitter:card" content="summary_large_image">
@@ -167,6 +167,16 @@
 
   .faq-photo { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--r-lg); margin-top: var(--s-6); }
   @media (max-width: 1023px) { .faq-photo { display: none; } }
+  /* trang nguồn ảnh: mỗi ảnh một hàng, ảnh nhỏ bên trái, giấy phép bên phải */
+  .credits { padding-top: calc(var(--section) + 40px); }
+  .credits h1 { font: var(--display-weight) clamp(38px, 3.24vw + 25.4px, 72px)/1.04 var(--font-display); letter-spacing: -0.04em; margin: var(--s-3) 0 var(--s-4); }
+  .credits .t-lead { max-width: 60ch; color: var(--muted); }
+  .credits__rows { list-style: none; margin: var(--s-7) 0 0; padding: 0; max-width: 860px; }
+  .credits__rows li { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: var(--s-4); align-items: center; padding: var(--s-3) 0; border-top: 1px solid var(--line); }
+  .credits__rows img { width: 72px; height: 54px; object-fit: cover; border-radius: 12px; }
+  .credits__rows span { display: grid; gap: 2px; min-width: 0; }
+  .credits__rows small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .credits__lic { font: 12px var(--font-mono); padding: 4px 10px; border-radius: 999px; background: var(--surface-2, #efede6); white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -183,25 +193,25 @@
 <header class="nav nav--centre">
   <div class="wrap nav__bar">
     <a class="skip-link" href="#top">Bỏ qua đến nội dung</a>
-    <a class="nav__logo" href="#top"><span class="mark" data-mark="arc" aria-hidden="true"></span>Sân Chung</a>
+    <a class="nav__logo" href="#top"><span class="mark" data-mark="arc" aria-hidden="true"></span>SCB</a>
     <nav class="nav__links" aria-label="Chính">
       <div class="nav__item">
-        <a class="nav__link" href="#lich">Lịch sân <svg class="chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <a class="nav__link" href="index.html#lich">Lịch sân <svg class="chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
         <div class="nav__menu">
           <div class="wrap grid">
             <div class="menu-col span-3">
               <p class="t-label">Người chơi</p>
               <a href="app/#/tim-san">Tìm sân<span>Lọc theo môn và khu vực</span></a>
-              <a href="#lich">Lịch trống<span>Từng sân con, từng giờ</span></a>
-              <a href="#coc">Hoàn cọc<span>80%, 50% hoặc 0% theo giờ</span></a>
+              <a href="index.html#lich">Lịch trống<span>Từng sân con, từng giờ</span></a>
+              <a href="index.html#coc">Hoàn cọc<span>80%, 50% hoặc 0% theo giờ</span></a>
             </div>
             <div class="menu-col span-3">
               <p class="t-label">Chủ sân</p>
-              <a href="#chu-san">Cơ sở và sân con<span>Địa chỉ, giờ mở cửa, môn</span></a>
-              <a href="#dat">Cách tính giá<span>Hệ số giờ cao điểm, ngày lễ</span></a>
+              <a href="index.html#chu-san">Cơ sở và sân con<span>Địa chỉ, giờ mở cửa, môn</span></a>
+              <a href="index.html#dat">Cách tính giá<span>Hệ số giờ cao điểm, ngày lễ</span></a>
               <a href="app/#/chu-san/lich-dat">Lịch đặt<span>Lưới sân theo ngày</span></a>
             </div>
-            <a class="menu-card span-3 start-10" href="#mon">
+            <a class="menu-card span-3 start-10" href="index.html#mon">
               <div class="panel"><img class="frame__img" src="assets/img/photo-f69770121-500.jpg" alt="Vợt cầu lông và quả cầu trên mặt sân" loading="lazy" data-source="stand-in" data-subject="stand-in"></div>
               <span class="t-card">Ba môn, một lịch</span>
               <span class="t-small muted">Cầu lông, pickleball, bóng đá mini</span>
@@ -209,10 +219,10 @@
           </div>
         </div>
       </div>
-      <div class="nav__item"><a class="nav__link" href="#dat">Bảng giá</a></div>
-      <div class="nav__item"><a class="nav__link" href="#coc">Hoàn cọc</a></div>
-      <div class="nav__item"><a class="nav__link" href="#chu-san">Chủ sân</a></div>
-      <div class="nav__item"><a class="nav__link" href="#hoi-dap">Hỏi đáp</a></div>
+      <div class="nav__item"><a class="nav__link" href="index.html#dat">Bảng giá</a></div>
+      <div class="nav__item"><a class="nav__link" href="index.html#coc">Hoàn cọc</a></div>
+      <div class="nav__item"><a class="nav__link" href="index.html#chu-san">Chủ sân</a></div>
+      <div class="nav__item"><a class="nav__link" href="index.html#hoi-dap">Hỏi đáp</a></div>
     </nav>
     <div class="nav__actions">
       <a class="nav__link" href="app/#/dang-nhap">Đăng nhập</a>
@@ -224,17 +234,18 @@
   </div>
 </header>
 
-<main id="top">
-  <p><a class="link" href="index.html">Sân Chung</a></p>
-  <section class="credits-list" id="credits" aria-labelledby="credits-h">
-    <h1 id="credits-h">Photograph credits</h1>
-    <ul>
-      <li><a href="https://commons.wikimedia.org/wiki/File:Bong_da_mini.jpg">Nguyendinh Deptrai</a>, <a href="http://creativecommons.org/publicdomain/zero/1.0/deed.en">CC0</a></li>
-      <li><a href="https://commons.wikimedia.org/wiki/File:Pickleball_Players.jpg">TheVillagesFL</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a></li>
-      <li><a href="https://commons.wikimedia.org/wiki/File:Rachet%C4%83_de_badminton_%C5%9Fi_flutura%C5%9F.jpg">Vladimir Maftei, http://www.enciclopedie.info/</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a></li>
-      <li><a href="https://commons.wikimedia.org/wiki/File:Indoor_badminton_court.jpg">Alanands3</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a></li>
-      <li><a href="https://commons.wikimedia.org/wiki/File:Mini_football_outdoors_in_Vietnam.jpg">Lưu Nguyễn Thiện Hậu</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a></li>
-      <li><a href="https://commons.wikimedia.org/wiki/File:A_little_birdie_told_me,_let%27s_play_Badminton_-_Flickr_-_katerha.jpg">Kate Ter Haar from Cedarville, MI, USA</a>, <a href="https://creativecommons.org/licenses/by/2.0">CC BY 2.0</a></li>
+<main id="top" class="section credits">
+  <section class="wrap credits-list" id="credits" aria-labelledby="credits-h">
+    <p class="t-label"><a class="link" href="index.html">SCB</a> / Nguồn ảnh</p>
+    <h1 id="credits-h">Nguồn ảnh</h1>
+    <p class="t-lead">Ảnh minh họa từ Wikimedia Commons, dùng theo giấy phép ghi bên cạnh. Bản thật sẽ dùng ảnh sân của chủ sân.</p>
+    <ul class="credits__rows">
+      <li><img src="assets/img/photo-f141382632-500.jpg" alt="" loading="lazy"><span><a href="https://commons.wikimedia.org/wiki/File:Bong_da_mini.jpg">Bong da mini</a><small>Nguyendinh Deptrai</small></span><a class="credits__lic" href="http://creativecommons.org/publicdomain/zero/1.0/deed.en">CC0</a></li>
+      <li><img src="assets/img/photo-f65975778-500.jpg" alt="" loading="lazy"><span><a href="https://commons.wikimedia.org/wiki/File:Pickleball_Players.jpg">Pickleball Players</a><small>TheVillagesFL</small></span><a class="credits__lic" href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a></li>
+      <li><img src="assets/img/photo-f69770121-500.jpg" alt="" loading="lazy"><span><a href="https://commons.wikimedia.org/wiki/File:Rachet%C4%83_de_badminton_%C5%9Fi_flutura%C5%9F.jpg">Rachetă de badminton şi fluturaş</a><small>Vladimir Maftei, http://www.enciclopedie.info/</small></span><a class="credits__lic" href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a></li>
+      <li><img src="assets/img/photo-f47425568-500.jpg" alt="" loading="lazy"><span><a href="https://commons.wikimedia.org/wiki/File:Indoor_badminton_court.jpg">Indoor badminton court</a><small>Alanands3</small></span><a class="credits__lic" href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a></li>
+      <li><img src="assets/img/photo-f77025547-500.jpg" alt="" loading="lazy"><span><a href="https://commons.wikimedia.org/wiki/File:Mini_football_outdoors_in_Vietnam.jpg">Mini football outdoors in Vietnam</a><small>Lưu Nguyễn Thiện Hậu</small></span><a class="credits__lic" href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a></li>
+      <li><img src="assets/img/photo-f92863522-500.jpg" alt="" loading="lazy"><span><a href="https://commons.wikimedia.org/wiki/File:A_little_birdie_told_me,_let%27s_play_Badminton_-_Flickr_-_katerha.jpg">A little birdie told me, let&#x27;s play Badminton - Flickr - katerha</a><small>Kate Ter Haar from Cedarville, MI, USA</small></span><a class="credits__lic" href="https://creativecommons.org/licenses/by/2.0">CC BY 2.0</a></li>
     </ul>
   </section>
 </main>
@@ -246,21 +257,21 @@
         <div><h2 id="close-h">Tìm sân còn trống gần bạn</h2><p class="t-lead">Xem lịch không cần tài khoản. Đăng nhập khi đặt cọc.</p></div>
         <a class="btn btn--primary" href="app/#/tim-san">Tìm sân trống<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
       </div>
-      <p class="close__word" aria-hidden="true">Sân Chung</p>
+      <p class="close__word" aria-hidden="true">SCB</p>
     </div>
     <div class="closing__links">
       <div class="grid">
         <div class="span-4 stack-4">
-          <a class="nav__logo" href="#top"><span class="mark" data-mark="arc" aria-hidden="true"></span>Sân Chung</a>
+          <a class="nav__logo" href="#top"><span class="mark" data-mark="arc" aria-hidden="true"></span>SCB</a>
           <p class="footer__lede">Đặt và quản lý sân cầu lông, pickleball, bóng đá mini.</p>
         </div>
         <div class="span-2 footer__col"><h3>Người chơi</h3><ul><li><a href="app/#/tim-san">Tìm sân</a></li><li><a href="app/#/lich-dat">Lịch đặt của tôi</a></li><li><a href="app/#/vi">Ví</a></li></ul></div>
         <div class="span-2 footer__col"><h3>Chủ sân</h3><ul><li><a href="app/#/chu-san">Cơ sở của tôi</a></li><li><a href="app/#/chu-san/bang-gia">Bảng giá</a></li><li><a href="app/#/chu-san/lich-dat">Lịch đặt</a></li></ul></div>
-        <div class="span-2 footer__col"><h3>Quy định</h3><ul><li><a href="#dat">Cách tính giá</a></li><li><a href="#coc">Hoàn cọc</a></li><li><a href="#hoi-dap">Hỏi đáp</a></li></ul></div>
+        <div class="span-2 footer__col"><h3>Quy định</h3><ul><li><a href="index.html#dat">Cách tính giá</a></li><li><a href="index.html#coc">Hoàn cọc</a></li><li><a href="index.html#hoi-dap">Hỏi đáp</a></li></ul></div>
         <div class="span-2 footer__col"><h3>Tài khoản</h3><ul><li><a href="app/#/dang-nhap">Đăng nhập</a></li><li><a href="app/#/dang-ky">Đăng ký</a></li></ul></div>
       </div>
       <div class="footer__legal">
-        <span>&copy; 2026 Sân Chung · Nhóm 6, NMCNPM</span>
+        <span>&copy; 2026 SCB · Nhóm 6, NMCNPM</span>
         <div class="socials"></div>
         <a class="credits" href="credits.html">Ảnh từ Wikimedia Commons</a>
       </div>

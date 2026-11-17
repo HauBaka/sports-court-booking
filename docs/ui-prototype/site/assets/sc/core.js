@@ -1,5 +1,5 @@
 /*
-  Sân Chung page motion, shared layer.
+  SCB page motion, shared layer.
   - Marks each section .is-in the first time it takes the screen (the one-time builds in a/b/c/d key on it)
     and .is-active while it is the section on screen.
   - Full-page mode (from 1024px wide and 640px tall, no reduced motion): one wheel, swipe or key press moves one

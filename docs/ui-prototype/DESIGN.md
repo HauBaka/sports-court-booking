@@ -144,7 +144,7 @@ Hệ giao diện là tấm bảng lịch treo ở quầy sân: mỗi hàng một
 
 Nền là giấy ấm, gần trắng ngà; bảng và các khung nội dung là tấm trắng nổi nhẹ trên nền đó, bo tròn lớn, không viền cứng, đổ một bóng dài và thấp. Chỉ có một màu nhấn là xanh sân; nó đánh dấu thứ người chơi đã chọn hoặc đang giữ, và hành động chính. Độ dày nội dung vừa phải: khoảng thở rộng ở trang giới thiệu, gọn hơn trong app, nhưng cùng một bộ màu, bo góc và cách đổ bóng.
 
-Cảm giác tay: mềm, gọn, chắc. Nút là viên thuốc, nhấn thì lún nhẹ; thẻ có liên kết nhấc lên 2px khi rê chuột; ô giờ đổi màu tức thì khi chọn. Trang giới thiệu (`site/`) là chuẩn của hệ này; app (`app/`) đã theo cùng chuẩn. Trên màn từ 1024×600 trở lên, mỗi trang của app đứng trọn trong màn hình: tiêu đề cố định, danh sách dài cuộn trong khung của nó.
+Cảm giác tay: mềm, gọn, chắc. Nút là viên thuốc, nhấn thì lún nhẹ; thẻ có liên kết nhấc lên 2px khi rê chuột; ô giờ đổi màu tức thì khi chọn. Trang giới thiệu (`site/`) là chuẩn của hệ này; app (`app/`) đã theo cùng chuẩn. Trên màn từ 1024×600 trở lên, mỗi trang của app đứng trọn trong màn hình: tiêu đề cố định, danh sách dài chia trang.
 
 **Key Characteristics:**
 - Một màu nhấn xanh sân trên nền giấy ấm và tấm trắng.
@@ -263,6 +263,19 @@ Thành phần đặc trưng. Hàng là sân con, cột là giờ (nhãn giờ mo
 ### App Window
 Cửa sổ app vẽ lại trong trang giới thiệu: tấm trắng bo 20px, thanh trên không có dải nền, ba chấm nhạt; thanh bên nền gần trắng với mục đang chọn là viên thuốc nổi; hàng danh sách cao 56px với avatar tròn, tên, địa chỉ và nhãn trạng thái.
 
+### App (bản 0.2)
+- Tiêu đề trang 28px, đậm 500, không có đoạn phụ đề; giải thích quy định đặt sau nút "?" (tooltip).
+- Từ 1024×600 trở lên không cuộn trang: danh sách dùng phân trang (`‹ 1 2 3 ›` kèm "1–8 / 23" viết mono), số mục mỗi trang tính theo chiều cao màn. Chỉ lưới sân × giờ cuộn ngang trong khung của nó.
+- Đặt sân trong một ngăn trượt từ phải (Dịch vụ, Cọc, Xong), không chuyển trang. Thanh tóm tắt viên thuốc dính đáy trang cơ sở, viền xanh khi đã chọn giờ.
+- Ví: số dư và biểu đồ trên tấm trắng như các trang khác, số dư màu Court Green; trục biểu đồ ôm theo khoảng số dư (không kéo từ 0); giao dịch là danh sách có chấm vào/ra.
+- Biểu đồ: đường số dư là bậc thang bo góc với vùng tô nhạt dần, vẽ ra một lần; cột đầu tròn, mọc lên từ đáy.
+- Trạng thái trống và trang 404 có hình sân vẽ nét mảnh với một quả bóng nảy ba lần.
+- Điện thoại (dưới 640px): khách dùng thanh tab ở đáy (Tìm sân, Lịch đặt, Ghép đội, Ví).
+- Khóa giờ: tab riêng trong trang sửa cơ sở; mỗi ô hiện trạng thái của ngày đang xem (Mở, Khóa và lý do, Đã cọc, Chờ cọc); bấm ô mở popup ngay cạnh ô để khóa hoặc mở khóa.
+- Ô chọn (`Select` trong `ui.jsx`) thay cho `<select>` của trình duyệt: danh sách xổ là tấm trắng bo 16px, mục đang chọn màu xanh sân kèm dấu tích.
+- Thanh bên của chủ sân và admin thu gọn được còn cột biểu tượng 76px; trình duyệt nhớ lựa chọn.
+- Nội dung trang quản lý lấp đầy chiều ngang (tối đa 1680px); khung nào ít nội dung thì ôm theo nội dung, không kéo dài xuống đáy.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -277,4 +290,4 @@ Cửa sổ app vẽ lại trong trang giới thiệu: tấm trắng bo 20px, tha
 - **Don't** viết chữ màu Line Mint trên nền sáng.
 - **Don't** thêm màu nhấn thứ hai; tím và tím nhạt không bao giờ xuất hiện.
 - **Don't** dùng chữ đậm 600–700 trong nội dung.
-- **Don't** để một trang app dài hơn màn hình từ 1024×600 trở lên; phần dài cuộn trong khung của nó.
+- **Don't** để một trang app dài hơn màn hình từ 1024×600 trở lên; danh sách dài chia trang.

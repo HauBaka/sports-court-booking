@@ -3,9 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useStore, occupancy } from "../data/store";
 import { CITIES, SPORTS, sportName } from "../data/mock";
 import { dateKey, hoursBetween, hourOf, vnd } from "../lib/format";
-import { Empty, Icon, Rating } from "../components/ui";
-
-const PAGE = 4;
+import { Empty, Icon, Rating, Select, usePaged } from "../components/ui";
 
 function freeHoursToday(state, f) {
   const today = dateKey(new Date());
@@ -24,7 +22,6 @@ export default function SearchPage() {
   const [district, setDistrict] = useState("");
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("rating");
-  const [page, setPage] = useState(1);
   const [hot, setHot] = useState(null);
   // giả lập độ trễ mạng lần đầu để thấy khung chờ
   const [loading, setLoading] = useState(true);
@@ -40,77 +37,68 @@ export default function SearchPage() {
       .sort((a, b) => (sort === "price" ? a.from - b.from : sort === "free" ? b.free - a.free : b.rating - a.rating));
   }, [state, sport, city, district, q, sort]);
 
-  const pages = Math.max(1, Math.ceil(results.length / PAGE));
-  const shown = results.slice((page - 1) * PAGE, page * PAGE);
-  const reset = (fn) => (v) => { fn(v); setPage(1); };
+  // 2 cột thẻ từ 1280px, mỗi hàng 132px (thẻ 118 + khe 14); đổi bộ lọc thì về trang 1
+  // shortcut: số cột đọc lúc render, đổi cỡ cửa sổ qua mốc 1280 cần đổi trang mới tính lại
+  const { ref, items: shown, pager } = usePaged(results, 132, { cols: matchMedia("(min-width: 1280px)").matches ? 2 : 1, min: 4, reserve: 70, reset: [sport, city, district, q, sort].join() });
 
   return (
     <main className="page">
       <div className="wrap">
-        <div className="page-head">
-          <div>
-            <h1>Tìm sân còn trống</h1>
-            <p>Chọn môn và khu vực. Mỗi sân hiện số giờ còn trống hôm nay và giá thấp nhất mỗi giờ.</p>
-          </div>
-        </div>
+        <h1 className="sr-only">Tìm sân còn trống</h1>
 
         <form className="sbar" onSubmit={(e) => e.preventDefault()} role="search">
           <label className="sbar__seg sbar__seg--q"><span>Tìm theo tên</span>
-            <input placeholder="Tên sân hoặc tên đường, ví dụ Cộng Hòa" value={q} onChange={(e) => reset(setQ)(e.target.value)} />
-            {q && <button type="button" className="sbar__clear" aria-label="Xóa từ khóa" onClick={() => reset(setQ)("")}><Icon name="x" size={12} /></button>}
+            <input placeholder="Tên sân hoặc tên đường, ví dụ Cộng Hòa" value={q} onChange={(e) => setQ(e.target.value)} />
+            {q && <button type="button" className="sbar__clear" aria-label="Xóa từ khóa" onClick={() => setQ("")}><Icon name="x" size={12} /></button>}
           </label>
           <label className="sbar__seg"><span>Thành phố</span>
-            <select value={city} onChange={(e) => { setCity(e.target.value); setDistrict(""); setPage(1); }}>
+            <Select className="sbar__sel" value={city} onChange={(e) => { setCity(e.target.value); setDistrict(""); }}>
               {Object.keys(CITIES).map((c) => <option key={c}>{c}</option>)}
-            </select>
+            </Select>
           </label>
           <label className="sbar__seg"><span>Quận, huyện</span>
-            <select value={district} onChange={(e) => reset(setDistrict)(e.target.value)}>
+            <Select className="sbar__sel" value={district} onChange={(e) => setDistrict(e.target.value)}>
               <option value="">Tất cả quận</option>
               {CITIES[city].map((d) => <option key={d}>{d}</option>)}
-            </select>
+            </Select>
           </label>
           <label className="sbar__seg"><span>Xếp theo</span>
-            <select value={sort} onChange={(e) => setSort(e.target.value)}>
+            <Select className="sbar__sel" value={sort} onChange={(e) => setSort(e.target.value)}>
               <option value="rating">Đánh giá cao nhất</option><option value="price">Giá thấp nhất</option><option value="free">Nhiều giờ trống nhất</option>
-            </select>
+            </Select>
           </label>
           <button className="sbar__go"><Icon name="search" size={18} />Tìm sân</button>
         </form>
 
         <div className="result-bar">
           <div className="chips" role="group" aria-label="Môn">
-            <button className={"chip" + (sport === "all" ? " on" : "")} onClick={() => reset(setSport)("all")}>Tất cả môn</button>
-            {SPORTS.map((s) => <button key={s.id} className={"chip" + (sport === s.id ? " on" : "")} onClick={() => reset(setSport)(s.id)}>{s.name}</button>)}
+            <button className={"chip" + (sport === "all" ? " on" : "")} onClick={() => setSport("all")}>Tất cả môn</button>
+            {SPORTS.map((s) => <button key={s.id} className={"chip" + (sport === s.id ? " on" : "")} onClick={() => setSport(s.id)}>{s.name}</button>)}
           </div>
           <span className="muted small">{loading ? "Đang tìm…" : `${results.length} cơ sở ở ${district || city}`}</span>
         </div>
 
         <div className="split split--search">
-          <div className="stack stagger scroll" style={{ "--gap": "16px" }} key={loading ? "sk" : page}>
-            {loading && [0, 1, 2].map((i) => <SkeletonCard key={i} />)}
-            {!loading && shown.length === 0 && <Empty title="Chưa có sân phù hợp">Thử bỏ bớt bộ lọc quận hoặc chọn môn khác.</Empty>}
-            {!loading && shown.map((f) => (
-              <Link key={f.id} to={`/san/${f.id}`} className={"card fac" + (hot === f.id ? " is-hot" : "")} onMouseEnter={() => setHot(f.id)} onMouseLeave={() => setHot(null)}>
-                <div className="fac__img"><img src={f.photos[0]} alt={`Sân của ${f.name}`} loading="lazy" /></div>
-                <div className="fac__body">
-                  <div className="row between"><div className="chips">{f.sports.map((s) => <span key={s} className="tag">{sportName(s)}</span>)}</div><Rating value={f.rating} count={f.reviews} /></div>
-                  <h3 style={{ fontSize: 20 }}>{f.name}</h3>
-                  <div className="row small ink2" style={{ "--gap": "6px" }}><Icon name="pin" size={15} />{f.street}, {f.district} · {f.open}–{f.close}</div>
-                  <div className="fac__foot">
-                    <div><div className="muted small">Giá từ</div><div className="price">{vnd(f.from)}<small> / giờ</small></div></div>
-                    <span className={"badge " + (f.free > 0 ? "badge--deposited" : "badge--cancelled")}>{f.free > 0 ? `Còn ${f.free} giờ trống hôm nay` : "Hôm nay đã kín"}</span>
+          <div className="results" ref={ref}>
+            <div className="fac-grid stagger" key={loading ? "sk" : shown.map((f) => f.id).join()}>
+              {loading && [0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+              {!loading && shown.map((f) => (
+                <Link key={f.id} to={`/san/${f.id}`} className={"card fac" + (hot === f.id ? " is-hot" : "")} onMouseEnter={() => setHot(f.id)} onMouseLeave={() => setHot(null)}>
+                  <div className="fac__img"><img src={f.photos[0]} alt="" loading="lazy" /></div>
+                  <div className="fac__body">
+                    <div className="row between small"><span className="muted">{f.sports.map(sportName).join(" · ")}</span><Rating value={f.rating} /></div>
+                    <h3>{f.name}</h3>
+                    <div className="fac__addr small ink2"><Icon name="pin" size={14} />{f.street}, {f.district}</div>
+                    <div className="fac__foot">
+                      <div className="price">{vnd(f.from)}<small>/giờ</small></div>
+                      <span className={"badge " + (f.free > 0 ? "badge--deposited" : "badge--cancelled")}>{f.free > 0 ? `${f.free} giờ trống` : "Hôm nay kín"}</span>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
-            {!loading && pages > 1 && (
-              <nav className="row" aria-label="Phân trang" style={{ justifyContent: "center", marginTop: 8 }}>
-                <button className="icon-btn" disabled={page === 1} onClick={() => setPage(page - 1)} aria-label="Trang trước"><Icon name="chevL" /></button>
-                {Array.from({ length: pages }, (_, i) => <button key={i} className={"chip" + (page === i + 1 ? " on" : "")} onClick={() => setPage(i + 1)}>{i + 1}</button>)}
-                <button className="icon-btn" disabled={page === pages} onClick={() => setPage(page + 1)} aria-label="Trang sau"><Icon name="chevR" /></button>
-              </nav>
-            )}
+                </Link>
+              ))}
+            </div>
+            {!loading && shown.length === 0 && <Empty title="Chưa có sân phù hợp"><button className="link" onClick={() => { setDistrict(""); setSport("all"); setQ(""); }}>Bỏ bộ lọc</button></Empty>}
+            {!loading && pager}
           </div>
           <div className="sticky hide-sm">
             <MapView items={loading ? [] : results} hot={hot} setHot={setHot} onOpen={(id) => nav(`/san/${id}`)} />
@@ -147,7 +135,6 @@ function MapView({ items, hot, setHot, onOpen }) {
           {Math.round(f.from / 1000)}k
         </button></span>
       ))}
-      <span className="map__note">Bản đồ minh họa. Bản thật dùng Leaflet với dữ liệu OpenStreetMap.</span>
     </div>
   );
 }

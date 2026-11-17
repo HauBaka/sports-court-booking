@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { Children, createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { vnd } from "../lib/format";
 
@@ -26,6 +26,7 @@ const P = {
   logout: "M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10",
   user: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9c.8-3.5 3.6-6 7-6s6.2 2.5 7 6",
   menu: "M4 7h16M4 17h16",
+  panel: "M4 5h16v14H4zM9.5 5v14",
   sun: "M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2",
   info: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-11v6m0-9h.01",
   alert: "M12 3 2 20h20L12 3Zm0 6v5m0 3h.01",
@@ -47,8 +48,8 @@ export function Icon({ name, size = 18, fill = false, ...rest }) {
 }
 
 export const Logo = ({ to = "../index.html" }) =>
-  to.startsWith("..") ? <a className="logo" href={to}><span className="logo__mark" />Sân Chung</a>
-    : <Link className="logo" to={to}><span className="logo__mark" />Sân Chung</Link>;
+  to.startsWith("..") ? <a className="logo" href={to}><span className="logo__mark" />SCB</a>
+    : <Link className="logo" to={to}><span className="logo__mark" />SCB</Link>;
 
 export const STATUS = {
   PENDING_DEPOSIT: { label: "Chờ đặt cọc", cls: "pending" },
@@ -83,7 +84,15 @@ export function Modal({ title, children, onClose, footer }) {
   );
 }
 
-export const Empty = ({ title, children }) => <div className="empty"><h3>{title}</h3><div>{children}</div></div>;
+// Sân vẽ nét mảnh cho trạng thái trống và trang 404 (cùng nét với hình sân ở trang giới thiệu).
+export const CourtArt = ({ size = 120 }) => (
+  <svg className="court-art" width={size} height={size * 0.6} viewBox="0 0 200 120" fill="none" stroke="currentColor" strokeWidth="1.2" aria-hidden="true">
+    <rect x="10" y="10" width="180" height="100" rx="3" /><path d="M100 10v100M10 22h180M10 98h180M66 22v76M134 22v76M10 60h56M134 60h56" />
+    <path d="M100 4v112" strokeWidth="2.4" strokeDasharray="2 3" />
+    <circle className="court-art__ball" cx="146" cy="40" r="4.5" fill="currentColor" stroke="none" />
+  </svg>
+);
+export const Empty = ({ title, children }) => <div className="empty"><CourtArt size={96} /><h3>{title}</h3>{children && <div>{children}</div>}</div>;
 
 const ToastCtx = createContext(() => {});
 export function ToastProvider({ children }) {
@@ -157,5 +166,101 @@ export function HoldRing({ until, total = 10 * 60000 }) {
       <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true"><circle className="track" cx="18" cy="18" r="15" /><circle className="val" cx="18" cy="18" r="15" strokeDasharray={C} strokeDashoffset={C * (1 - left / total)} /></svg>
       <span><span className="hold-ring__label">Giữ chỗ còn </span>{text}</span>
     </span>
+  );
+}
+
+// Phân trang vừa màn: số mục mỗi trang tính theo chỗ còn lại dưới đầu danh sách (từ 1024×600), tối thiểu `min`.
+// rowH là chiều cao một hàng (kể cả khe), cols là số cột của lưới.
+export function usePaged(list, rowH, { cols = 1, min = 4, reserve = 72, fallback = 8, reset } = {}) {
+  const ref = useRef(null);
+  const [rows, setRows] = useState(Math.ceil(fallback / cols));
+  const [page, setPage] = useState(0);
+  useEffect(() => {
+    const fit = () => {
+      const el = ref.current;
+      if (!el) return;
+      if (innerWidth < 1024 || innerHeight < 600) return setRows(Math.ceil(fallback / cols));
+      setRows(Math.max(Math.ceil(min / cols), Math.floor((innerHeight - el.getBoundingClientRect().top - reserve) / rowH)));
+    };
+    fit();
+    // đo lại khi hiệu ứng vào trang (dịch 10px) đã xong
+    const t = setTimeout(fit, 500);
+    addEventListener("resize", fit);
+    return () => { clearTimeout(t); removeEventListener("resize", fit); };
+  }, [rowH, cols, min, reserve, fallback]);
+  useEffect(() => setPage(0), [reset]);
+  const size = rows * cols, pages = Math.max(1, Math.ceil(list.length / size)), p = Math.min(page, pages - 1);
+  return { ref, items: list.slice(p * size, p * size + size), pager: <Pager page={p} pages={pages} size={size} total={list.length} onPage={setPage} /> };
+}
+
+export function Pager({ page, pages, size, total, onPage }) {
+  if (total <= size) return null;
+  // tối đa 7 nút: đầu, cuối, quanh trang đang xem
+  const nums = [...new Set([0, pages - 1, page - 1, page, page + 1].filter((n) => n >= 0 && n < pages))].sort((a, b) => a - b);
+  return (
+    <nav className="pager" aria-label="Phân trang">
+      <span className="pager__count mono">{page * size + 1}–{Math.min(total, page * size + size)} / {total}</span>
+      <button className="pager__btn" disabled={page === 0} onClick={() => onPage(page - 1)} aria-label="Trang trước"><Icon name="chevL" size={16} /></button>
+      {nums.map((n, i) => (
+        <span key={n} className="row" style={{ "--gap": "4px" }}>
+          {i > 0 && n - nums[i - 1] > 1 && <span className="muted">…</span>}
+          <button className="pager__btn mono" aria-current={n === page ? "page" : undefined} onClick={() => onPage(n)}>{n + 1}</button>
+        </span>
+      ))}
+      <button className="pager__btn" disabled={page === pages - 1} onClick={() => onPage(page + 1)} aria-label="Trang sau"><Icon name="chevR" size={16} /></button>
+    </nav>
+  );
+}
+
+// Giải thích ngắn sau dấu "?", hiện khi rê chuột hoặc focus, thay cho đoạn ghi chú dưới tiêu đề.
+export const Tip = ({ children, label = "Giải thích" }) => (
+  <span className="tip"><button type="button" className="tip__btn" aria-label={label}>?</button><span className="tip__body" role="tooltip">{children}</span></span>
+);
+
+// Ô chọn tự vẽ thay cho <select> gốc của trình duyệt: cùng cách dùng (con là <option>, onChange nhận e.target.value),
+// danh sách xổ theo giao diện, đặt fixed để không bị khung cuộn cắt; phím lên/xuống, Enter, Esc, gõ chữ đầu.
+export function Select({ value, onChange, children, className = "select", style, ...rest }) {
+  const opts = Children.toArray(children).filter(Boolean).map((o) => ({ v: String(o.props.value ?? o.props.children), l: o.props.children }));
+  const [pos, setPos] = useState(null);
+  const [hi, setHi] = useState(0);
+  const btn = useRef(null), list = useRef(null);
+  const cur = opts.find((o) => o.v === String(value ?? "")) ?? opts[0];
+  const open = !!pos;
+  const show = () => {
+    const r = btn.current.getBoundingClientRect(), h = Math.min(288, opts.length * 40 + 12), up = innerHeight - r.bottom < h + 12 && r.top > h + 12;
+    setPos({ left: r.left, width: Math.max(r.width, 160), top: up ? r.top - h - 6 : r.bottom + 6 });
+    setHi(Math.max(0, opts.indexOf(cur)));
+  };
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => !btn.current?.contains(e.target) && !list.current?.contains(e.target) && setPos(null);
+    const off = (e) => !list.current?.contains(e.target) && setPos(null);
+    document.addEventListener("mousedown", close);
+    addEventListener("scroll", off, true); addEventListener("resize", off);
+    return () => { document.removeEventListener("mousedown", close); removeEventListener("scroll", off, true); removeEventListener("resize", off); };
+  }, [open]);
+  useEffect(() => { if (open) list.current?.children[hi]?.scrollIntoView({ block: "nearest" }); }, [open, hi]);
+  const pick = (o) => { setPos(null); btn.current?.focus(); if (o && o.v !== String(value ?? "")) onChange?.({ target: { value: o.v } }); };
+  const key = (e) => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (!open) return show(); setHi((h) => Math.min(opts.length - 1, Math.max(0, h + (e.key === "ArrowDown" ? 1 : -1)))); }
+    else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open ? pick(opts[hi]) : show(); }
+    else if (e.key === "Escape" || e.key === "Tab") setPos(null);
+    else if (e.key.length === 1) { const i = opts.findIndex((o) => String(o.l).toLowerCase().startsWith(e.key.toLowerCase())); if (i >= 0) open ? setHi(i) : pick(opts[i]); }
+  };
+  return (
+    <>
+      <button type="button" ref={btn} className={className + " sel"} style={style} aria-haspopup="listbox" aria-expanded={open} onClick={() => (open ? setPos(null) : show())} onKeyDown={key} {...rest}>
+        <span className="sel__val">{cur?.l}</span>
+      </button>
+      {open && (
+        <ul className="sel__list" role="listbox" ref={list} style={pos}>
+          {opts.map((o, i) => (
+            <li key={o.v} role="option" aria-selected={o === cur} className={i === hi ? "hi" : ""} onMouseEnter={() => setHi(i)} onMouseDown={(e) => { e.preventDefault(); pick(o); }}>
+              <span>{o.l}</span>{o === cur && <Icon name="check" size={15} />}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }
