@@ -5,3 +5,5 @@ shots/
 .impeccable/review/
 .impeccable/hook.cache.json
 graphify-out/
+# gốc repo bỏ qua lib/ (mẫu Python), mở lại cho mã nguồn bản mẫu
+!app/src/lib/
