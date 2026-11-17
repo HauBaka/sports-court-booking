@@ -1,0 +1,200 @@
+/* section motion, part b: #dat (one stage, one column of words and step tabs) and #vi (the tactics board) */
+
+/* ---------------------------------------------------------------- #dat
+   b.js builds .dat-one: one device at the left (a card with a bar; the four steps are four screens that slide through
+   it), the heading and the four step tabs at the right. In full-page mode the first visit starts as .dat-intro: the
+   device alone in the middle, larger; taking the class off lets it settle to the left and brings the words in. */
+#dat:not(.dat-one) .dat-stage { display: none; }
+html.sc-ready #dat.dat-one .mo-pc__steps { display: none; }
+main > #dat.dat-one > .mo-pc__grid { display: grid; grid-template-columns: minmax(0, 1fr); row-gap: var(--s-5); align-items: stretch; }
+#dat.dat-one .mo-pc__text { display: flex; flex-direction: column; gap: var(--s-5); min-width: 0; }
+#dat.dat-one .dat-stage { position: relative; min-width: 0; display: grid; place-items: center; }
+/* the device: one card for every step, as tall as the tallest screen (b.js sets --dat-h) */
+#dat.dat-one .mo-pc__visuals {
+  --dbar: 46px; position: relative; display: block; width: min(100%, 420px); height: calc(var(--dbar) + var(--dat-h, 380px)); min-height: 0; padding: 0; overflow: hidden;
+  border: 0; border-radius: 24px; background: #fff; aspect-ratio: auto;
+  box-shadow: 0 0 0 1px rgb(22 40 28 / 0.045), 0 30px 70px -30px rgb(22 40 28 / 0.3), 0 10px 24px -14px rgb(22 40 28 / 0.14);
+}
+.dat-bar { position: absolute; inset: 0 0 auto; z-index: 6; height: var(--dbar); display: flex; align-items: center; gap: 10px; padding: 0 6px 0 18px; border-bottom: 1px solid rgb(22 40 28 / 0.07); background: #fff; }
+.dat-bar > b { flex: none; padding: 5px 8px; border-radius: 999px; background: var(--sc-tint); color: var(--p-accent); font: 500 11px/1 var(--font-mono); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.dat-bar__t { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 13px/1.2 var(--font-text); color: #171916; }
+.dat-bar__segs { flex: none; display: flex; gap: 3px; }
+.dat-bar__segs i { width: 14px; height: 3px; border-radius: 3px; background: rgb(22 40 28 / 0.12); transition: background-color 0.4s linear, width 0.5s var(--sc-ease); }
+.dat-bar__segs i.is-done { background: color-mix(in oklab, var(--p-accent) 45%, transparent); }
+.dat-bar__segs i.is-on { width: 24px; background: var(--p-accent); }
+#dat.dat-one .mo-pc__visual.mo-pc__visual--lit { background: none; overflow: visible; padding: 0; }
+html.sc-ready #dat.dat-one .mo-pc__visuals > .mo-pc__visual {
+  position: absolute; inset: var(--dbar) 0 0; width: 100%; height: auto; margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); place-items: center stretch; aspect-ratio: auto;
+  opacity: 0; visibility: hidden; transform: translate(36px, 0); transition: opacity 0.16s linear, transform 0.5s var(--sc-ease), visibility 0s linear 0.5s;
+}
+html.sc-ready #dat.dat-one .mo-pc__visuals > .mo-pc__visual.is-out { transform: translate(-36px, 0); }
+html.sc-ready #dat.dat-one .mo-pc__visuals > .mo-pc__visual.is-on { opacity: 1; visibility: visible; transform: none; transition: opacity 0.34s linear 0.17s, transform 0.75s var(--sc-ease) 0.12s, visibility 0s; }
+/* a screen in the device has no card of its own */
+#dat.dat-one .mo-pc__visual > .tour { width: 100%; max-width: none; border: 0; border-radius: 0; box-shadow: none; background: none; }
+@media (min-width: 1024px) {
+  main > #dat.dat-one > .mo-pc__grid { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); grid-template-rows: minmax(0, 1fr); column-gap: var(--gutter); height: calc(100svh - var(--padt) - var(--padb) - var(--bar, 0px)); align-content: stretch; }
+  #dat.dat-one .dat-stage { grid-column: 1; grid-row: 1; transition: transform 1.25s var(--sc-ease-io); }
+  #dat.dat-one .mo-pc__text { grid-column: 2; grid-row: 1; justify-content: center; gap: var(--s-6); transition: opacity 0.8s var(--sc-ease) 0.4s, transform 1.1s var(--sc-ease) 0.4s; }
+}
+/* the device plays larger where the stage has the room (the cursor and its ring scale with it) */
+@media (min-width: 1280px) and (min-height: 680px) { #dat.dat-one .mo-pc__visuals { scale: 1.14; } }
+@media (min-width: 1280px) and (min-height: 840px) { #dat.dat-one .mo-pc__visuals { scale: 1.22; } }
+
+/* the way out, only while the device plays alone */
+.dat-skip { position: absolute; left: 50%; bottom: -10px; translate: -50% 0; margin: 0; opacity: 0; visibility: hidden; transition: opacity 0.3s linear, visibility 0s linear 0.3s; white-space: nowrap; min-height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: none; color: var(--muted); font: 500 13px/1 var(--font-text); cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in oklab, currentColor 35%, transparent); text-underline-offset: 4px; }
+.dat-skip:hover { color: var(--ink); }
+.dat-skip:focus-visible { outline: 2px solid var(--p-accent); outline-offset: 2px; }
+html.sc-fp #dat.dat-intro .dat-stage { transform: translate(var(--dat-dx, 20%), -14px) scale(1.08); transition: none; }
+html.sc-fp #dat.dat-intro .mo-pc__text { opacity: 0; transform: translateX(56px); pointer-events: none; transition: none; }
+html.sc-fp #dat.dat-intro .dat-skip { opacity: 1; visibility: visible; transition: opacity 0.4s linear; }
+/* #lich -> #dat: the layer that carries the framed hours (b.js), and the frame round them */
+.dat-lift { position: fixed; inset: 0; z-index: 30; pointer-events: none; font-size: 13px; color: var(--u-ink); }
+.dat-lift > * { position: absolute; margin: 0; box-sizing: border-box; transform-origin: 0 0; }
+.dat-lift > .slots__h { display: grid; place-items: center; }
+/* quiet: a hairline in the accent and a faint lift, so the cells stay what the eye follows */
+.dat-carry { box-shadow: 0 0 0 1px color-mix(in oklab, var(--p-accent) 32%, transparent), 0 12px 28px -18px rgb(22 40 28 / 0.18); background: rgb(255 255 255 / 0.4); }
+
+/* the step tabs: a list; the step on show opens into its own soft card with its lines */
+.dat-tabs { display: grid; gap: 6px; }
+.dat-tab {
+  position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: baseline; gap: 2px 8px; min-height: 48px; margin: 0; padding: 12px 16px;
+  border: 0; border-radius: 16px; background: none; color: var(--muted); font: 500 17px/1.3 var(--font-text); text-align: left; cursor: pointer;
+  transition: background-color 0.3s linear, color 0.25s linear, box-shadow 0.4s var(--sc-ease);
+}
+.dat-tab:hover { color: var(--ink); background: rgb(255 255 255 / 0.5); }
+.dat-tab[aria-selected="true"] { color: var(--ink); background: #fff; box-shadow: var(--sc-shadow-sm); }
+.dat-tab:focus-visible { outline: 2px solid var(--p-accent); outline-offset: 2px; }
+.dat-tab__n { font: 500 12px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.dat-tab[aria-selected="true"] .dat-tab__n { color: var(--p-accent); }
+.dat-tab__p { grid-column: 2; display: none; font-size: 15px; font-weight: 400; color: color-mix(in oklab, var(--ink) 78%, transparent); line-height: 1.5; }
+.dat-tab[aria-selected="true"] .dat-tab__p { display: block; }
+.dat-again {
+  flex: none; display: grid; place-items: center; width: 36px; height: 36px; margin: 0; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+  background: none; color: #171916; transition: background-color 0.2s linear, transform 0.35s var(--sc-ease), opacity 0.2s linear;
+}
+.dat-again:hover { background: var(--sc-tint); }
+.tb-again {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin: 0; padding: 0 18px 0 14px; border: 0; border-radius: 999px; cursor: pointer;
+  font: 500 14px/1 var(--font-text); transition: background-color 0.2s linear, transform 0.35s var(--sc-ease);
+}
+.dat-again svg, .tb-again svg { width: 16px; height: 16px; transition: rotate 0.6s var(--sc-ease); }
+.tb-again:hover { transform: translateY(-1px); }
+.dat-again:hover svg, .tb-again:hover svg { rotate: -180deg; }
+.dat-again:active, .tb-again:active { transform: translateY(1px); }
+.dat-again:focus-visible, .tb-again:focus-visible { outline: 2px solid var(--p-accent); outline-offset: 2px; }
+#dat.is-playing .dat-again { opacity: 0.35; pointer-events: none; }
+
+/* the drawn cursor and its press ring */
+.dat-cursor { position: absolute; left: 0; top: 0; z-index: 5; width: 22px; height: 22px; pointer-events: none; opacity: 0; transition: opacity 200ms ease; }
+.dat-cursor.is-on { opacity: 1; }
+.dat-cursor svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 2px 3px rgb(0 0 0 / .22)); transform-origin: 4px 3px; }
+.dat-ring { position: absolute; z-index: 4; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%; pointer-events: none; background: color-mix(in oklab, var(--p-accent) 30%, transparent); }
+#dat .slots__go, #dat .pay__btn { transition: filter 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
+#dat .is-hover { box-shadow: 0 0 0 4px color-mix(in oklab, var(--p-accent) 20%, transparent); }
+#dat .is-press { transform: scale(.96); filter: brightness(.9); }
+#dat .bill__rows li { transition: background-color 200ms ease, box-shadow 200ms ease; }
+#dat .bill__rows li.is-hl { background: var(--sc-tint); box-shadow: -10px 0 0 var(--sc-tint), 10px 0 0 var(--sc-tint); border-radius: 4px; }
+#dat .pay__btn.is-load { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.dat-spin { width: 14px; height: 14px; animation: dat-spin 700ms linear infinite; }
+@keyframes dat-spin { to { transform: rotate(1turn); } }
+
+@media (max-width: 1023px) {
+  .dat-tab { font-size: 15px; padding: 10px 12px; }
+}
+@media (max-width: 639px) {
+  #dat.dat-one .bill { padding: 16px 18px; }
+  #dat.dat-one .bill__rows { margin-top: 12px; }
+  #dat.dat-one .bill__rows li { padding: 7px 0; }
+}
+/* a tall screen: the tabs read larger */
+@media (min-width: 1024px) and (min-height: 840px) {
+  .dat-tab { padding: 16px 18px; font-size: 19px; grid-template-columns: 40px minmax(0, 1fr); }
+  .dat-tab__p { font-size: 16px; margin-top: 2px; }
+}
+
+/* ---------------------------------------------------------------- #vi: the tactics board
+   Three wallets stand as three players on a pitch seen from above, the system's wallet in the centre circle.
+   The deposit is the one ball: it is passed along the dashed lines, and each wallet's balance follows. */
+#vi .tb { display: flex; flex-direction: column; gap: var(--s-4); margin-top: var(--s-6); min-height: 0; }
+.tb__top, .tb__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3) var(--s-5); flex-wrap: wrap; }
+.tb-switch { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgb(255 255 255 / 0.06); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08); }
+.tb-switch button {
+  min-height: 40px; margin: 0; padding: 0 18px; border: 0; border-radius: 999px; background: none; color: #c5ccc5; font: 500 14px/1 var(--font-text); cursor: pointer;
+  transition: background-color 0.25s linear, color 0.25s linear;
+}
+.tb-switch button:hover { color: #fff; }
+.tb-switch button[aria-pressed="true"] { background: #f1f4f0; color: #121512; }
+.tb-switch button:focus-visible, .tb-steps button:focus-visible { outline: 2px solid var(--sc-volt); outline-offset: 2px; }
+.tb-steps { display: flex; align-items: center; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.tb-steps li { display: flex; align-items: center; gap: 4px; }
+.tb-steps li + li::before { content: ""; width: 22px; height: 1px; background: rgb(255 255 255 / 0.2); }
+.tb-steps button { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; margin: 0; padding: 0 12px 0 6px; border: 0; border-radius: 999px; background: none; color: #9da39c; font: 500 14px/1 var(--font-text); cursor: pointer; transition: color 0.25s linear, background-color 0.25s linear; }
+.tb-steps button:hover { background: rgb(255 255 255 / 0.06); color: #fff; }
+.tb-steps b { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: rgb(255 255 255 / 0.09); font: 500 12px/1 var(--font-mono); transition: background-color 0.3s linear, color 0.3s linear; }
+.tb-steps button.is-past { color: #d5dbd5; }
+.tb-steps button.is-past b { background: color-mix(in oklab, var(--sc-volt) 28%, transparent); }
+.tb-steps button[aria-current="step"] { color: #fff; }
+.tb-steps button[aria-current="step"] b { background: var(--sc-volt); color: #10130f; }
+
+.tb__board {
+  position: relative; flex: 1 1 0; min-height: 250px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; padding: 0 3%;
+  border-radius: 28px; overflow: hidden; background: radial-gradient(110% 130% at 50% -10%, #212b24, #171d19 72%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07), 0 40px 70px -40px rgb(0 0 0 / 0.7);
+}
+.tb__pitch { position: absolute; inset: 14px; width: calc(100% - 28px); height: calc(100% - 28px); border-radius: 16px; box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 0.09); fill: none; stroke: rgb(255 255 255 / 0.09); stroke-width: 1.5px; }
+.tb__pitch * { vector-effect: non-scaling-stroke; }
+.tb__lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.tb-line { fill: none; stroke: rgb(255 255 255 / 0.24); stroke-width: 1.5px; stroke-dasharray: 1 8; stroke-linecap: round; transition: stroke 0.5s linear, opacity 0.5s linear; }
+.tb-line.is-on { stroke: var(--sc-volt); }
+.tb-line--back { opacity: 0; }
+.tb-line--back.is-on { opacity: 1; }
+/* the padding above equals the name and the balance below the disc, so it is the disc that sits on the middle line */
+.tb-p { position: relative; z-index: 1; display: grid; justify-items: center; gap: 4px; text-align: center; min-width: 0; padding-top: calc(33px + clamp(18px, 2.3vw, 30px) * 1.1); }
+.tb-p__disc { display: grid; place-items: center; width: 72px; height: 72px; margin-bottom: 8px; border-radius: 50%; background: #27312a; color: #e7efe8; box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 0.16), 0 14px 26px -14px #000; transition: box-shadow 0.4s linear, background-color 0.4s linear; }
+.tb-p[data-p="ht"] .tb-p__disc { width: 88px; height: 88px; }
+.tb-p__disc svg { width: 28px; height: 28px; }
+.tb-p__n { font: 500 14px/1.2 var(--font-text); color: #a9b0a9; }
+.tb-p__v { font: 500 clamp(18px, 2.3vw, 30px)/1.1 var(--font-mono); letter-spacing: -0.03em; color: #f4f6f3; font-variant-numeric: tabular-nums; transition: color 0.4s linear; }
+.tb-p.is-holding .tb-p__disc { box-shadow: inset 0 0 0 2px var(--sc-volt), 0 14px 26px -14px #000; background: #2a3a2f; }
+.tb-p.is-holding .tb-p__v { color: var(--sc-volt); }
+.tb-p.is-hit .tb-p__disc { animation: tb-hit 0.9s var(--sc-ease); }
+@keyframes tb-hit { 0% { transform: scale(1); } 28% { transform: scale(1.12); } 100% { transform: none; } }
+/* the ball: the deposit itself, its amount on it */
+.tb-ball {
+  position: absolute; left: 0; top: 0; z-index: 2; display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px 8px 9px; border-radius: 999px;
+  background: var(--sc-volt); color: #10130f; font: 500 13px/1 var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; box-shadow: 0 12px 22px -10px rgb(0 0 0 / 0.7);
+  offset-rotate: 0deg; offset-anchor: 50% 100%; offset-distance: 100%;
+}
+.tb-ball::before { content: ""; width: 13px; height: 13px; border-radius: 50%; background: #10130f; box-shadow: inset 0 0 0 3px #10130f, inset 0 0 0 4.5px var(--sc-volt); }
+.tb-ball--b { background: #fff; }
+.tb-ball--b::before { box-shadow: inset 0 0 0 3px #10130f, inset 0 0 0 4.5px #fff; }
+.tb-ball[hidden] { display: none; }
+.tb:not(.is-laid) .tb-ball { visibility: hidden; }
+.tb__foot { min-height: 44px; flex-wrap: nowrap; }
+.tb__say { display: flex; align-items: center; gap: 14px; margin: 0; font: 500 clamp(16px, 1.45vw, 21px)/1.35 var(--font-text); color: #f4f6f3; }
+.tb__say b { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--sc-volt); color: #10130f; font: 500 14px/1 var(--font-mono); }
+/* the board and its replay control: the control sits in the board's lower right corner, an icon alone */
+.tb__stage { position: relative; flex: 1 1 0; min-height: 250px; display: grid; }
+.tb-again { position: absolute; right: 16px; bottom: 16px; z-index: 3; justify-content: center; width: 44px; padding: 0; background: rgb(255 255 255 / 0.08); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.14); color: #f1f4f0; backdrop-filter: blur(6px); }
+.tb-again:hover { background: rgb(255 255 255 / 0.16); }
+.tb.is-playing .tb-again { opacity: 0.4; pointer-events: none; }
+@media (max-width: 859px) {
+  .tb-steps span { display: none; }
+  .tb-steps button { padding: 0 6px; }
+  .tb-p__disc { width: 52px; height: 52px; }
+  .tb-p[data-p="ht"] .tb-p__disc { width: 60px; height: 60px; }
+  .tb-p__disc svg { width: 22px; height: 22px; }
+  .tb-p__n { font-size: 12px; }
+  .tb-ball { font-size: 11px; padding: 6px 9px 6px 7px; }
+  .tb__stage { flex: none; min-height: 300px; }
+  .tb__board { min-height: 300px; }
+  .tb-again { right: 12px; bottom: 12px; }
+  .tb__foot { flex-wrap: wrap; }
+}
+@media (min-width: 1024px) and (max-height: 780px) { #vi .tb { margin-top: var(--s-4); gap: var(--s-3); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .dat-cursor, .dat-ring { display: none; }
+  #dat.dat-one .dat-stage, #dat.dat-one .mo-pc__text, .dat-tab, .tb-line, .tb-p__disc { transition: none; }
+  .tb-p.is-hit .tb-p__disc { animation: none; }
+}

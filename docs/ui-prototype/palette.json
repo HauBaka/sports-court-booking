@@ -1,0 +1,12 @@
+{
+  "bg": "#f8f8f8",
+  "surface": "#eeeeee",
+  "ink": "#0a0a0a",
+  "muted": "#6a6a6a",
+  "accent": "#1f6b3a",
+  "accentInk": "#ffffff",
+  "fontDisplay": "Mona Sans",
+  "fontText": "Mona Sans",
+  "fontMono": "Geist Mono",
+  "googleFontsHref": "https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,400..600&family=Geist+Mono:wght@400..500&display=swap"
+}

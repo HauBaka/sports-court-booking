@@ -1,0 +1,530 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-16T18:46:46.653735+00:00",
+  "title": "Design System: Sport Court Booking (SCB)",
+  "extensions": {
+    "colorMeta": {
+      "court-green": {
+        "role": "primary",
+        "displayName": "Court Green",
+        "canonical": "#1f6b3a",
+        "tonalRamp": [
+          "#001102",
+          "#023014",
+          "#19522c",
+          "#327647",
+          "#5a9a6b",
+          "#88bd94",
+          "#b2debc",
+          "#d6f9dd"
+        ]
+      },
+      "court-green-ink": {
+        "role": "primary",
+        "displayName": "Court Green Ink",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#262626",
+          "#454545",
+          "#666666",
+          "#898989",
+          "#aeaeae",
+          "#d1d1d1",
+          "#eeeeee"
+        ]
+      },
+      "line-mint": {
+        "role": "primary",
+        "displayName": "Line Mint",
+        "canonical": "#bfe9c9",
+        "tonalRamp": [
+          "#020f05",
+          "#172c1d",
+          "#304d38",
+          "#4c7056",
+          "#709379",
+          "#99b7a0",
+          "#c0d9c5",
+          "#e0f5e5"
+        ]
+      },
+      "green-tint": {
+        "role": "primary",
+        "displayName": "Green Tint",
+        "canonical": "#e9f0eb",
+        "tonalRamp": [
+          "#0a0c0a",
+          "#242725",
+          "#424643",
+          "#626864",
+          "#858b87",
+          "#aaafac",
+          "#ced2cf",
+          "#ecefed"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Warm Paper",
+        "canonical": "#f7f6f2",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#272625",
+          "#464542",
+          "#676663",
+          "#8a8986",
+          "#afaeab",
+          "#d1d1ce",
+          "#efeeec"
+        ]
+      },
+      "paper-deep": {
+        "role": "neutral",
+        "displayName": "Deep Paper",
+        "canonical": "#efede6",
+        "tonalRamp": [
+          "#0c0b09",
+          "#272623",
+          "#464540",
+          "#686660",
+          "#8b8983",
+          "#afaea9",
+          "#d2d1cd",
+          "#efeeeb"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "White Panel",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#262626",
+          "#454545",
+          "#666666",
+          "#898989",
+          "#aeaeae",
+          "#d1d1d1",
+          "#eeeeee"
+        ]
+      },
+      "cell-free": {
+        "role": "neutral",
+        "displayName": "Free Cell",
+        "canonical": "#f5f6f1",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#262724",
+          "#454542",
+          "#666662",
+          "#898a86",
+          "#aeaeab",
+          "#d1d1ce",
+          "#eeefec"
+        ]
+      },
+      "cell-taken": {
+        "role": "neutral",
+        "displayName": "Taken Cell",
+        "canonical": "#e7e9e1",
+        "tonalRamp": [
+          "#0b0b09",
+          "#262723",
+          "#444641",
+          "#656760",
+          "#888a83",
+          "#adafa9",
+          "#d0d2cd",
+          "#eeefeb"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Court Ink",
+        "canonical": "#171916",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#252725",
+          "#444643",
+          "#646763",
+          "#888a86",
+          "#acafab",
+          "#d0d1cf",
+          "#edefed"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Stone",
+        "canonical": "#666862",
+        "tonalRamp": [
+          "#0b0b09",
+          "#262724",
+          "#444641",
+          "#656761",
+          "#888a84",
+          "#adafaa",
+          "#d0d2cd",
+          "#eeefeb"
+        ]
+      },
+      "night": {
+        "role": "neutral",
+        "displayName": "Night",
+        "canonical": "#141413",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#262626",
+          "#454544",
+          "#666665",
+          "#898988",
+          "#aeaead",
+          "#d1d1d0",
+          "#eeeeee"
+        ]
+      },
+      "night-surface": {
+        "role": "neutral",
+        "displayName": "Night Surface",
+        "canonical": "#1d1d1b",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#262625",
+          "#454543",
+          "#666664",
+          "#898987",
+          "#aeaeac",
+          "#d1d1cf",
+          "#eeeeed"
+        ]
+      },
+      "night-ink": {
+        "role": "neutral",
+        "displayName": "Night Ink",
+        "canonical": "#f7f6f2",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#272625",
+          "#464542",
+          "#676663",
+          "#8a8986",
+          "#afaeab",
+          "#d1d1ce",
+          "#efeeec"
+        ]
+      },
+      "night-muted": {
+        "role": "neutral",
+        "displayName": "Night Muted",
+        "canonical": "#9b9a95",
+        "tonalRamp": [
+          "#0b0b09",
+          "#272624",
+          "#464542",
+          "#676662",
+          "#8a8985",
+          "#afaeaa",
+          "#d2d1ce",
+          "#efeeec"
+        ]
+      },
+      "warn": {
+        "role": "tertiary",
+        "displayName": "Warn",
+        "canonical": "#8a5300",
+        "tonalRamp": [
+          "#190500",
+          "#3c1e00",
+          "#633a00",
+          "#8d5915",
+          "#b17d44",
+          "#d1a476",
+          "#efc9a3",
+          "#ffe8c9"
+        ]
+      },
+      "warn-soft": {
+        "role": "tertiary",
+        "displayName": "Warn Soft",
+        "canonical": "#fbf1dc",
+        "tonalRamp": [
+          "#0e0b05",
+          "#2b261c",
+          "#4b4437",
+          "#6d6554",
+          "#908877",
+          "#b4ad9f",
+          "#d6d0c4",
+          "#f3eee4"
+        ]
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Danger",
+        "canonical": "#b42318",
+        "tonalRamp": [
+          "#260000",
+          "#520000",
+          "#81130b",
+          "#b42e22",
+          "#da5b4b",
+          "#f88b7a",
+          "#ffb5a7",
+          "#ffd9cc"
+        ]
+      },
+      "danger-soft": {
+        "role": "tertiary",
+        "displayName": "Danger Soft",
+        "canonical": "#fdecea",
+        "tonalRamp": [
+          "#0f0a09",
+          "#2c2423",
+          "#4d4241",
+          "#706261",
+          "#938584",
+          "#b7aba9",
+          "#d8cecd",
+          "#f5eceb"
+        ]
+      },
+      "info": {
+        "role": "tertiary",
+        "displayName": "Info",
+        "canonical": "#1f5a99",
+        "tonalRamp": [
+          "#000a23",
+          "#04274a",
+          "#1a4676",
+          "#3268a5",
+          "#588cc8",
+          "#86b1e5",
+          "#b0d4ff",
+          "#d4f2ff"
+        ]
+      },
+      "info-soft": {
+        "role": "tertiary",
+        "displayName": "Info Soft",
+        "canonical": "#e7eff9",
+        "tonalRamp": [
+          "#090b0e",
+          "#23272b",
+          "#40464c",
+          "#60676f",
+          "#838a92",
+          "#a9aeb6",
+          "#cdd1d7",
+          "#ebeff4"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Tiêu đề hero, mỗi trang một lần."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Tiêu đề section."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Tiêu đề thẻ, câu hỏi, tên bước."
+      },
+      "body-lead": {
+        "displayName": "Body lead",
+        "purpose": "Đoạn dẫn cạnh tiêu đề section."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Văn bản thường."
+      },
+      "ui": {
+        "displayName": "UI",
+        "purpose": "Chữ trong cửa sổ app, ô giờ, nhãn trạng thái."
+      },
+      "label-mono": {
+        "displayName": "Label mono",
+        "purpose": "Giờ, số tiền, chỉ số mục."
+      }
+    },
+    "shadows": [
+      {
+        "name": "panel",
+        "value": "0 0 0 1px rgb(22 40 28 / 0.045), 0 2px 4px -1px rgb(22 40 28 / 0.04), 0 14px 32px -12px rgb(22 40 28 / 0.1), 0 40px 72px -36px rgb(22 40 28 / 0.18)",
+        "purpose": "Bảng, cửa sổ app, thẻ chính."
+      },
+      {
+        "name": "panel-sm",
+        "value": "0 0 0 1px rgb(22 40 28 / 0.05), 0 6px 18px -8px rgb(22 40 28 / 0.14)",
+        "purpose": "Câu hỏi đang mở, thẻ nhỏ, ghi chú nổi."
+      },
+      {
+        "name": "raised-pill",
+        "value": "0 0 0 1px rgb(22 40 28 / 0.04), 0 2px 6px -2px rgb(22 40 28 / 0.1)",
+        "purpose": "Mục đang chọn trong thanh bên."
+      },
+      {
+        "name": "green-lift",
+        "value": "0 6px 14px -6px color-mix(in oklab, #1f6b3a 70%, transparent)",
+        "purpose": "Ô giờ đã chọn, nút chính."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Mặc định cho chuyển động vào và đổi trạng thái."
+      },
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Phản hồi nhanh khi rê chuột, nhấn."
+      },
+      {
+        "name": "ease-io",
+        "value": "cubic-bezier(0.62, 0.02, 0.2, 1)",
+        "purpose": "Vật thể di chuyển giữa hai vị trí (chuyển section, mang khung)."
+      },
+      {
+        "name": "dur-ui",
+        "value": "180ms",
+        "purpose": "Đổi màu nút, viền, nền."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "390px"
+      },
+      {
+        "name": "sm",
+        "value": "639px"
+      },
+      {
+        "name": "md",
+        "value": "1023px"
+      },
+      {
+        "name": "fullpage",
+        "value": "1024px"
+      },
+      {
+        "name": "lg",
+        "value": "1280px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Hành động chính, mỗi màn một nút.",
+      "html": "<button class=\"ds-btn-primary\">Tìm sân trống</button>",
+      "css": ".ds-btn-primary{font-family:'Mona Sans',system-ui,sans-serif;display:inline-flex;align-items:center;height:44px;padding:0 24px;border:0;border-radius:999px;background:#1f6b3a;color:#fff;font-size:16px;font-weight:500;cursor:pointer;box-shadow:0 8px 20px -10px rgba(31,107,58,.8),inset 0 1px 0 rgba(255,255,255,.14);transition:background-color .18s,transform .35s cubic-bezier(.16,1,.3,1)}.ds-btn-primary:hover{background:#1b5d33}.ds-btn-primary:active{transform:translateY(1px) scale(.985)}.ds-btn-primary:focus-visible{outline:2px solid #1f6b3a;outline-offset:2px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Hành động phụ cạnh nút chính.",
+      "html": "<button class=\"ds-btn-secondary\">Xem cách tính giá</button>",
+      "css": ".ds-btn-secondary{font-family:'Mona Sans',system-ui,sans-serif;display:inline-flex;align-items:center;height:44px;padding:0 24px;border:1px solid rgba(22,40,28,.12);border-radius:999px;background:rgba(255,255,255,.7);color:#171916;font-size:16px;font-weight:500;cursor:pointer;transition:background-color .18s,border-color .18s,transform .35s cubic-bezier(.16,1,.3,1)}.ds-btn-secondary:hover{background:#fff;border-color:rgba(22,40,28,.3)}.ds-btn-secondary:active{transform:translateY(1px) scale(.985)}.ds-btn-secondary:focus-visible{outline:2px solid #1f6b3a;outline-offset:2px}"
+    },
+    {
+      "name": "Status Pills",
+      "kind": "chip",
+      "refersTo": "status-free",
+      "description": "Trạng thái cơ sở hoặc khung giờ trong danh sách.",
+      "html": "<div class=\"ds-pills\"><span class=\"ds-pill\">Còn trống</span><span class=\"ds-pill ds-pill--held\">Đang giữ</span><span class=\"ds-pill ds-pill--full\">Kín lịch</span></div>",
+      "css": ".ds-pills{display:flex;gap:8px}.ds-pill{font-family:'Mona Sans',system-ui,sans-serif;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:#e9f0eb;color:#1d6236;font-size:13px;font-weight:500}.ds-pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.6}.ds-pill--held{background:#1f6b3a;color:#fff;box-shadow:0 4px 10px -4px rgba(31,107,58,.6)}.ds-pill--held::before{opacity:1}.ds-pill--full{background:#efefea;color:#5c5e58}"
+    },
+    {
+      "name": "Search Field",
+      "kind": "input",
+      "refersTo": null,
+      "description": "Ô tìm kiếm khu vực hoặc tên cơ sở.",
+      "html": "<label class=\"ds-search\"><svg viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><circle cx=\"7\" cy=\"7\" r=\"4.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"m10.5 10.5 3 3\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg><input placeholder=\"Tân Bình\" aria-label=\"Khu vực\"></label>",
+      "css": ".ds-search{font-family:'Mona Sans',system-ui,sans-serif;display:inline-flex;align-items:center;gap:8px;height:40px;width:240px;padding:0 14px;border-radius:999px;background:#f5f6f1;color:#666862;transition:box-shadow .18s,background-color .18s}.ds-search input{border:0;background:none;outline:none;font:inherit;font-size:14px;color:#171916;width:100%}.ds-search:hover{background:#eef0e9}.ds-search:focus-within{background:#fff;box-shadow:0 0 0 1px #1f6b3a,0 0 0 4px rgba(31,107,58,.14)}"
+    },
+    {
+      "name": "Court Board",
+      "kind": "custom",
+      "refersTo": "slot-picked",
+      "description": "Lưới sân con × giờ, thành phần trung tâm.",
+      "html": "<div class=\"ds-board\"><span></span><b>18:00</b><b>19:00</b><b>20:00</b><b>21:00</b><i>Sân 1</i><button class=\"ds-slot ds-slot--taken\">Đã cọc</button><button class=\"ds-slot ds-slot--pick\">Đã chọn</button><button class=\"ds-slot ds-slot--pick\">Đã chọn</button><button class=\"ds-slot\">Trống</button><i>Sân 2</i><button class=\"ds-slot\">Trống</button><button class=\"ds-slot\">Trống</button><button class=\"ds-slot ds-slot--held\">Đang giữ</button><button class=\"ds-slot\">Trống</button></div>",
+      "css": ".ds-board{font-family:'Mona Sans',system-ui,sans-serif;display:grid;grid-template-columns:52px repeat(4,minmax(64px,1fr));gap:6px;align-items:center;padding:20px 24px;background:#fff;border-radius:20px;box-shadow:0 0 0 1px rgba(22,40,28,.045),0 14px 32px -12px rgba(22,40,28,.1),0 40px 72px -36px rgba(22,40,28,.18);font-size:12px;color:#171916}.ds-board b{font:400 12px 'Geist Mono',ui-monospace,monospace;color:#666862;text-align:center}.ds-board i{font-style:normal;font-weight:500;font-size:13px}.ds-slot{font:inherit;height:44px;border-radius:12px;border:1.5px solid transparent;background:#f5f6f1;color:#8a8c86;cursor:pointer;transition:background-color .18s,color .18s,transform .18s}.ds-slot:hover{color:#1f6b3a;transform:translateY(-1px)}.ds-slot:focus-visible{outline:2px solid #1f6b3a;outline-offset:2px}.ds-slot--taken{background:#e7e9e1;color:#9a9b95;cursor:default}.ds-slot--held{background:none;border-style:dashed;border-color:rgba(31,107,58,.55);color:#1f6b3a}.ds-slot--pick{background:#1f6b3a;color:#fff;font-weight:500;box-shadow:0 6px 14px -6px rgba(31,107,58,.7)}.ds-slot--pick:hover{color:#fff}"
+    },
+    {
+      "name": "Panel Card",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Tấm trắng chứa nội dung trên nền giấy.",
+      "html": "<a class=\"ds-card\" href=\"#\"><b>Cầu lông Thành Công</b><span>Cộng Hòa, Tân Bình · 3 sân</span><em>120.000đ / giờ</em></a>",
+      "css": ".ds-card{font-family:'Mona Sans',system-ui,sans-serif;display:grid;gap:4px;width:280px;padding:20px 24px;border-radius:20px;background:#fff;color:#171916;text-decoration:none;box-shadow:0 0 0 1px rgba(22,40,28,.045),0 2px 4px -1px rgba(22,40,28,.04),0 14px 32px -12px rgba(22,40,28,.1),0 40px 72px -36px rgba(22,40,28,.18);transition:transform .35s cubic-bezier(.16,1,.3,1)}.ds-card b{font-size:16px;font-weight:500}.ds-card span{font-size:14px;color:#666862}.ds-card em{font:400 13px 'Geist Mono',ui-monospace,monospace;font-style:normal;color:#1f6b3a;margin-top:8px}.ds-card:hover{transform:translateY(-2px)}.ds-card:focus-visible{outline:2px solid #1f6b3a;outline-offset:3px}"
+    },
+    {
+      "name": "Top Navigation",
+      "kind": "nav",
+      "refersTo": null,
+      "description": "Thanh trên cố định của trang.",
+      "html": "<nav class=\"ds-nav\"><span class=\"ds-nav__logo\">SCB</span><a href=\"#\" class=\"is-on\">Lịch sân</a><a href=\"#\">Bảng giá</a><a href=\"#\">Hoàn cọc</a><a href=\"#\">Hỏi đáp</a><span class=\"ds-nav__cta\">Tìm sân trống</span></nav>",
+      "css": ".ds-nav{font-family:'Mona Sans',system-ui,sans-serif;display:flex;align-items:center;gap:6px;height:64px;padding:0 20px;background:rgba(247,246,242,.86);backdrop-filter:blur(12px);border-bottom:1px solid rgba(22,40,28,.07)}.ds-nav__logo{font-size:19px;font-weight:500;letter-spacing:-.02em;color:#1f6b3a;margin-right:24px}.ds-nav a{padding:8px 12px;border-radius:999px;color:#3d403b;font-size:14px;font-weight:500;text-decoration:none;transition:background-color .18s,color .18s}.ds-nav a:hover,.ds-nav a.is-on{background:#efede6;color:#171916}.ds-nav a:focus-visible{outline:2px solid #1f6b3a;outline-offset:2px}.ds-nav__cta{margin-left:auto;display:inline-flex;align-items:center;height:40px;padding:0 20px;border-radius:999px;background:#1f6b3a;color:#fff;font-size:14px;font-weight:500}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Court Board",
+    "overview": "Hệ giao diện là tấm bảng lịch treo ở quầy sân: mỗi hàng một sân con, mỗi cột một giờ, ô nào trống, ô nào đã cọc, ô nào đang có người giữ, nhìn một lần là biết. Mọi màn hình xoay quanh cái bảng đó và những con số đi kèm nó: tổng tiền, tiền cọc, mức hoàn. Trang trí chỉ được phép khi nó giúp đọc bảng nhanh hơn.\n\nNền là giấy ấm, gần trắng ngà; bảng và các khung nội dung là tấm trắng nổi nhẹ trên nền đó, bo tròn lớn, không viền cứng, đổ một bóng dài và thấp. Chỉ có một màu nhấn là xanh sân; nó đánh dấu thứ người chơi đã chọn hoặc đang giữ, và hành động chính. Độ dày nội dung vừa phải: khoảng thở rộng ở trang giới thiệu, gọn hơn trong app, nhưng cùng một bộ màu, bo góc và cách đổ bóng.\n\nCảm giác tay: mềm, gọn, chắc. Nút là viên thuốc, nhấn thì lún nhẹ; thẻ có liên kết nhấc lên 2px khi rê chuột; ô giờ đổi màu tức thì khi chọn. Trang giới thiệu (`site/`) là chuẩn của hệ này; app (`app/`) còn dùng biến thể cũ (nền xám lạnh #f8f8f8, bo 8–18px, nút bo 8px) và phải dần theo chuẩn này.",
+    "keyCharacteristics": [
+      "Một màu nhấn xanh sân trên nền giấy ấm và tấm trắng.",
+      "Lưới sân × giờ là thành phần trung tâm, các màn khác dẫn về nó.",
+      "Bo tròn lớn, không viền cứng, bóng dài và thấp có chút xanh.",
+      "Chữ không chân Mona Sans; số và nhãn kỹ thuật dùng Geist Mono.",
+      "Một phần tối (night) duy nhất dành cho ví và tiền."
+    ],
+    "rules": [
+      {
+        "name": "The One Green Rule",
+        "body": "Xanh sân chỉ đánh dấu thứ thuộc về người đang xem (giờ họ chọn, chỗ họ giữ) và hành động chính. Không dùng làm nền trang trí hay viền khung.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mint Is Not Ink Rule",
+        "body": "Line Mint là màu tô; chữ trên nền sáng không bao giờ dùng màu này.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Numbers Rule",
+        "body": "Giờ, số tiền và chỉ số dùng Geist Mono số đều; chữ thường không bao giờ dùng mono.",
+        "section": "typography"
+      },
+      {
+        "name": "The Two Weights Rule",
+        "body": "Chỉ 400 và 500. Không in đậm 600–700 trong nội dung.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Hard Border Rule",
+        "body": "Khung nội dung không có viền đặc; mép do bóng và vòng 1px rất mờ tạo ra.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** để lưới sân × giờ là thứ nhìn thấy đầu tiên ở mọi màn liên quan đến đặt sân.",
+      "**Do** dùng xanh sân (court-green) cho đúng thứ người dùng đã chọn, đang giữ, và hành động chính.",
+      "**Do** viết giờ và tiền bằng Geist Mono số đều (ví dụ 19:00, 276.000đ).",
+      "**Do** dùng bóng Panel thay cho viền để tách tấm trắng khỏi nền giấy.",
+      "**Do** giữ bo tròn: 12px cho ô giờ, 20px cho bảng, 999px cho nút và nhãn."
+    ],
+    "donts": [
+      "**Don't** dùng viền đặc 1px màu xám làm khung thẻ hay khung cửa sổ.",
+      "**Don't** viết chữ màu Line Mint trên nền sáng.",
+      "**Don't** thêm màu nhấn thứ hai; tím và tím nhạt không bao giờ xuất hiện.",
+      "**Don't** dùng chữ đậm 600–700 trong nội dung.",
+      "**Don't** dùng nền xám lạnh (#f8f8f8) hay bo 8px cho màn mới; đó là biến thể cũ của app."
+    ]
+  }
+}

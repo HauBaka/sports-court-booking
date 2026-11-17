@@ -1,0 +1,7 @@
+node_modules/
+shots/
+# trạng thái và báo cáo của công cụ kiểm tra giao diện (taste-skill, impeccable), sinh lại được
+.taste-skill/
+.impeccable/review/
+.impeccable/hook.cache.json
+graphify-out/

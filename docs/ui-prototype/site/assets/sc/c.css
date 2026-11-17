@@ -1,0 +1,210 @@
+/* section motion, part c: #mon (three drawn scenes) and #coc (tiers, the cancel-time slider, the cancel screen).
+   Pre-build states hide only under html.sc-ready.sc-c (c.js sets sc-c) and only without reduced motion,
+   so a failed script or a reduced-motion visitor always sees the finished page. */
+
+/* ------------------------------------------------------------ #mon: a tile is a scene over its name
+   Each sport has its own court tone; the figure, the lines and the ball take theirs from it. */
+.sports__tile {
+  position: relative; display: grid; grid-template-rows: minmax(0, 1fr) auto; margin: 0; overflow: hidden; border-radius: 28px; cursor: pointer;
+  background: var(--sp-bg); color: var(--sp-ink); box-shadow: inset 0 0 0 1px rgb(22 40 28 / 0.05);
+  transition: transform 0.6s var(--sc-ease), box-shadow 0.6s var(--sc-ease);
+}
+.sports__tile:hover { transform: translateY(-4px); box-shadow: inset 0 0 0 1px rgb(22 40 28 / 0.05), 0 28px 44px -28px rgb(22 40 28 / 0.4); }
+.sports__tile:focus-visible { outline: 2px solid var(--p-accent); outline-offset: 3px; }
+.sports__tile[data-sport="badminton"] { --sp-bg: #dfeee2; --sp-floor: #d0e5d5; --sp-ink: #173322; --sp-line: rgb(23 51 34 / 0.24); --sp-pop: #ffffff; }
+.sports__tile[data-sport="pickleball"] { --sp-bg: #f1e8d5; --sp-floor: #e8dcc2; --sp-ink: #2b2a22; --sp-line: rgb(43 42 34 / 0.22); --sp-pop: #2f8a4e; }
+.sports__tile[data-sport="football"] { --sp-bg: #16241b; --sp-floor: #1b3122; --sp-ink: #f1f5ee; --sp-line: rgb(255 255 255 / 0.24); --sp-pop: #ffffff; }
+.sp-box { position: relative; min-height: 0; overflow: hidden; }
+.sp { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: visible; }
+/* the first visit (c.js): a tile waits unseen until its turn; the heading comes when the three are in place */
+#mon.mon-intro .sports__tile:not(.is-placed) { opacity: 0; }
+#mon.mon-intro .grid--top { opacity: 0; }
+#mon .grid--top { transition: opacity 0.9s var(--sc-ease); }
+#mon.mon-intro .sports__tile { pointer-events: none; }
+/* the catch marks: four corners of a viewfinder, on once the frame is caught */
+.sp-box::after {
+  content: ""; position: absolute; inset: 16px; pointer-events: none; opacity: 0; transition: opacity 0.25s linear; --m: var(--sp-ink);
+  background:
+    linear-gradient(var(--m), var(--m)) 0 0 / 22px 2px, linear-gradient(var(--m), var(--m)) 0 0 / 2px 22px,
+    linear-gradient(var(--m), var(--m)) 100% 0 / 22px 2px, linear-gradient(var(--m), var(--m)) 100% 0 / 2px 22px,
+    linear-gradient(var(--m), var(--m)) 0 100% / 22px 2px, linear-gradient(var(--m), var(--m)) 0 100% / 2px 22px,
+    linear-gradient(var(--m), var(--m)) 100% 100% / 22px 2px, linear-gradient(var(--m), var(--m)) 100% 100% / 2px 22px;
+  background-repeat: no-repeat;
+}
+.is-caught .sp-box::after { opacity: 0.5; }
+.sp-floor { fill: var(--sp-floor); }
+.sp-line { fill: none; stroke: var(--sp-line); stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round; }
+.sp-line--strong { stroke: var(--sp-ink); stroke-opacity: 0.6; stroke-width: 3px; }
+.sp-net { fill: color-mix(in oklab, var(--sp-ink) 7%, transparent); stroke: var(--sp-line); stroke-width: 1.2px; }
+.sp-shadow { fill: var(--sp-ink); opacity: 0.13; }
+.sp-fig { color: var(--sp-ink); }
+.sp-ball { fill: var(--sp-pop); stroke: var(--sp-ink); stroke-width: 2px; }
+.sp-bird__cork { fill: var(--sp-ink); }
+.sp-bird__cone { fill: var(--sp-pop); stroke: var(--sp-ink); stroke-width: 1.6px; stroke-linejoin: round; }
+.sp-trail { fill: none; stroke: var(--sp-ink); stroke-opacity: 0.55; stroke-width: 2px; stroke-linecap: round; stroke-dasharray: 1 7; }
+.sp-flash { fill: #fff; opacity: 0; pointer-events: none; }
+.sports__tag { position: relative; z-index: 1; margin: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 16px 22px 20px; }
+.sports__tag b { font: 500 clamp(22px, 2vw, 30px)/1.05 var(--font-display); letter-spacing: -0.03em; }
+.sports__tag span { font-size: 14px; color: color-mix(in oklab, var(--sp-ink) 72%, transparent); white-space: nowrap; }
+.sports__tag em { display: inline-block; margin-right: 6px; padding: 4px 9px; border-radius: 999px; background: var(--sp-ink); color: var(--sp-bg); font: 500 12px/1 var(--font-mono); font-style: normal; }
+@media (min-width: 1024px) {
+  #mon .sports { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); margin-top: var(--s-6); }
+  #mon .sports > .sports__tile { grid-column: auto; height: auto; min-height: 240px; }
+}
+/* below the desktop grid the tiles set the section's height, not the other way round: three narrow tiles on a tablet,
+   one a row on a phone, each tall enough for its whole scene */
+@media (max-width: 1023px) {
+  #mon .wrap > .fill { flex: none; }
+  main > #mon.section, main > #mon.section > .wrap { height: auto; min-height: 0; }
+  #mon .sports { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #mon .sports > .sports__tile, #mon .sports > .sports__tile:first-child { grid-column: auto; min-width: 0; height: 320px; aspect-ratio: auto; }
+  .sports__tag { display: grid; gap: 6px; padding: 12px 16px 16px; }
+  .sports__tag b { font-size: 20px; }
+}
+@media (max-width: 639px) { #mon .sports { grid-template-columns: minmax(0, 1fr); } #mon .sports > .sports__tile, #mon .sports > .sports__tile:first-child { height: 390px; } .sports__tag { display: flex; } }
+@media (prefers-reduced-motion: no-preference) {
+  .is-caught .sp-flash { animation: sp-flash 0.55s ease-out; }
+  .is-caught .sp { animation: sp-snap 0.8s var(--sc-ease); }
+}
+@keyframes sp-flash { from { opacity: 0.75; } to { opacity: 0; } }
+@keyframes sp-snap { from { transform: scale(1.035); } to { transform: none; } }
+
+/* ------------------------------------------------------------ #coc: tiers and the cancel-time slider */
+.coc-left { display: flex; flex-direction: column; gap: var(--s-5); min-width: 0; }
+.tiers li { position: relative; }
+.tiers .t-stat { font-variant-numeric: tabular-nums; transition: color 0.25s var(--sc-ease); }
+.tiers.is-live li:not(.is-on) .t-stat { color: color-mix(in oklab, var(--muted) 86%, transparent); }
+.tiers.is-live li.is-on .t-stat { color: var(--p-accent); }
+#coc .tiers .t-stat { letter-spacing: -0.04em; }
+
+.coc-calc { --h: 30; --th: 34px; --pos: calc(var(--th) / 2 + (100% - var(--th)) * var(--h) / 48); display: grid; gap: 4px; }
+.coc-calc[hidden] { display: none; }
+.coc-calc__label { font-weight: 500; }
+/* the track: three refund zones, four checkpoints, the native range on top (its own track is clear) */
+.coc-track { position: relative; height: 70px; }
+.coc-zones, .coc-dots { position: absolute; left: 0; right: 0; bottom: 10px; height: 18px; }
+.coc-zones > i {
+  position: absolute; top: 0; bottom: 0; display: grid; place-items: center; font-style: normal;
+  left: calc(var(--th) / 2 + (100% - var(--th)) * var(--a) / 48 + 2px); right: calc(100% - var(--th) / 2 - (100% - var(--th)) * var(--b) / 48 + 2px);
+  background: color-mix(in oklab, var(--ink) 7%, transparent); border-radius: 999px;
+  font: 500 11px/1 var(--font-mono); color: var(--muted); transition: background-color 0.3s linear, color 0.3s linear;
+}
+.coc-calc[data-tier="0"] .coc-zones > i:nth-child(1),
+.coc-calc[data-tier="50"] .coc-zones > i:nth-child(2),
+.coc-calc[data-tier="80"] .coc-zones > i:nth-child(3) { background: var(--p-accent); color: var(--p-accent-ink); }
+.coc-calc[data-tier="0"] .coc-zones > i:nth-child(1) { background: var(--ink); color: var(--bg); }
+.coc-dots { z-index: 1; pointer-events: none; }
+.coc-dots > i { position: absolute; top: 50%; left: calc(var(--th) / 2 + (100% - var(--th)) * var(--at) / 48); width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%, -50%); background: #fff; box-shadow: 0 0 0 1.5px color-mix(in oklab, var(--ink) 26%, transparent); transition: background-color 0.25s linear, box-shadow 0.25s linear; }
+.coc-dots > i.is-past { background: var(--sc-volt); box-shadow: 0 0 0 1.5px var(--p-accent); }
+.coc-calc__range {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; -webkit-appearance: none; appearance: none; width: 100%; height: 38px; margin: 0; background: transparent; cursor: pointer;
+}
+.coc-calc__range::-webkit-slider-runnable-track { height: 38px; background: transparent; }
+.coc-calc__range::-moz-range-track { height: 38px; background: transparent; }
+.coc-calc__range::-webkit-slider-thumb { -webkit-appearance: none; width: 34px; height: 34px; margin-top: 2px; border-radius: 50%; background: transparent; border: 0; cursor: grab; }
+.coc-calc__range::-moz-range-thumb { width: 34px; height: 34px; border-radius: 50%; background: transparent; border: 0; cursor: grab; }
+/* the thumb: a white knob that grows a little under the pointer */
+.coc-ball { position: absolute; z-index: 3; left: var(--pos); bottom: 19px; width: 32px; height: 32px; translate: -50% 50%; pointer-events: none; transition: scale 0.25s var(--sc-ease); }
+.coc-calc__range:hover ~ .coc-ball { scale: 1.1; }
+.coc-calc__range:active ~ .coc-ball { scale: 1.16; }
+.coc-calc__range:focus-visible { outline: 2px solid var(--p-accent); outline-offset: 2px; border-radius: 6px; }
+/* the hour rides above the thumb */
+.coc-calc__h {
+  position: absolute; top: 0; left: var(--pos); translate: -50% 0; padding: 5px 10px; border-radius: 999px; background: var(--ink); color: var(--bg);
+  font: 500 13px/1 var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none;
+}
+/* checkpoint buttons under the track, each centred on its hour */
+.coc-marks { position: relative; height: 44px; margin-top: -4px; }
+.coc-marks > button {
+  position: absolute; top: 0; left: calc(var(--th) / 2 + (100% - var(--th)) * var(--at) / 48); translate: -50% 0; min-width: 44px; height: 44px; padding: 0 6px; margin: 0;
+  border: 0; background: none; color: var(--muted); font: 500 13px/1 var(--font-mono); cursor: pointer; border-radius: 6px; white-space: nowrap; transition: color 0.2s linear;
+}
+.coc-marks > button:hover { color: var(--ink); }
+.coc-marks > button[aria-pressed="true"] { color: var(--ink); font-weight: 600; }
+.coc-marks > button:focus-visible { outline: 2px solid var(--p-accent); outline-offset: 0; }
+.coc-calc__out { display: block; margin-top: 2px; font: 500 var(--t-lead)/1.35 var(--font-text); font-variant-numeric: tabular-nums; transform-origin: 0 50%; }
+
+@media (prefers-reduced-motion: no-preference) {
+  html.sc-ready.sc-c #coc:not(.is-in) .c-rule { transform: scaleX(0); }
+  html.sc-ready.sc-c #coc:not(.is-in) .tiers .t-stat,
+  html.sc-ready.sc-c #coc:not(.is-in) .tiers li > span,
+  html.sc-ready.sc-c #coc:not(.is-in) .coc-calc { opacity: 0; }
+}
+/* the drawn rule: a line under each tier that runs left to right on enter */
+.tiers.c-ruled li { border-bottom-color: transparent; }
+.tiers li > .c-rule { position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--line); transform-origin: 0 50%; pointer-events: none; }
+
+/* the cancel screen: the booking's own page, on a soft stage. It shows the slider's hour and acts the cancel out */
+.cx { position: relative; align-self: stretch; display: grid; place-items: center; min-width: 0; min-height: 0; padding: 20px; border-radius: 28px; background: linear-gradient(155deg, #dfeee2, #ecefe4 70%); box-shadow: inset 0 0 0 1px rgb(22 40 28 / 0.05); }
+.cx__app { position: relative; width: min(100%, 400px); padding: 4px 20px 18px; overflow: hidden; font-size: 14px; color: var(--u-ink); }
+.cx__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 44px; border-bottom: 1px solid var(--u-line); font-size: 13px; color: var(--u-muted); }
+.cx__wallet b { margin-left: 4px; font: 500 14px/1 var(--font-mono); color: var(--u-ink); font-variant-numeric: tabular-nums; }
+.cx__book { display: grid; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--u-line); }
+.cx__row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+.cx__row > b { font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cx__st { flex: none; padding: 5px 10px; border-radius: 999px; background: var(--sc-tint); color: var(--p-accent); font: 500 12px/1 var(--font-text); transition: background-color 0.3s linear, color 0.3s linear; }
+.cx__st.is-off { background: var(--u-fill-2); color: var(--u-muted); }
+.cx__meta { font-size: 13px; color: var(--u-muted); }
+.cx__cells { display: flex; gap: 6px; }
+.cx__cells i { padding: 6px 10px; border-radius: 10px; border: 1.5px solid var(--p-accent); background: var(--sc-tint); color: var(--p-accent); font: 500 12px/1 var(--font-mono); font-style: normal; transition: background-color 0.3s linear, color 0.3s linear, border-color 0.3s linear; }
+.cx__cells i.is-free { border-color: transparent; background: #f0f1ea; color: var(--u-muted); }
+.cx__lines { margin: 0; padding: 6px 0 2px; }
+.cx__lines > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 0; }
+.cx__lines dt { color: var(--u-muted); }
+.cx__lines dd { margin: 0; font: 500 13px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.cx__back dt { color: var(--u-ink); font-weight: 500; }
+.cx__back dd { font-size: 15px; color: var(--p-accent); }
+.cx__back em { margin-left: 6px; padding: 3px 8px; border-radius: 999px; background: var(--sc-volt); color: var(--sc-volt-ink); font: 500 12px/1 var(--font-mono); font-style: normal; }
+.cx__btn { display: flex; align-items: center; justify-content: center; height: 44px; margin-top: 8px; border-radius: 999px; background: #1d201c; color: #fff; font-weight: 500; transition: transform 0.16s ease, background-color 0.3s linear, color 0.3s linear; }
+.cx__btn.is-press { transform: scale(0.96); }
+.cx__btn.is-load { background: #3a3e38; }
+.cx__btn.is-off { background: var(--u-fill-2); color: var(--u-muted); }
+.cx__toast { position: absolute; left: 12px; right: 12px; bottom: 12px; padding: 14px 16px; border-radius: 16px; background: var(--p-accent); color: #fff; font-weight: 500; text-align: center; transform: translateY(150%); transition: transform 0.7s var(--sc-ease); }
+.cx__app.is-done .cx__toast { transform: none; }
+.cx__app.is-zero .cx__toast { background: #1d201c; }
+.cx__cursor { z-index: 6; }
+.cx__again {
+  position: absolute; right: 14px; top: 14px; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin: 0; padding: 0; border: 0; border-radius: 999px; cursor: pointer;
+  background: rgb(255 255 255 / 0.8); box-shadow: inset 0 0 0 1px rgb(22 40 28 / 0.1); color: var(--ink); font: 500 13px/1 var(--font-text); transition: background-color 0.2s linear, transform 0.35s var(--sc-ease), opacity 0.2s linear;
+}
+.cx__again[hidden] { display: none; }
+.cx__again svg { width: 16px; height: 16px; transition: rotate 0.6s var(--sc-ease); }
+.cx__again:hover { background: #fff; transform: translateY(-1px); }
+.cx__again:hover svg { rotate: -180deg; }
+.cx__again:active { transform: translateY(1px); }
+.cx__again:focus-visible { outline: 2px solid var(--p-accent); outline-offset: 2px; }
+.cx.is-running .cx__again { opacity: 0.45; pointer-events: none; }
+.cx__again span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 1023px) { .cx { margin-top: var(--s-5); } }
+/* desktop: the heading and the tiers keep the left half; the cancel screen takes the right half for the section's
+   whole height, so it stands in the middle of it, and plays larger */
+@media (min-width: 1024px) {
+  #coc > .wrap { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: auto minmax(0, 1fr); column-gap: var(--gutter); }
+  #coc > .wrap > .section-head { grid-column: 1 / span 6; grid-row: 1; }
+  #coc > .wrap > .grid { display: contents; }
+  #coc .coc-left { grid-column: 1 / span 6; grid-row: 2; gap: var(--s-4); }
+  #coc .tiers li { padding: 12px 0; }
+  #coc .cx { grid-column: 7 / -1; grid-row: 1 / -1; }
+  .cx__app { scale: 1.18; }
+}
+@media (min-width: 1280px) and (min-height: 840px) { .cx__app { scale: 1.36; } }
+@media (max-width: 639px) {
+  #coc .wrap > .fill { flex: none; }
+  main > #coc.section, main > #coc.section > .wrap { height: auto; }
+  .cx { padding: 12px; }
+  .cx__again { position: static; margin-top: 10px; }
+}
+/* a short laptop screen: the tiers and the screen give up their second lines so one screen still holds the section */
+@media (min-width: 1024px) and (max-height: 780px) {
+  #coc .tiers li { padding: 8px 0; }
+  #coc .tiers__what { display: none; }
+  #coc .tiers .t-stat { font-size: 40px; }
+  #coc .coc-left { gap: var(--s-4); }
+  #coc .section-head > p { margin-top: 4px; }
+  .cx { padding: 12px; }
+  .cx__lines > div { padding: 5px 0; }
+  .cx__book { padding: 10px 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sports__tile, .tiers .t-stat, .cx__toast, .cx__btn { transition: none; }
+}
