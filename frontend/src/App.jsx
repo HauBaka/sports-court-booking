@@ -18,6 +18,9 @@ import FacilityCreatePage from "./pages/owner/FacilityCreatePage";
 import FacilityDetailPage from "./pages/owner/FacilityDetailPage";
 import CourtDetailPage from "./pages/owner/CourtDetailPage";
 import CourtEditPage from "./pages/owner/CourtEditPage";
+import FindCourtsPage from "./pages/customer/FindCourtsPage";
+import CustomerCourtDetailPage from "./pages/customer/CourtDetailPage";
+import BookingConfirmPage from "./pages/customer/BookingConfirmPage";
 
 export default function App() {
   return (
@@ -32,6 +35,13 @@ export default function App() {
             <Route path="health" element={<HealthCheckPage />} />
             <Route path="unauthorized" element={<UnauthorizedPage />} />
             <Route path="profile" element={<ProfilePage />} />
+
+            {/* Khách hàng */}
+            <Route element={<RequireRole roles="customer" />}>
+              <Route path="courts" element={<FindCourtsPage />} />
+              <Route path="courts/:id" element={<CustomerCourtDetailPage />} />
+              <Route path="booking/confirm" element={<BookingConfirmPage />} />
+            </Route>
 
             {/* Chủ sân */}
             <Route element={<RequireRole roles="owner" />}>
