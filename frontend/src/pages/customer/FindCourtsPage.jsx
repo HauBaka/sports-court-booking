@@ -14,20 +14,42 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
+const SPORTS = [
+  { id: "",  name: "Tất cả môn" },
+  { id: 1,   name: "Cầu lông" },
+  { id: 2,   name: "Pickleball" },
+  { id: 3,   name: "Bóng đá mini" },
+];
+
 const PAGE_LIMIT = 10;
 
 export default function FindCourtsPage() {
+  // ── Bộ lọc (đang nhập) ──
+  const [search,  setSearch]  = useState("");
+  const [city,    setCity]    = useState("");
+  const [sportId, setSportId] = useState("");
+
+  // ── Params đã áp dụng ──
+  const [applied, setApplied] = useState({ search: "", city: "", sportId: "" });
+
+  // ── Phân trang ──
   const [page,       setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total,      setTotal]      = useState(0);
-  const [items,      setItems]      = useState([]);
-  const [status,     setStatus]     = useState("loading");
-  const [errorMsg,   setErrorMsg]   = useState("");
 
-  const fetchFacilities = useCallback(async (pg) => {
+  // ── Dữ liệu ──
+  const [items,    setItems]    = useState([]);
+  const [status,   setStatus]   = useState("loading");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const fetchFacilities = useCallback(async (params, pg) => {
     setStatus("loading");
     try {
-      const res = await listFacilities({ page: pg, limit: PAGE_LIMIT });
+      const query = { page: pg, limit: PAGE_LIMIT };
+      if (params.search.trim())  query.search   = params.search.trim();
+      if (params.city.trim())    query.city     = params.city.trim();
+      if (params.sportId !== "") query.sport_id = params.sportId;
+      const res = await listFacilities(query);
       setItems(res.data ?? []);
       setTotal(res.meta?.total ?? 0);
       setTotalPages(res.meta?.total_pages ?? 1);
@@ -38,12 +60,23 @@ export default function FindCourtsPage() {
     }
   }, []);
 
-  useEffect(() => { fetchFacilities(1); }, [fetchFacilities]);
+  useEffect(() => { fetchFacilities(applied, 1); }, [fetchFacilities]); // eslint-disable-line
 
   const goToPage = (pg) => {
     setPage(pg);
-    fetchFacilities(pg);
+    fetchFacilities(applied, pg);
     document.querySelector(".fc-main")?.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSearch = () => {
+    const params = { search, city, sportId };
+    setApplied(params);
+    setPage(1);
+    fetchFacilities(params, 1);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") handleSearch();
   };
 
   return (
@@ -53,6 +86,59 @@ export default function FindCourtsPage() {
         <div className="fc-hero-inner">
           <h1 className="fc-hero-title">Tìm sân thể thao</h1>
           <p className="fc-hero-sub">Tìm sân gần bạn, đặt ngay trong vài giây</p>
+        </div>
+      </div>
+
+      {/* Filter bar */}
+      <div className="fc-filter-bar" onKeyDown={handleKeyDown}>
+        <div className="fc-filter-group fc-filter-group--search">
+          <label className="fc-filter-label">Tên cơ sở</label>
+          <div className="fc-search-wrap">
+            <input
+              className="fc-search-input"
+              type="text"
+              placeholder="Nhập tên sân..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button className="fc-search-clear" type="button" onClick={() => setSearch("")} title="Xóa">✕</button>
+            )}
+          </div>
+        </div>
+
+        <div className="fc-filter-group">
+          <label className="fc-filter-label">Thành phố</label>
+          <div className="fc-search-wrap">
+            <input
+              className="fc-search-input"
+              type="text"
+              placeholder="VD: Hồ Chí Minh"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+            />
+            {city && (
+              <button className="fc-search-clear" type="button" onClick={() => setCity("")} title="Xóa">✕</button>
+            )}
+          </div>
+        </div>
+
+        <div className="fc-filter-group">
+          <label className="fc-filter-label">Môn thể thao</label>
+          <select
+            className="fc-select"
+            value={sportId}
+            onChange={(e) => setSportId(e.target.value === "" ? "" : Number(e.target.value))}
+          >
+            {SPORTS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
+
+        <div className="fc-filter-action">
+          <label className="fc-filter-label">&nbsp;</label>
+          <button className="fc-btn-search" type="button" onClick={handleSearch}>
+            Tìm sân
+          </button>
         </div>
       </div>
 
@@ -71,7 +157,7 @@ export default function FindCourtsPage() {
           {status === "error" && (
             <div className="fc-state-box">
               <p className="fc-error-msg">{errorMsg}</p>
-              <button className="fc-btn-search" type="button" onClick={() => fetchFacilities(page)}>
+              <button className="fc-btn-search" type="button" onClick={() => fetchFacilities(applied, page)}>
                 Thử lại
               </button>
             </div>
