@@ -44,15 +44,15 @@ export default function BookingConfirmPage() {
     );
   }
 
-  const { courtId, playDate, timeSlotIds } = state;
+  const { courtId, playDate, timeSlotIds, services = [] } = state;
 
-  return <ConfirmFlow courtId={courtId} playDate={playDate} timeSlotIds={timeSlotIds} />;
+  return <ConfirmFlow courtId={courtId} playDate={playDate} timeSlotIds={timeSlotIds} services={services} />;
 }
 
 // ─────────────────────────────────────────────────────────────────
 //  Flow confirm → booked (tách riêng để tránh hooks trong if)
 // ─────────────────────────────────────────────────────────────────
-function ConfirmFlow({ courtId, playDate, timeSlotIds }) {
+function ConfirmFlow({ courtId, playDate, timeSlotIds, services }) {
   const navigate = useNavigate();
 
   // ── Tính giá ──
@@ -63,7 +63,7 @@ function ConfirmFlow({ courtId, playDate, timeSlotIds }) {
   useEffect(() => {
     let cancelled = false;
     setPriceStatus("loading");
-    calculatePrice({ court_id: courtId, play_date: playDate, time_slot_ids: timeSlotIds, services: [] })
+    calculatePrice({ court_id: courtId, play_date: playDate, time_slot_ids: timeSlotIds, services })
       .then((res) => { if (!cancelled) { setPriceData(res.data); setPriceStatus("ready"); } })
       .catch((err) => { if (!cancelled) { setPriceError(err.message || "Không tính được giá."); setPriceStatus("error"); } });
     return () => { cancelled = true; };
@@ -96,7 +96,7 @@ function ConfirmFlow({ courtId, playDate, timeSlotIds }) {
         court_id: courtId,
         play_date: playDate,
         time_slot_ids: timeSlotIds,
-        services: [],
+        services,
       });
       setBooking(res.data);
     } catch (err) {

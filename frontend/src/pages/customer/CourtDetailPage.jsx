@@ -203,9 +203,10 @@ export default function CourtDetailPage() {
   const handleProceed = () => {
     navigate("/booking/confirm", {
       state: {
-        courtId:      selectedCourt,
-        playDate:     selectedDate,
-        timeSlotIds:  selectedSlotsSorted,
+        courtId:     selectedCourt,
+        playDate:    selectedDate,
+        timeSlotIds: selectedSlotsSorted,
+        services:    servicesPayload,
       },
     });
   };
