@@ -7,6 +7,9 @@ export const createFacility = (payload) => api.post("/facilities", payload);
 // GET /facilities/:id trả kèm courts[] nhúng bên trong data (theo API spec 2.2).
 export const getFacility = (id) => api.get(`/facilities/${id}`);
 
+// GET /facilities/:id/services — danh sách dịch vụ đi kèm (spec 2.11).
+export const getFacilityServices = (id) => api.get(`/facilities/${id}/services`);
+
 // POST /facilities/:id/courts — tạo sân con mới (spec 2.5).
 export const createCourt = (facilityId, payload) =>
   api.post(`/facilities/${facilityId}/courts`, payload);

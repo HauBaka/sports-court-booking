@@ -7,7 +7,7 @@ import { listFacilities } from "../../services/facilityService";
 import { formatVnd } from "../../utils/format";
 import "../../styles/find-courts.css";
 
-// ── Fix icon mặc định của Leaflet bị vỡ khi bundle bằng Vite ────
+// ── Fix icon Leaflet vỡ khi bundle bằng Vite ────────────────────
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -15,78 +15,78 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// ── Dữ liệu tĩnh cho bộ lọc ─────────────────────────────────────
-const DISTRICTS = [
-  "Tất cả khu vực",
-  "Quận 1, TP.HCM",
-  "Quận 3, TP.HCM",
-  "Quận 7, TP.HCM",
-  "Bình Thạnh, TP.HCM",
-  "Tân Bình, TP.HCM",
-  "Thủ Đức, TP.HCM",
-  "Gò Vấp, TP.HCM",
+// ── Hằng số ─────────────────────────────────────────────────────
+const SPORTS = [
+  { id: "", name: "Tất cả môn" },
+  { id: 1,  name: "Cầu lông" },
+  { id: 2,  name: "Pickleball" },
+  { id: 3,  name: "Bóng đá mini" },
 ];
 
 const PRICE_RANGES = [
   { label: "Tất cả mức giá", min: null, max: null },
-  { label: "Dưới 100.000 đ", min: 0, max: 100000 },
-  { label: "100.000 – 200.000 đ", min: 100000, max: 200000 },
-  { label: "200.000 – 300.000 đ", min: 200000, max: 300000 },
-  { label: "Trên 300.000 đ", min: 300000, max: null },
+  { label: "Dưới 100.000 đ",        min: 0,      max: 100000 },
+  { label: "100.000 – 200.000 đ",   min: 100000, max: 200000 },
+  { label: "200.000 – 300.000 đ",   min: 200000, max: 300000 },
+  { label: "Trên 300.000 đ",        min: 300000, max: null   },
 ];
 
 const SORT_OPTIONS = [
-  { value: "newest", label: "Mới nhất" },
-  { value: "price_asc", label: "Giá tăng dần" },
+  { value: "newest",     label: "Mới nhất" },
+  { value: "price_asc",  label: "Giá tăng dần" },
   { value: "price_desc", label: "Giá giảm dần" },
-  { value: "name_asc", label: "Tên A → Z" },
+  { value: "name_asc",   label: "Tên A → Z" },
 ];
 
-// ── Helpers ──────────────────────────────────────────────────────
+const PAGE_LIMIT = 10;
+
+// ── Helpers sort (client-side, chỉ trên trang hiện tại) ─────────
 function sortItems(items, sortBy) {
   const copy = [...items];
-  if (sortBy === "price_asc") copy.sort((a, b) => (a.min_price ?? 0) - (b.min_price ?? 0));
-  else if (sortBy === "price_desc") copy.sort((a, b) => (b.min_price ?? 0) - (a.min_price ?? 0));
-  else if (sortBy === "name_asc") copy.sort((a, b) => a.name.localeCompare(b.name, "vi"));
+  if (sortBy === "price_asc")  copy.sort((a, b) => (a.min_price ?? 0) - (b.min_price ?? 0));
+  if (sortBy === "price_desc") copy.sort((a, b) => (b.min_price ?? 0) - (a.min_price ?? 0));
+  if (sortBy === "name_asc")   copy.sort((a, b) => a.name.localeCompare(b.name, "vi"));
   return copy;
 }
 
-function matchesFilters(facility, { district, priceRange }) {
-  if (district !== "Tất cả khu vực") {
-    const loc = `${facility.district ?? ""}, ${facility.city ?? ""}`;
-    if (!loc.toLowerCase().includes(district.split(",")[0].trim().toLowerCase())) return false;
-  }
-  if (priceRange.min !== null && (facility.max_price ?? 0) < priceRange.min) return false;
-  if (priceRange.max !== null && (facility.min_price ?? 0) > priceRange.max) return false;
-  return true;
-}
-
-// ── Component chính ───────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+//  COMPONENT CHÍNH
+// ─────────────────────────────────────────────────────────────────
 export default function FindCourtsPage() {
-  const [allItems, setAllItems] = useState([]);
-  const [status, setStatus] = useState("loading"); // loading | ready | error
-  const [errorMsg, setErrorMsg] = useState("");
-
-  // Bộ lọc (input đang nhập)
-  const [search, setSearch] = useState("");
-  const [district, setDistrict] = useState("Tất cả khu vực");
+  // ── Bộ lọc (đang nhập) ──
+  const [search,     setSearch]     = useState("");
+  const [city,       setCity]       = useState("");
+  const [sportId,    setSportId]    = useState("");
   const [priceRange, setPriceRange] = useState(PRICE_RANGES[0]);
-  const [sortBy, setSortBy] = useState("newest");
 
-  // Params đã áp dụng (chỉ cập nhật khi bấm Tìm sân)
-  const [appliedParams, setAppliedParams] = useState({
-    search: "",
-    district: "Tất cả khu vực",
-    priceRange: PRICE_RANGES[0],
+  // ── Params đã áp dụng (commit khi bấm Tìm sân) ──
+  const [applied, setApplied] = useState({
+    search: "", city: "", sportId: "", priceRange: PRICE_RANGES[0],
   });
 
-  const fetchFacilities = useCallback(async (params) => {
+  // ── Phân trang ──
+  const [page,       setPage]       = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total,      setTotal]      = useState(0);
+
+  // ── Dữ liệu & trạng thái ──
+  const [items,   setItems]   = useState([]);
+  const [status,  setStatus]  = useState("loading");
+  const [errorMsg,setErrorMsg]= useState("");
+  const [sortBy,  setSortBy]  = useState("newest");
+
+  // ── Fetch: gửi tất cả filter lên backend ──
+  const fetchFacilities = useCallback(async (params, pg) => {
     setStatus("loading");
     try {
-      const query = { limit: 100 };
-      if (params.search.trim()) query.search = params.search.trim();
+      const query = { page: pg, limit: PAGE_LIMIT };
+      if (params.search.trim())  query.search   = params.search.trim();
+      if (params.city.trim())    query.city     = params.city.trim();
+      if (params.sportId !== "") query.sport_id = params.sportId;
       const res = await listFacilities(query);
-      setAllItems(res.data ?? []);
+      setItems(res.data ?? []);
+      setTotal(res.meta?.total ?? 0);
+      setTotalPages(res.meta?.total_pages ?? 1);
       setStatus("ready");
     } catch {
       setErrorMsg("Không tải được danh sách sân. Vui lòng thử lại.");
@@ -95,39 +95,51 @@ export default function FindCourtsPage() {
   }, []);
 
   // Load lần đầu
-  useEffect(() => { fetchFacilities(appliedParams); }, []);  // eslint-disable-line
+  useEffect(() => { fetchFacilities(applied, 1); }, []); // eslint-disable-line
+
+  // Khi đổi trang → fetch trang mới với applied params hiện tại
+  const goToPage = (pg) => {
+    setPage(pg);
+    fetchFacilities(applied, pg);
+    // Cuộn lên đầu danh sách
+    document.querySelector(".fc-main")?.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleSearch = () => {
-    const params = { search, district, priceRange };
-    setAppliedParams(params);
-    fetchFacilities(params);
+    const params = { search, city, sportId, priceRange };
+    setApplied(params);
+    setPage(1);
+    fetchFacilities(params, 1);
   };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") handleSearch();
   };
 
-  // Lọc client: district + priceRange (search đã lọc ở backend)
-  const displayed = sortItems(
-    allItems.filter((f) => matchesFilters(f, appliedParams)),
-    sortBy
-  );
+  // Lọc giá client-side (backend chưa có filter giá)
+  const filtered = items.filter((f) => {
+    const { min, max } = applied.priceRange;
+    if (min !== null && (f.max_price ?? 0) < min) return false;
+    if (max !== null && (f.min_price ?? 0) > max) return false;
+    return true;
+  });
+
+  const displayed = sortItems(filtered, sortBy);
 
   return (
     <div className="fc-page">
-      {/* ── Hero / tiêu đề ── */}
+      {/* ── Hero ── */}
       <div className="fc-hero">
         <div className="fc-hero-inner">
           <h1 className="fc-hero-title">Tìm sân thể thao</h1>
-          <p className="fc-hero-sub">
-            Tìm sân gần bạn, đặt ngay trong vài giây
-          </p>
+          <p className="fc-hero-sub">Tìm sân gần bạn, đặt ngay trong vài giây</p>
         </div>
       </div>
 
       {/* ── Bộ lọc ── */}
       <div className="fc-filter-bar" onKeyDown={handleKeyDown}>
-        {/* Tìm theo tên */}
+
+        {/* Tên cơ sở */}
         <div className="fc-filter-group fc-filter-group--search">
           <label className="fc-filter-label">Tên cơ sở</label>
           <div className="fc-search-wrap">
@@ -139,27 +151,43 @@ export default function FindCourtsPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
             {search && (
-              <button
-                className="fc-search-clear"
-                type="button"
-                onClick={() => setSearch("")}
-                title="Xóa"
-              >✕</button>
+              <button className="fc-search-clear" type="button" onClick={() => setSearch("")} title="Xóa">✕</button>
             )}
           </div>
         </div>
 
+        {/* Thành phố */}
         <div className="fc-filter-group">
-          <label className="fc-filter-label">Khu vực</label>
+          <label className="fc-filter-label">Thành phố</label>
+          <div className="fc-search-wrap">
+            <input
+              className="fc-search-input"
+              type="text"
+              placeholder="VD: Hồ Chí Minh"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+            />
+            {city && (
+              <button className="fc-search-clear" type="button" onClick={() => setCity("")} title="Xóa">✕</button>
+            )}
+          </div>
+        </div>
+
+        {/* Môn thể thao */}
+        <div className="fc-filter-group">
+          <label className="fc-filter-label">Môn thể thao</label>
           <select
             className="fc-select"
-            value={district}
-            onChange={(e) => setDistrict(e.target.value)}
+            value={sportId}
+            onChange={(e) => setSportId(e.target.value === "" ? "" : Number(e.target.value))}
           >
-            {DISTRICTS.map((d) => <option key={d}>{d}</option>)}
+            {SPORTS.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
           </select>
         </div>
 
+        {/* Mức giá */}
         <div className="fc-filter-group">
           <label className="fc-filter-label">Mức giá</label>
           <select
@@ -179,10 +207,10 @@ export default function FindCourtsPage() {
         </div>
       </div>
 
-      {/* ── Nội dung chính ── */}
+      {/* ── Body: danh sách + bản đồ ── */}
       <div className="fc-body">
 
-        {/* ── Cột trái: danh sách ── */}
+        {/* Cột trái: danh sách */}
         <div className="fc-main">
           {status === "loading" && (
             <div className="fc-state-box">
@@ -194,7 +222,7 @@ export default function FindCourtsPage() {
           {status === "error" && (
             <div className="fc-state-box">
               <p className="fc-error-msg">{errorMsg}</p>
-              <button className="fc-btn-search" type="button" onClick={() => fetchFacilities(appliedParams)}>
+              <button className="fc-btn-search" type="button" onClick={() => fetchFacilities(applied, page)}>
                 Thử lại
               </button>
             </div>
@@ -202,10 +230,13 @@ export default function FindCourtsPage() {
 
           {status === "ready" && (
             <>
-              {/* Thanh kết quả + sắp xếp */}
+              {/* Result bar */}
               <div className="fc-result-bar">
                 <span className="fc-result-count">
-                  <strong>{displayed.length}</strong> sân phù hợp
+                  <strong>{total}</strong> sân phù hợp
+                  {totalPages > 1 && (
+                    <span className="fc-result-page"> · Trang {page}/{totalPages}</span>
+                  )}
                 </span>
                 <div className="fc-sort">
                   <label className="fc-sort-label">Sắp xếp:</label>
@@ -221,7 +252,7 @@ export default function FindCourtsPage() {
                 </div>
               </div>
 
-              {/* Danh sách sân */}
+              {/* Danh sách */}
               {displayed.length === 0 ? (
                 <div className="fc-empty">
                   <div className="fc-empty-icon">🏟️</div>
@@ -231,15 +262,42 @@ export default function FindCourtsPage() {
               ) : (
                 <ul className="fc-list">
                   {displayed.map((facility, idx) => (
-                    <CourtCard key={facility.id} facility={facility} index={idx} />
+                    <CourtCard
+                      key={facility.id}
+                      facility={facility}
+                      index={(page - 1) * PAGE_LIMIT + idx}
+                    />
                   ))}
                 </ul>
+              )}
+
+              {/* Phân trang */}
+              {totalPages > 1 && (
+                <div className="fc-pagination">
+                  <button
+                    className="fc-page-btn"
+                    type="button"
+                    disabled={page <= 1}
+                    onClick={() => goToPage(page - 1)}
+                  >
+                    ← Trang trước
+                  </button>
+                  <span className="fc-page-info">{page} / {totalPages}</span>
+                  <button
+                    className="fc-page-btn"
+                    type="button"
+                    disabled={page >= totalPages}
+                    onClick={() => goToPage(page + 1)}
+                  >
+                    Trang sau →
+                  </button>
+                </div>
               )}
             </>
           )}
         </div>
 
-        {/* ── Cột phải: bản đồ ── */}
+        {/* Cột phải: bản đồ */}
         <div className="fc-map-col">
           <FacilitiesMap facilities={displayed} />
         </div>
@@ -249,13 +307,15 @@ export default function FindCourtsPage() {
   );
 }
 
-// ── Card sân ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+//  Card sân
+// ─────────────────────────────────────────────────────────────────
 function CourtCard({ facility, index }) {
   const address = [facility.district, facility.city].filter(Boolean).join(", ");
+  const hasPrice = facility.min_price != null;
 
   return (
     <li className="fc-card">
-      {/* Placeholder ảnh cố định */}
       <div className="fc-card-img">
         <div className="fc-card-img-placeholder">
           <span className="fc-placeholder-icon">🏟️</span>
@@ -263,7 +323,6 @@ function CourtCard({ facility, index }) {
         <span className="fc-card-index">#{index + 1}</span>
       </div>
 
-      {/* Thông tin */}
       <div className="fc-card-body">
         <div className="fc-card-top">
           <div>
@@ -272,7 +331,6 @@ function CourtCard({ facility, index }) {
           </div>
         </div>
 
-        {/* Tags */}
         <div className="fc-card-tags">
           {facility.total_courts != null && (
             <span className="fc-tag fc-tag-courts">{facility.total_courts} sân</span>
@@ -282,13 +340,18 @@ function CourtCard({ facility, index }) {
           )}
         </div>
 
-        {/* Footer card */}
         <div className="fc-card-footer">
           <div className="fc-card-price">
-            {facility.min_price ? (
+            {hasPrice ? (
               <>
                 <span className="fc-price-label">Từ</span>
                 <span className="fc-price-value">{formatVnd(facility.min_price)}</span>
+                {facility.max_price != null && facility.max_price !== facility.min_price && (
+                  <>
+                    <span className="fc-price-sep">–</span>
+                    <span className="fc-price-max">{formatVnd(facility.max_price)}</span>
+                  </>
+                )}
                 <span className="fc-price-unit">/giờ</span>
               </>
             ) : (
@@ -304,34 +367,23 @@ function CourtCard({ facility, index }) {
   );
 }
 
-// ── Bản đồ ───────────────────────────────────────────────────────
-// Trung tâm mặc định: TP.HCM
+// ─────────────────────────────────────────────────────────────────
+//  Bản đồ
+// ─────────────────────────────────────────────────────────────────
 const DEFAULT_CENTER = [10.7769, 106.7009];
-const DEFAULT_ZOOM = 12;
+const DEFAULT_ZOOM   = 12;
 
 function FacilitiesMap({ facilities }) {
-  // Chỉ lấy cơ sở có toạ độ hợp lệ
-  const pinned = facilities.filter(
-    (f) => f.latitude != null && f.longitude != null
-  );
-
-  // Tính center từ danh sách ghim, fallback về HCM
-  const center =
-    pinned.length > 0
-      ? [
-          pinned.reduce((s, f) => s + f.latitude, 0) / pinned.length,
-          pinned.reduce((s, f) => s + f.longitude, 0) / pinned.length,
-        ]
-      : DEFAULT_CENTER;
+  const pinned = facilities.filter((f) => f.latitude != null && f.longitude != null);
+  const center = pinned.length > 0
+    ? [
+        pinned.reduce((s, f) => s + f.latitude,  0) / pinned.length,
+        pinned.reduce((s, f) => s + f.longitude, 0) / pinned.length,
+      ]
+    : DEFAULT_CENTER;
 
   return (
-    <MapContainer
-      center={center}
-      zoom={DEFAULT_ZOOM}
-      className="fc-map"
-      // key buộc re-mount khi center thay đổi đáng kể (danh sách mới)
-      key={center.join(",")}
-    >
+    <MapContainer center={center} zoom={DEFAULT_ZOOM} className="fc-map" key={center.join(",")}>
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'
@@ -343,16 +395,9 @@ function FacilitiesMap({ facilities }) {
               <strong className="fc-map-popup-name">{f.name}</strong>
               <p className="fc-map-popup-addr">{f.address}</p>
               {[f.district, f.city].filter(Boolean).length > 0 && (
-                <p className="fc-map-popup-addr">
-                  {[f.district, f.city].filter(Boolean).join(", ")}
-                </p>
+                <p className="fc-map-popup-addr">{[f.district, f.city].filter(Boolean).join(", ")}</p>
               )}
-              <a
-                className="fc-map-popup-link"
-                href={`/courts/${f.id}`}
-              >
-                Xem chi tiết →
-              </a>
+              <a className="fc-map-popup-link" href={`/courts/${f.id}`}>Xem chi tiết →</a>
             </div>
           </Popup>
         </Marker>

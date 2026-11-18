@@ -304,7 +304,38 @@
   white-space: nowrap;
 }
 
-/* ── Empty state ────────────────────────────────────────────── */
+/* ── Pagination ─────────────────────────────────────────────── */
+.fc-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px 0 4px;
+  border-top: 1px solid var(--fc-border-soft);
+  margin-top: 12px;
+}
+.fc-page-btn {
+  padding: 7px 16px;
+  border: 1.5px solid var(--fc-border-soft);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--fc-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.fc-page-btn:hover:not(:disabled) {
+  border-color: var(--fc-primary);
+  background: var(--fc-primary-light);
+}
+.fc-page-btn:disabled { opacity: .4; cursor: not-allowed; }
+.fc-page-info { font-size: 13px; color: var(--fc-muted); }
+.fc-result-page { color: var(--fc-muted); font-size: 13px; font-weight: 400; }
+
+/* ── Price range (min – max) ────────────────────────────────── */
+.fc-price-sep { font-size: 13px; color: var(--fc-muted); margin: 0 1px; }
+.fc-price-max { font-size: 14px; font-weight: 600; color: var(--fc-muted); }
 .fc-empty {
   text-align: center;
   padding: 56px 20px;
@@ -467,7 +498,7 @@
 .fc-card-footer {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   margin-top: auto;
   padding-top: 6px;
   border-top: 1px solid #f3f4f6;
@@ -476,8 +507,10 @@
 
 .fc-card-price {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px;
+  gap: 3px;
+  min-width: 0;
 }
 .fc-price-label {
   font-size: 12px;
@@ -510,6 +543,8 @@
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
+  flex-shrink: 0;
+  align-self: flex-end;
   transition: background 0.15s, color 0.15s;
 }
 .fc-btn-detail:hover {

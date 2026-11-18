@@ -26,6 +26,10 @@
   --slot-booked-border:    #fca5a5;
   --slot-booked-text:      #991b1b;
 
+  --slot-unavailable-bg:     #f9fafb;
+  --slot-unavailable-border: #d1d5db;
+  --slot-unavailable-text:   #9ca3af;
+
   --slot-holding-bg:       #fffbeb;
   --slot-holding-border:   #fcd34d;
   --slot-holding-text:     #92400e;
@@ -354,11 +358,12 @@
   display: inline-block;
   border: 1.5px solid transparent;
 }
-.cd-legend-dot.available { background: var(--slot-available-bg); border-color: var(--slot-available-border); }
-.cd-legend-dot.holding   { background: var(--slot-holding-bg);   border-color: var(--slot-holding-border); }
-.cd-legend-dot.booked    { background: var(--slot-booked-bg);    border-color: var(--slot-booked-border); }
-.cd-legend-dot.closed    { background: var(--slot-closed-bg);    border-color: var(--slot-closed-border); }
-.cd-legend-dot.selected  { background: var(--slot-selected-bg);  border-color: var(--slot-selected-border); }
+.cd-legend-dot.available    { background: var(--slot-available-bg);    border-color: var(--slot-available-border); }
+.cd-legend-dot.unavailable  { background: var(--slot-unavailable-bg);  border-color: var(--slot-unavailable-border); }
+.cd-legend-dot.holding      { background: var(--slot-holding-bg);      border-color: var(--slot-holding-border); }
+.cd-legend-dot.booked       { background: var(--slot-booked-bg);       border-color: var(--slot-booked-border); }
+.cd-legend-dot.closed       { background: var(--slot-closed-bg);       border-color: var(--slot-closed-border); }
+.cd-legend-dot.selected     { background: var(--slot-selected-bg);     border-color: var(--slot-selected-border); }
 
 /* ── Slots grid ─────────────────────────────────────────────── */
 .cd-slots-grid {
@@ -404,6 +409,16 @@
 .cd-slot--available.cd-slot--selected:hover:not(:disabled) {
   background: #166534;
   transform: translateY(-1px);
+}
+
+/* unavailable (đã qua giờ) */
+.cd-slot--unavailable {
+  background: var(--slot-unavailable-bg);
+  border-color: var(--slot-unavailable-border);
+  color: var(--slot-unavailable-text);
+  cursor: not-allowed;
+  opacity: .6;
+  text-decoration: line-through;
 }
 
 /* booked */
@@ -565,3 +580,321 @@
   .cd-slots-grid { grid-template-columns: repeat(2, 1fr); }
   .cd-summary-info { gap: 2px 12px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Dịch vụ đi kèm
+   ═══════════════════════════════════════════════════════════════ */
+.cd-services {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--cd-border);
+}
+.cd-services-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--cd-text);
+}
+.cd-services-opt { font-size: 12px; font-weight: 400; color: var(--cd-muted); }
+.cd-services-list { display: flex; flex-direction: column; gap: 8px; }
+.cd-service-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #f9fafb;
+  border: 1px solid var(--cd-border);
+  border-radius: 8px;
+  gap: 12px;
+}
+.cd-service-info { display: flex; flex-direction: column; gap: 2px; }
+.cd-service-name { font-size: 14px; font-weight: 500; color: var(--cd-text); }
+.cd-service-price { font-size: 12px; color: var(--cd-muted); }
+.cd-service-qty { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.cd-qty-btn {
+  width: 28px; height: 28px;
+  border: 1.5px solid var(--cd-border);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--cd-text);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .15s, background .15s;
+}
+.cd-qty-btn:hover:not(:disabled) { border-color: var(--cd-primary); background: var(--cd-primary-light); }
+.cd-qty-btn:disabled { opacity: .35; cursor: not-allowed; }
+.cd-qty-val { min-width: 20px; text-align: center; font-size: 15px; font-weight: 700; }
+
+/* ═══════════════════════════════════════════════════════════════
+   Nút Tiếp tục (proceed bar dưới lưới)
+   ═══════════════════════════════════════════════════════════════ */
+.cd-proceed-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--cd-border);
+}
+.cd-price-loading { font-size: 13px; color: var(--cd-muted); }
+.cd-price-preview { font-size: 14px; color: var(--cd-text-soft); }
+.cd-btn-proceed {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #15803d 0%, #059669 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(21,128,61,.3);
+  transition: opacity .15s, transform .1s;
+}
+.cd-btn-proceed:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+.cd-btn-proceed:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ═══════════════════════════════════════════════════════════════
+   View: Confirm
+   ═══════════════════════════════════════════════════════════════ */
+.cd-confirm-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.cd-back-btn {
+  background: none;
+  border: none;
+  color: var(--cd-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+.cd-back-btn:hover { text-decoration: underline; }
+
+.cd-confirm-meta {
+  background: #f9fafb;
+  border: 1px solid var(--cd-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.cd-confirm-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 14px;
+  gap: 8px;
+}
+.cd-confirm-row span:first-child { color: var(--cd-muted); flex-shrink: 0; }
+.cd-confirm-row strong { color: var(--cd-text); font-weight: 600; text-align: right; }
+
+/* Chi tiết breakdown */
+.cd-breakdown-title {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--cd-text-soft);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.cd-breakdown {
+  border: 1px solid var(--cd-border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.cd-breakdown-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  font-size: 13px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.cd-breakdown-row:last-child { border-bottom: none; }
+.cd-breakdown-time { font-weight: 600; white-space: nowrap; color: var(--cd-text); min-width: 110px; }
+.cd-breakdown-rule { flex: 1; color: var(--cd-muted); font-size: 12px; }
+.cd-breakdown-mult {
+  padding: 1px 6px;
+  background: #fef9c3;
+  color: #854d0e;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.cd-breakdown-price { font-weight: 700; color: var(--cd-primary-dark); white-space: nowrap; min-width: 90px; text-align: right; }
+
+/* Tổng */
+.cd-confirm-totals {
+  border: 1px solid var(--cd-border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.cd-confirm-totals .cd-confirm-row {
+  padding: 9px 14px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.cd-confirm-totals .cd-confirm-row:last-child { border-bottom: none; }
+.cd-confirm-row--total {
+  background: #f0fdf4;
+  font-size: 15px !important;
+}
+.cd-confirm-row--total strong { color: var(--cd-primary-dark); font-size: 17px; }
+.cd-confirm-row--deposit {
+  background: #fffbeb;
+}
+.cd-confirm-row--deposit strong { color: #92400e; }
+.cd-confirm-row--remain { color: var(--cd-muted); font-size: 13px !important; }
+
+/* Ví */
+.cd-wallet-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.cd-wallet-status.insufficient {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+.cd-wallet-ok { color: var(--cd-primary-dark); font-weight: 600; }
+.cd-wallet-warn { color: #991b1b; font-weight: 600; }
+
+/* Lỗi đặt sân */
+.cd-booking-error {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  color: #991b1b;
+  font-size: 13px;
+}
+.cd-slot-conflict {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cd-slot-conflict p { margin: 0; color: #991b1b; font-size: 13px; font-weight: 600; }
+
+.cd-btn-book {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, #15803d 0%, #059669 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(21,128,61,.3);
+  transition: opacity .15s, transform .1s;
+}
+.cd-btn-book:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+.cd-btn-book:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+/* ═══════════════════════════════════════════════════════════════
+   View: Booked
+   ═══════════════════════════════════════════════════════════════ */
+.cd-booked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0 8px;
+  text-align: center;
+}
+.cd-booked-icon {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--cd-primary);
+  color: #fff;
+  font-size: 28px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 14px rgba(21,128,61,.35);
+}
+.cd-booked-title { margin: 0 0 4px; font-size: 20px; font-weight: 800; color: var(--cd-primary-dark); }
+.cd-booked-sub { margin: 0 0 20px; font-size: 14px; color: var(--cd-muted); }
+.cd-booked-info {
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid var(--cd-border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.cd-booked-info .cd-confirm-row {
+  padding: 9px 14px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.cd-booked-info .cd-confirm-row:last-child { border-bottom: none; }
+
+/* Countdown */
+.cd-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 32px;
+  border: 2px solid #86efac;
+  border-radius: 10px;
+  background: #f0fdf4;
+  margin-bottom: 20px;
+  transition: border-color .3s, background .3s;
+}
+.cd-countdown.urgent {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+.cd-countdown-label { font-size: 12px; color: var(--cd-muted); text-transform: uppercase; letter-spacing: .06em; }
+.cd-countdown-value {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--cd-primary-dark);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
+}
+.cd-countdown.urgent .cd-countdown-value { color: #991b1b; }
+
+.cd-booked-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 400px;
+}
+.cd-btn-outline-sm {
+  padding: 10px;
+  background: #fff;
+  color: var(--cd-primary);
+  border: 1.5px solid var(--cd-primary);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.cd-btn-outline-sm:hover { background: var(--cd-primary-light); }
