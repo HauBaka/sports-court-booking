@@ -4,7 +4,11 @@ import { useUser } from "../context/UserContext";
 import { logout } from "../services/authService";
 
 const MENU_BY_ROLE = {
-  customer: [{ to: "/", label: "Trang chủ" }, { to: "/wallet", label: "Ví của tôi" }],
+  customer: [
+    { to: "/", label: "Trang chủ" },
+    { to: "/courts", label: "Tìm sân" },
+    { to: "/wallet", label: "Ví của tôi" },
+  ],
   owner: [
     { to: "/", label: "Trang chủ" },
     { to: "/owner/facilities", label: "Cơ sở của tôi" },

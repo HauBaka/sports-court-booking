@@ -1,0 +1,614 @@
+/* ═══════════════════════════════════════════════════════════════
+   Find Courts Page  —  Tìm & lọc sân thể thao (customer only)
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --fc-primary: #15803d;
+  --fc-primary-dark: #166534;
+  --fc-primary-light: #dcfce7;
+  --fc-accent: #059669;
+  --fc-bg: #f0fdf4;
+  --fc-surface: #ffffff;
+  --fc-border: #d1fae5;
+  --fc-border-soft: #e5e7eb;
+  --fc-text: #1f2937;
+  --fc-text-soft: #374151;
+  --fc-muted: #6b7280;
+  --fc-radius: 10px;
+  --fc-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  --fc-shadow-hover: 0 4px 16px rgba(21, 128, 61, 0.14);
+}
+
+/* ── Page shell ─────────────────────────────────────────────── */
+.fc-page {
+  min-height: 100vh;
+  background: var(--fc-bg);
+  color: var(--fc-text);
+}
+
+/* ── Hero ───────────────────────────────────────────────────── */
+.fc-hero {
+  background: linear-gradient(135deg, #15803d 0%, #059669 60%, #0d9488 100%);
+  padding: 36px 24px 32px;
+}
+.fc-hero-inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+.fc-hero-title {
+  margin: 0 0 6px;
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+.fc-hero-icon {
+  font-size: 26px;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+.fc-hero-sub {
+  margin: 0;
+  font-size: 15px;
+  color: #bbf7d0;
+}
+
+/* ── Filter bar ─────────────────────────────────────────────── */
+.fc-filter-bar {
+  background: var(--fc-surface);
+  border-bottom: 1px solid var(--fc-border-soft);
+  padding: 16px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: flex-end;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.fc-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 160px;
+}
+
+/* Search group rộng hơn các group khác */
+.fc-filter-group--search {
+  flex: 1.6;
+  min-width: 200px;
+}
+
+/* Search input wrapper */
+.fc-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.fc-search-icon {
+  position: absolute;
+  left: 10px;
+  font-size: 13px;
+  pointer-events: none;
+  line-height: 1;
+}
+.fc-search-input {
+  width: 100%;
+  padding: 9px 32px 9px 12px;
+  border: 1.5px solid var(--fc-border-soft);
+  border-radius: 7px;
+  font-size: 14px;
+  color: var(--fc-text);
+  background: #f9fafb;
+  transition: border-color .15s, box-shadow .15s;
+}
+.fc-search-input:focus {
+  outline: none;
+  border-color: var(--fc-primary);
+  box-shadow: 0 0 0 3px rgba(21,128,61,.12);
+  background: #fff;
+}
+.fc-search-input::placeholder { color: #9ca3af; }
+.fc-search-clear {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  line-height: 1;
+}
+.fc-search-clear:hover { color: var(--fc-text); background: #f3f4f6; }
+
+.fc-filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fc-muted);
+}
+
+.fc-select {
+  padding: 9px 12px;
+  border: 1.5px solid var(--fc-border-soft);
+  border-radius: 7px;
+  font-size: 14px;
+  color: var(--fc-text);
+  background: #f9fafb;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  appearance: auto;
+}
+.fc-select:focus {
+  outline: none;
+  border-color: var(--fc-primary);
+  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.12);
+  background: #fff;
+}
+.fc-select:hover:not(:focus) {
+  border-color: #9ca3af;
+}
+
+.fc-select-sm {
+  padding: 7px 10px;
+  font-size: 13px;
+}
+
+.fc-filter-action {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fc-btn-search {
+  padding: 10px 22px;
+  background: linear-gradient(135deg, var(--fc-primary) 0%, var(--fc-accent) 100%);
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+  box-shadow: 0 2px 8px rgba(21, 128, 61, 0.3);
+}
+.fc-btn-search:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(21, 128, 61, 0.35);
+}
+.fc-btn-search:active {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* ── Main area ──────────────────────────────────────────────── */
+.fc-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  min-height: calc(100vh - 180px);
+}
+
+/* Cột trái: danh sách */
+.fc-main {
+  flex: 0 0 480px;
+  max-width: 480px;
+  padding: 20px 20px 48px;
+  overflow-y: auto;
+  max-height: calc(100vh - 130px);
+  position: sticky;
+  top: 57px; /* chiều cao filter bar */
+}
+
+/* Cột phải: bản đồ */
+.fc-map-col {
+  flex: 1;
+  position: sticky;
+  top: 57px;
+  height: calc(100vh - 130px);
+}
+
+.fc-map {
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* Popup bản đồ */
+.fc-map-popup { min-width: 180px; }
+.fc-map-popup-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+.fc-map-popup-addr {
+  margin: 0 0 2px;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+.fc-map-popup-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #15803d;
+  text-decoration: none;
+}
+.fc-map-popup-link:hover { text-decoration: underline; }
+
+/* ── Loading / error states ─────────────────────────────────── */
+.fc-state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 60px 0;
+  color: var(--fc-muted);
+  font-size: 15px;
+}
+
+.fc-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3.5px solid var(--fc-border);
+  border-top-color: var(--fc-primary);
+  border-radius: 50%;
+  animation: fc-spin 0.75s linear infinite;
+}
+@keyframes fc-spin { to { transform: rotate(360deg); } }
+
+.fc-error-msg {
+  color: #b91c1c;
+  margin: 0;
+}
+
+/* ── Result bar ─────────────────────────────────────────────── */
+.fc-result-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fc-result-count {
+  font-size: 15px;
+  color: var(--fc-text-soft);
+}
+.fc-result-count strong {
+  color: var(--fc-primary-dark);
+  font-size: 17px;
+}
+
+.fc-sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fc-sort-label {
+  font-size: 13px;
+  color: var(--fc-muted);
+  white-space: nowrap;
+}
+
+/* ── Pagination ─────────────────────────────────────────────── */
+.fc-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px 0 4px;
+  border-top: 1px solid var(--fc-border-soft);
+  margin-top: 12px;
+}
+.fc-page-btn {
+  padding: 7px 16px;
+  border: 1.5px solid var(--fc-border-soft);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--fc-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.fc-page-btn:hover:not(:disabled) {
+  border-color: var(--fc-primary);
+  background: var(--fc-primary-light);
+}
+.fc-page-btn:disabled { opacity: .4; cursor: not-allowed; }
+.fc-page-info { font-size: 13px; color: var(--fc-muted); }
+.fc-result-page { color: var(--fc-muted); font-size: 13px; font-weight: 400; }
+
+/* ── Price range (min – max) ────────────────────────────────── */
+.fc-price-sep { font-size: 13px; color: var(--fc-muted); margin: 0 1px; }
+.fc-price-max { font-size: 14px; font-weight: 600; color: var(--fc-muted); }
+.fc-empty {
+  text-align: center;
+  padding: 56px 20px;
+  background: var(--fc-surface);
+  border: 1.5px dashed #a7f3d0;
+  border-radius: var(--fc-radius);
+  color: var(--fc-muted);
+}
+.fc-empty-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+}
+.fc-empty p {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--fc-text-soft);
+}
+.fc-empty-sub {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  color: var(--fc-muted) !important;
+}
+
+/* ── Court list ─────────────────────────────────────────────── */
+.fc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Court card ─────────────────────────────────────────────── */
+.fc-card {
+  display: flex;
+  background: var(--fc-surface);
+  border: 1.5px solid var(--fc-border-soft);
+  border-radius: var(--fc-radius);
+  overflow: hidden;
+  box-shadow: var(--fc-shadow);
+  transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
+}
+.fc-card:hover {
+  box-shadow: var(--fc-shadow-hover);
+  border-color: #86efac;
+  transform: translateY(-2px);
+}
+
+/* ── Card image ─────────────────────────────────────────────── */
+.fc-card-img {
+  position: relative;
+  flex-shrink: 0;
+  width: 130px;
+}
+.fc-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.fc-card-img-placeholder {
+  width: 100%;
+  height: 100%;
+  min-height: 110px;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fc-placeholder-icon {
+  font-size: 36px;
+  opacity: 0.6;
+}
+.fc-card-index {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  backdrop-filter: blur(2px);
+}
+
+/* ── Card body ──────────────────────────────────────────────── */
+.fc-card-body {
+  flex: 1;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.fc-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.fc-card-name {
+  margin: 0 0 2px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--fc-text);
+  line-height: 1.3;
+}
+
+.fc-card-address {
+  margin: 0;
+  font-size: 13px;
+  color: var(--fc-muted);
+}
+
+/* Rating */
+.fc-card-rating {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: #fefce8;
+  border: 1px solid #fde047;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.fc-rating-star {
+  color: #ca8a04;
+  font-size: 13px;
+}
+.fc-rating-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: #854d0e;
+}
+
+/* Tags */
+.fc-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fc-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.fc-tag-courts {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+/* Card footer */
+.fc-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: auto;
+  padding-top: 6px;
+  border-top: 1px solid #f3f4f6;
+  gap: 10px;
+}
+
+.fc-card-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 0;
+}
+.fc-price-label {
+  font-size: 12px;
+  color: var(--fc-muted);
+}
+.fc-price-value {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--fc-primary-dark);
+}
+.fc-price-unit {
+  font-size: 12px;
+  color: var(--fc-muted);
+}
+.fc-price-na {
+  font-size: 13px;
+  color: var(--fc-muted);
+  font-style: italic;
+}
+
+/* Detail button */
+.fc-btn-detail {
+  display: inline-block;
+  padding: 7px 18px;
+  background: var(--fc-surface);
+  color: var(--fc-primary);
+  border: 1.5px solid var(--fc-primary);
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: flex-end;
+  transition: background 0.15s, color 0.15s;
+}
+.fc-btn-detail:hover {
+  background: var(--fc-primary);
+  color: #fff;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .fc-hero {
+    padding: 24px 16px 20px;
+  }
+  .fc-hero-title {
+    font-size: 22px;
+  }
+  .fc-filter-bar {
+    padding: 14px 16px;
+  }
+  .fc-filter-group {
+    min-width: 140px;
+  }
+  .fc-body {
+    flex-direction: column;
+  }
+  .fc-main {
+    flex: none;
+    max-width: 100%;
+    max-height: none;
+    position: static;
+    padding: 16px 16px 24px;
+  }
+  .fc-map-col {
+    position: static;
+    height: 320px;
+    width: 100%;
+  }
+  .fc-card-img {
+    width: 100px;
+  }
+  .fc-card-name {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .fc-filter-group {
+    flex: 1 1 100%;
+  }
+  .fc-filter-action {
+    flex: 1 1 100%;
+  }
+  .fc-btn-search {
+    width: 100%;
+    text-align: center;
+  }
+  .fc-card {
+    flex-direction: column;
+  }
+  .fc-card-img {
+    width: 100%;
+    height: 140px;
+  }
+  .fc-card-index {
+    top: 10px;
+    left: 10px;
+  }
+}
