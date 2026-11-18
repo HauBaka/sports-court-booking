@@ -21,6 +21,7 @@ import CourtEditPage from "./pages/owner/CourtEditPage";
 import FindCourtsPage from "./pages/customer/FindCourtsPage";
 import CustomerCourtDetailPage from "./pages/customer/CourtDetailPage";
 import BookingConfirmPage from "./pages/customer/BookingConfirmPage";
+import DepositPage from "./pages/customer/DepositPage";
 
 export default function App() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
               <Route path="courts" element={<FindCourtsPage />} />
               <Route path="courts/:id" element={<CustomerCourtDetailPage />} />
               <Route path="booking/confirm" element={<BookingConfirmPage />} />
+              <Route path="bookings/:id/deposit" element={<DepositPage />} />
             </Route>
 
             {/* Chủ sân */}
