@@ -14,6 +14,8 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import RequireRole from "./components/RequireRole";
 import MyFacilitiesPage from "./pages/owner/MyFacilitiesPage";
 import ProfilePage from "./pages/ProfilePage";
+import WalletPage from "./pages/WalletPage";
+import AdminTopupPage from "./pages/admin/AdminTopupPage";
 import FacilityCreatePage from "./pages/owner/FacilityCreatePage";
 import FacilityDetailPage from "./pages/owner/FacilityDetailPage";
 import CourtDetailPage from "./pages/owner/CourtDetailPage";
@@ -32,6 +34,7 @@ export default function App() {
           <Route element={<MainLayout />}>
             <Route element={<RequireAuth />}>
               <Route index element={<HomePage />} />
+              <Route path="wallet" element={<WalletPage />} />
             </Route>
             <Route path="health" element={<HealthCheckPage />} />
             <Route path="unauthorized" element={<UnauthorizedPage />} />
@@ -56,7 +59,7 @@ export default function App() {
 
             {/* Admin */}
             <Route element={<RequireRole roles="admin" />}>
-              <Route path="admin" element={<AdminPlaceholderPage />} />
+              <Route path="admin" element={<AdminTopupPage />} />
             </Route>
 
             <Route path="*" element={<NotFoundPage />} />
@@ -71,9 +74,4 @@ export default function App() {
       </UserProvider>
     </RoleProvider>
   );
-}
-
-// Placeholder cho /admin cho den khi co trang that
-function AdminPlaceholderPage() {
-  return <div style={{ padding: 24 }}><h2>Trang quản trị viên</h2></div>;
 }

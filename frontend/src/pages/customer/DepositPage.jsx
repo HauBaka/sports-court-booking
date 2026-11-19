@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { depositBooking } from "../../services/bookingService";
-import { getBookingDetail } from "../../services/bookingService";
 import { useUser } from "../../context/UserContext";
 import "../../styles/court-detail.css";
 
@@ -19,54 +18,49 @@ function formatCountdown(secs) {
 export default function DepositPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { state } = useLocation();
   const { fetchUser } = useUser();
 
-  // ── Tải thông tin đơn ──
-  const [booking, setBooking] = useState(null);
-  const [loadStatus, setLoadStatus] = useState("loading"); // loading | ready | error
-  const [loadError, setLoadError] = useState("");
+  // Dữ liệu đơn và giá truyền từ BookingConfirmPage qua navigate state
+  const booking = state?.booking;    // response data từ POST /bookings (3.3)
+  const priceData = state?.priceData; // response data từ POST /bookings/calculate-price (3.2)
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoadStatus("loading");
-    getBookingDetail(id)
-      .then((res) => {
-        if (cancelled) return;
-        const b = res.data;
-        // Chỉ cho phép đặt cọc khi đơn còn ở PENDING_DEPOSIT
-        if (b.status !== "PENDING_DEPOSIT") {
-          setLoadError(
-            b.status === "DEPOSITED"
-              ? "Đơn này đã được thanh toán cọc."
-              : "Đơn này không còn ở trạng thái chờ cọc."
-          );
-          setLoadStatus("error");
-        } else {
-          setBooking(b);
-          setLoadStatus("ready");
-        }
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setLoadError(err.message || "Không tải được thông tin đơn đặt sân.");
-        setLoadStatus("error");
-      });
-    return () => { cancelled = true; };
-  }, [id]);
+  // Nếu truy cập trực tiếp không có state → yêu cầu đi qua flow đặt sân
+  if (!booking) {
+    return (
+      <div className="cd-page">
+        <div className="cd-state-center">
+          <p className="cd-error-msg">Không có thông tin đặt sân. Vui lòng đặt lại từ đầu.</p>
+          <Link to="/courts" className="cd-btn-retry">Về trang tìm sân</Link>
+        </div>
+      </div>
+    );
+  }
 
+  return (
+    <DepositFlow
+      bookingId={Number(id)}
+      booking={booking}
+      priceData={priceData}
+      navigate={navigate}
+      fetchUser={fetchUser}
+    />
+  );
+}
+
+// Tách ra để tránh hooks trong conditional render
+function DepositFlow({ bookingId, booking, priceData, navigate, fetchUser }) {
   // ── Countdown giữ chỗ ──
-  const [countdown, setCountdown] = useState(0);
+  const [countdown, setCountdown] = useState(() => secondsUntil(booking.hold_expires_at));
   const timerRef = useRef(null);
 
   useEffect(() => {
-    if (!booking?.hold_expires_at) return;
     clearInterval(timerRef.current);
-    setCountdown(secondsUntil(booking.hold_expires_at));
     timerRef.current = setInterval(() => {
       setCountdown(secondsUntil(booking.hold_expires_at));
     }, 1000);
     return () => clearInterval(timerRef.current);
-  }, [booking]);
+  }, [booking.hold_expires_at]);
 
   // ── Thanh toán cọc ──
   const [depositStatus, setDepositStatus] = useState("idle"); // idle | loading | success | error
@@ -77,7 +71,7 @@ export default function DepositPage() {
     setDepositStatus("loading");
     setDepositError("");
     try {
-      const res = await depositBooking(id);
+      const res = await depositBooking(bookingId);
       setDepositResult(res.data);
       setDepositStatus("success");
       // Cập nhật số dư ví trên navbar
@@ -86,33 +80,9 @@ export default function DepositPage() {
       setDepositError(err.message || "Thanh toán cọc thất bại. Vui lòng thử lại.");
       setDepositStatus("error");
     }
-  }, [id, fetchUser]);
+  }, [bookingId, fetchUser]);
 
-  // ── Render: loading ──
-  if (loadStatus === "loading") {
-    return (
-      <div className="cd-page">
-        <div className="cd-state-center">
-          <div className="fc-spinner" />
-          <p>Đang tải thông tin đơn đặt sân...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Render: lỗi tải ──
-  if (loadStatus === "error") {
-    return (
-      <div className="cd-page">
-        <div className="cd-state-center">
-          <p className="cd-error-msg">{loadError}</p>
-          <button className="cd-btn-retry" type="button" onClick={() => navigate("/courts")}>
-            Về trang tìm sân
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const isExpired = countdown === 0;
 
   // ── Render: đặt cọc thành công ──
   if (depositStatus === "success" && depositResult) {
@@ -172,7 +142,9 @@ export default function DepositPage() {
   }
 
   // ── Render: form đặt cọc ──
-  const isExpired = countdown === 0;
+  const depositAmount = booking.deposit_amount_required;
+  const totalAmount   = booking.total_amount;
+  const remaining     = totalAmount - depositAmount;
 
   return (
     <div className="cd-page">
@@ -194,16 +166,18 @@ export default function DepositPage() {
         <div className="cd-confirm-meta">
           <div className="cd-confirm-row">
             <span>Mã đặt sân</span>
-            <strong>#{booking.id}</strong>
+            <strong>#{booking.booking_id}</strong>
           </div>
           <div className="cd-confirm-row">
             <span>Sân</span>
-            <strong>{booking.court_name}</strong>
+            <strong>{booking.court_name ?? priceData?.court_name}</strong>
           </div>
-          <div className="cd-confirm-row">
-            <span>Cơ sở</span>
-            <strong>{booking.facility_name}</strong>
-          </div>
+          {priceData?.facility_name && (
+            <div className="cd-confirm-row">
+              <span>Cơ sở</span>
+              <strong>{priceData.facility_name}</strong>
+            </div>
+          )}
           <div className="cd-confirm-row">
             <span>Ngày chơi</span>
             <strong>{booking.play_date}</strong>
@@ -214,20 +188,21 @@ export default function DepositPage() {
         <div className="cd-confirm-totals" style={{ marginBottom: 16 }}>
           <div className="cd-confirm-row" style={{ padding: "9px 14px" }}>
             <span>Tổng tiền</span>
-            <span>{fmtVnd(booking.pricing_summary?.total_amount)}</span>
+            <span>{fmtVnd(totalAmount)}</span>
           </div>
           <div className="cd-confirm-row cd-confirm-row--deposit" style={{ padding: "9px 14px" }}>
             <span>Tiền cọc cần thanh toán (30%)</span>
-            <strong>{fmtVnd(booking.pricing_summary?.deposit_amount)}</strong>
+            <strong>{fmtVnd(depositAmount)}</strong>
           </div>
           <div className="cd-confirm-row cd-confirm-row--remain" style={{ padding: "9px 14px" }}>
             <span>Còn lại thanh toán tại sân</span>
-            <span>{fmtVnd(booking.pricing_summary?.remaining_amount_due_at_court)}</span>
+            <span>{fmtVnd(remaining)}</span>
           </div>
         </div>
 
         {/* Countdown */}
-        <div className={`cd-countdown${isExpired || countdown <= 60 ? " urgent" : ""}`}
+        <div
+          className={`cd-countdown${isExpired || countdown <= 60 ? " urgent" : ""}`}
           style={{ marginBottom: 16 }}
         >
           <span className="cd-countdown-label">
@@ -238,7 +213,7 @@ export default function DepositPage() {
           </span>
         </div>
 
-        {/* Lỗi hết hạn hoặc thiếu tiền */}
+        {/* Thông báo lỗi */}
         {isExpired && (
           <div className="cd-booking-error">
             Thời gian giữ chỗ đã hết. Vui lòng quay lại chọn sân và đặt lại.
@@ -248,7 +223,7 @@ export default function DepositPage() {
           <div className="cd-booking-error">{depositError}</div>
         )}
 
-        {/* Nút đặt cọc */}
+        {/* Nút đặt cọc — khóa khi đang xử lý hoặc đã hết hạn */}
         {!isExpired && (
           <button
             className="cd-btn-book"
@@ -258,7 +233,7 @@ export default function DepositPage() {
           >
             {depositStatus === "loading"
               ? "Đang xử lý..."
-              : `Xác nhận đặt cọc ${fmtVnd(booking.pricing_summary?.deposit_amount)}`}
+              : `Xác nhận đặt cọc ${fmtVnd(depositAmount)}`}
           </button>
         )}
 
