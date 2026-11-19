@@ -14,6 +14,8 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import RequireRole from "./components/RequireRole";
 import MyFacilitiesPage from "./pages/owner/MyFacilitiesPage";
 import ProfilePage from "./pages/ProfilePage";
+import WalletPage from "./pages/WalletPage";
+import AdminTopupPage from "./pages/admin/AdminTopupPage";
 import FacilityCreatePage from "./pages/owner/FacilityCreatePage";
 import FacilityDetailPage from "./pages/owner/FacilityDetailPage";
 import CourtDetailPage from "./pages/owner/CourtDetailPage";
@@ -21,6 +23,7 @@ import CourtEditPage from "./pages/owner/CourtEditPage";
 import FindCourtsPage from "./pages/customer/FindCourtsPage";
 import CustomerCourtDetailPage from "./pages/customer/CourtDetailPage";
 import BookingConfirmPage from "./pages/customer/BookingConfirmPage";
+import DepositPage from "./pages/customer/DepositPage";
 
 export default function App() {
   return (
@@ -31,6 +34,7 @@ export default function App() {
           <Route element={<MainLayout />}>
             <Route element={<RequireAuth />}>
               <Route index element={<HomePage />} />
+              <Route path="wallet" element={<WalletPage />} />
             </Route>
             <Route path="health" element={<HealthCheckPage />} />
             <Route path="unauthorized" element={<UnauthorizedPage />} />
@@ -41,6 +45,7 @@ export default function App() {
               <Route path="courts" element={<FindCourtsPage />} />
               <Route path="courts/:id" element={<CustomerCourtDetailPage />} />
               <Route path="booking/confirm" element={<BookingConfirmPage />} />
+              <Route path="bookings/:id/deposit" element={<DepositPage />} />
             </Route>
 
             {/* Chủ sân */}
@@ -54,7 +59,7 @@ export default function App() {
 
             {/* Admin */}
             <Route element={<RequireRole roles="admin" />}>
-              <Route path="admin" element={<AdminPlaceholderPage />} />
+              <Route path="admin" element={<AdminTopupPage />} />
             </Route>
 
             <Route path="*" element={<NotFoundPage />} />
@@ -69,9 +74,4 @@ export default function App() {
       </UserProvider>
     </RoleProvider>
   );
-}
-
-// Placeholder cho /admin cho den khi co trang that
-function AdminPlaceholderPage() {
-  return <div style={{ padding: 24 }}><h2>Trang quản trị viên</h2></div>;
 }

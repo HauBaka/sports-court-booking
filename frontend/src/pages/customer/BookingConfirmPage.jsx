@@ -162,7 +162,7 @@ function ConfirmFlow({ courtId, playDate, timeSlotIds, services }) {
                 className="cd-btn-book"
                 type="button"
                 disabled={countdown === 0}
-                onClick={() => navigate(`/bookings/${booking.booking_id}/deposit`)}
+                onClick={() => navigate(`/bookings/${booking.booking_id}/deposit`, { state: { booking, priceData } })}
               >
                 Thanh toán cọc ngay
               </button>

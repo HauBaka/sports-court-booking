@@ -7,10 +7,12 @@ const MENU_BY_ROLE = {
   customer: [
     { to: "/", label: "Trang chủ" },
     { to: "/courts", label: "Tìm sân" },
+    { to: "/wallet", label: "Ví của tôi" },
   ],
   owner: [
     { to: "/", label: "Trang chủ" },
     { to: "/owner/facilities", label: "Cơ sở của tôi" },
+    { to: "/wallet", label: "Ví của tôi" },
   ],
   admin: [
     { to: "/", label: "Trang chủ" },
