@@ -2,11 +2,10 @@
 Mã OTP trong seed và mã gửi ở máy cá nhân, CI đều là 123456."""
 import uuid
 
-import pytest
+from app.core.otp import hash_code
 
 from .helpers import API, OTP_CODE, PASSWORD, login, scalar, execute
 
-pytestmark = pytest.mark.skip(reason="Chờ SCB-136, SCB-137: POST /auth/otp, đăng ký có OTP, POST /auth/password/reset")
 
 
 def new_email(prefix):
@@ -23,6 +22,12 @@ def register(client, email, code, phone="0900000021"):
     })
 
 
+def use_seed_otp(email, purpose):
+    """Seed S3 lưu bcrypt, BE kiểm HMAC theo JWT_SECRET: ghi lại hash của 123456 cho dòng seed."""
+    execute("UPDATE email_otps SET code_hash = :h WHERE email = :e AND purpose = :p",
+            h=hash_code(email, purpose, OTP_CODE), e=email, p=purpose)
+
+
 def user_count(email):
     return scalar("SELECT COUNT(*) FROM users WHERE email = :e", e=email)
 
@@ -32,6 +37,7 @@ def error_code(res):
 
 
 def test_auth_07_dang_ky_dung_otp(client):
+    use_seed_otp("newuser@scb.vn", "REGISTER")
     res = register(client, "newuser@scb.vn", OTP_CODE)
     assert res.status_code == 201
     assert res.json()["data"]["balance"] == 0
@@ -85,12 +91,14 @@ def test_auth_14_quen_mat_khau_email_khong_ton_tai(client):
     res = send_otp(client, "khong.co@scb.vn", "RESET_PASSWORD")
     assert res.status_code == 200
     assert res.json()["message"] == known.json()["message"]  # không lộ email nào có tài khoản
-    assert scalar("SELECT COUNT(*) FROM email_otps WHERE email = 'khong.co@scb.vn'") == 0
+    # Vẫn lưu dòng OTP để tính cooldown, chỉ không gửi mail (API 1.5 POST /auth/otp)
+    assert scalar("SELECT COUNT(*) FROM email_otps WHERE email = 'khong.co@scb.vn'") == 1
 
 
 def test_auth_13_dat_lai_mat_khau(client):
     # Đổi mật khẩu Khách A: lưu hash cũ, trả lại cuối test để các kịch bản khác vẫn đăng nhập được
     old_hash = scalar("SELECT password_hash FROM users WHERE email = 'customer.a@scb.vn'")
+    use_seed_otp("customer.a@scb.vn", "RESET_PASSWORD")
     try:
         res = client.post(f"{API}/auth/password/reset", json={
             "email": "customer.a@scb.vn", "otp_code": OTP_CODE, "new_password": "MatKhauMoi123@",

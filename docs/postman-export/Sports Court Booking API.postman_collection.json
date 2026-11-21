@@ -2924,9 +2924,9 @@
                     "type": "text/javascript",
                     "exec": [
                       "// Đổi amount thành -1000, 1000.5 để thử hai giá trị còn lại",
-                      "pm.test(\"VI-02: 422 VALIDATION_ERROR\", () => {",
-                      "  pm.response.to.have.status(422);",
-                      "  pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\");",
+                      "pm.test(\"VI-02: 400 DEPOSIT_AMOUNT_INVALID\", () => {",
+                      "  pm.response.to.have.status(400);",
+                      "  pm.expect(pm.response.json().error.code).to.eql(\"DEPOSIT_AMOUNT_INVALID\");",
                       "});"
                     ]
                   }
