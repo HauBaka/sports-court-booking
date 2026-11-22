@@ -153,7 +153,7 @@ Dữ liệu lấy từ seed E3 (`database/seeds/S3__seed_e3.sql`), mọi dòng O
 | AUTH-11 | OTP đã dùng | | Seed E3 đã nạp | `POST /auth/register` với email `done@scb.vn`, `otp_code` = `123456` | Bị từ chối, không tạo user |
 | AUTH-12 | Gửi lại OTP trong 60 giây | | Chưa có OTP nào của `otp.resend@scb.vn` | 1. `POST /auth/otp` với email `otp.resend@scb.vn`, `purpose` = `REGISTER`<br>2. Gọi lại ngay | Bước 1: 200<br>Bước 2: `AUTH_OTP_TOO_SOON`, không gửi mail mới |
 | AUTH-13 | Đặt lại mật khẩu | | Seed E3 đã nạp | 1. `POST /auth/password/reset` với email `customer.a@scb.vn`, `otp_code` = `123456`, `new_password` = `MatKhauMoi123@`<br>2. Đăng nhập bằng mật khẩu cũ `TestPass123@`<br>3. Đăng nhập bằng `MatKhauMoi123@` | Bước 1: 200<br>Bước 2: 401 `AUTH_INVALID_CREDENTIALS`<br>Bước 3: 200, có `access_token` |
-| AUTH-14 | Quên mật khẩu với email không tồn tại | | Không có user `khong.co@scb.vn` | `POST /auth/otp` với email `khong.co@scb.vn`, `purpose` = `RESET_PASSWORD` | 200, cùng câu thông báo như email có thật<br>Không tạo OTP, không gửi mail |
+| AUTH-14 | Quên mật khẩu với email không tồn tại | | Không có user `khong.co@scb.vn` | `POST /auth/otp` với email `khong.co@scb.vn`, `purpose` = `RESET_PASSWORD` | 200, cùng câu thông báo như email có thật<br>Vẫn lưu một dòng OTP để tính cooldown (API 1.5), không gửi mail |
 
 AUTH-13 đổi mật khẩu của Khách A: chạy sau cùng hoặc nạp lại seed trước khi chạy kịch bản khác.
 
@@ -222,7 +222,7 @@ Mỗi ca đặt một khung giờ riêng để các ca không đặt trùng nhau
 | TRUNG-03 | Đơn nhiều khung, một khung trùng | QĐ3 | Đơn seed id 1 | 1. Khách A gọi 3.3 đặt sân 1, ngày mai, 07:00 đến 09:00 (2 khung)<br>2. Gọi 3.1 sân 1 ngày mai | Bước 1: 409 `SLOT_ALREADY_BOOKED`<br>Bước 2: khung 07:00 vẫn `AVAILABLE` |
 | TRUNG-04 | Khung liền kề, khác sân | QĐ3 | Đơn seed id 1 | 1. Khách A gọi 3.3 đặt sân 1, ngày mai, 10:00 đến 11:00<br>2. Gọi 3.3 đặt sân 2, ngày mai, 08:00 đến 09:00 | Cả hai: 201 `PENDING_DEPOSIT` |
 | VI-01 | Admin cấp tiền | QĐ6 | Admin đã đăng nhập | 1. Gọi 5.3 với `user_id` 6, `amount` 100.000<br>2. Khách B gọi 5.2 | Bước 1: ví B 300.000đ<br>Bước 2: có giao dịch `TOPUP` 100.000đ, `balance_after` 300.000đ, ghi người cấp là Admin |
-| VI-02 | Số tiền cấp sai | QĐ6 | Admin đã đăng nhập | Gọi 5.3 với `user_id` 6, `amount` lần lượt 0, -1000, 1000.5 | Cả ba: 422 `VALIDATION_ERROR`. Ví B không đổi |
+| VI-02 | Số tiền cấp sai | QĐ6 | Admin đã đăng nhập | Gọi 5.3 với `user_id` 6, `amount` lần lượt 0, -1000, 1000.5 | Cả ba: 400 `DEPOSIT_AMOUNT_INVALID`. Ví B không đổi |
 | VI-03 | Không phải Admin cấp tiền | QĐ6 | Khách A đã đăng nhập | Gọi 5.3 với `user_id` 5, `amount` 100.000 | 403 `AUTH_FORBIDDEN`. Ví A không đổi |
 | VI-04 | Xem lịch sử giao dịch | QĐ6 | Khách B đã đăng nhập, seed vừa nạp | Gọi 5.2 | Có `TOPUP` 300.000đ và `DEPOSIT` 100.000đ của đơn 1. Không có giao dịch của ví khác. Lọc `type=DEPOSIT` chỉ còn 1 dòng |
 | VI-06 | Admin tìm người dùng | | Admin, Khách A đã đăng nhập | 1. Admin gọi 5.4 với `search=customer.a`<br>2. Khách A gọi 5.4 | Bước 1: 1 kết quả, `id` 5, `balance` 500.000đ<br>Bước 2: 403 `AUTH_FORBIDDEN` |
