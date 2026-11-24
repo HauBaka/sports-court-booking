@@ -1,9 +1,10 @@
 node_modules/
 shots/
-# trạng thái và báo cáo của công cụ kiểm tra giao diện (taste-skill, impeccable), sinh lại được
+# file của công cụ (taste-skill, impeccable, graphify), sinh lại được, không thuộc bản mẫu
 .taste-skill/
-.impeccable/review/
-.impeccable/hook.cache.json
+.impeccable/
+.agents/
+site/.gitignore
 graphify-out/
 # gốc repo bỏ qua lib/ (mẫu Python), mở lại cho mã nguồn bản mẫu
 !app/src/lib/
