@@ -1,57 +1,25 @@
 """Kịch bản đặt sân, đặt cọc, ví (docs/test-scenarios.md mục 6). Chạy trên CSDL vừa nạp seed S2, S3.
 Mỗi ca dùng một khung giờ riêng (bảng cuối mục 6). Chạy lại phải nạp lại seed."""
-import uuid
 from datetime import date, timedelta
 
 import pytest
 
-from .helpers import API, auth, execute, next_tuesday, register, scalar, slot_id
+from .helpers import (
+    ADMIN, API, CUSTOMER_A, CUSTOMER_B, OWNER, auth, balance, book, deposit, execute, new_customer, next_tuesday,
+    scalar, slot_status, system_balance,
+)
 
-CUSTOMER_A, CUSTOMER_B, ADMIN, OWNER = "customer.a@scb.vn", "customer.b@scb.vn", "admin@scb.vn", "owner1@scb.vn"
 T = next_tuesday()
 TOMORROW = date.today() + timedelta(days=1)
-
-
-
-def book(client, headers, court_id, play_date, hours, **extra):
-    return client.post(f"{API}/bookings", headers=headers, json={
-        "court_id": court_id, "play_date": play_date.isoformat(),
-        "time_slot_ids": [slot_id(h) for h in hours], "services": [], **extra,
-    })
-
-
-def deposit(client, headers, booking_id):
-    return client.post(f"{API}/bookings/{booking_id}/deposit", headers=headers)
-
-
-def balance(email):
-    return scalar("SELECT w.balance FROM wallets w JOIN users u ON u.id = w.user_id WHERE u.email = :e", e=email)
-
-
-def system_balance():
-    return scalar("SELECT balance FROM wallets WHERE id = 1")
 
 
 def deposit_count(booking_id):
     return scalar("SELECT COUNT(*) FROM wallet_transactions WHERE type = 'DEPOSIT' AND related_booking_id = :b", b=booking_id)
 
 
-def slot_status(client, headers, court_id, play_date, hour):
-    res = client.get(f"{API}/courts/{court_id}/slots", params={"date": play_date.isoformat()}, headers=headers)
-    return next(s["status"] for s in res.json()["data"]["slots"] if s["time_slot_id"] == slot_id(hour))
-
-
 def expire(booking_id):
     # Không chờ 10 phút: đẩy hạn giữ chỗ về quá khứ
     execute("UPDATE bookings SET hold_expires_at = NOW() - INTERVAL 1 MINUTE WHERE id = :b", b=booking_id)
-
-
-def new_customer(client, amount):
-    """Khách mới ví 0đ, Admin cấp `amount` bằng 5.3."""
-    email = f"coc.{uuid.uuid4().hex[:8]}@scb.vn"
-    user_id = register(client, email, "09" + str(uuid.uuid4().int)[:8]).json()["data"]["id"]
-    client.post(f"{API}/admin/wallet-topups", headers=auth(client, ADMIN), json={"user_id": user_id, "amount": amount})
-    return email
 
 
 def test_gia_09_doi_bang_gia_sau_khi_co_don(client):
