@@ -49,7 +49,7 @@ Mọi phản hồi từ Backend đều có cấu trúc JSON thống nhất để
 ```
 
 #### B. Danh sách có phân trang (Paginated List)
-Áp dụng cho các API lấy danh sách (`GET /courts`, `GET /bookings`, `GET /wallet/transactions`):
+Áp dụng cho các API lấy danh sách (`GET /courts`, `GET /bookings`, `GET /wallet/transactions`, `GET /team-posts`, `GET /team-posts/{id}/applications`).
 
 ```json
 {
@@ -172,19 +172,24 @@ Khi xảy ra lỗi (HTTP Status >= 400), response trả về luôn tuân theo m�
 | | `HOLIDAY_DATE_EXISTS` | **409** | Ngày lễ (`holiday_date`) đã có trong danh sách, không được tạo trùng (ánh xạ từ `uq_holidays_date`). |
 | **4. Đặt sân & Giữ chỗ (Bookings)** | `BOOKING_NOT_FOUND` | **404** | Không tìm thấy đơn đặt sân. |
 | | `SLOT_ALREADY_BOOKED` | **409** | Khung giờ đã có người đặt cọc (`DEPOSITED`) hoặc đang trong thời gian giữ chỗ hợp lệ (`PENDING_DEPOSIT`). |
-| | `INVALID_BOOKING_TIME` | **400** | Thời gian bắt đầu phải ở tương lai, không cho đặt khung giờ trong quá khứ. |
-| | `CANNOT_CANCEL_BOOKING` | **400** | Lịch đặt đã diễn ra (`:now >= start_at`) hoặc đã hoàn tất, không thể hủy. |
+| | `INVALID_BOOKING_TIME` | **400** | Giờ bắt đầu phải ở tương lai khi đặt sân hoặc tạo bài ghép đội. |
+| | `CANNOT_CANCEL_BOOKING` | **400** | Chỉ đơn `PENDING_DEPOSIT` hoặc `DEPOSITED` mới được hủy và chỉ khi `:now < start_at`. |
 | | `CANNOT_DEPOSIT_EXPIRED_BOOKING` | **400** | Đơn đặt sân đã quá hạn giữ chỗ 10 phút, không thể thanh toán cọc. |
 | | `CANNOT_SETTLE_BEFORE_START` | **400** | Buổi chơi chưa diễn ra (`:now < start_at`), không thể kết toán cọc cho chủ sân. |
+| | `CANNOT_SETTLE_BOOKING` | **400** | Chỉ kết toán đơn `DEPOSITED`. Áp dụng cả khi đơn đã `COMPLETED` do kết toán trước đó. |
 | **5. Ví & Tiền cọc (Wallets & Payments)** | `WALLET_NOT_FOUND` | **404** | Không tìm thấy ví nội bộ của người dùng trong hệ thống. |
 | | `WALLET_INSUFFICIENT_BALANCE` | **402** | Số dư ví hiện tại không đủ 30% tiền cọc (QĐ4, QĐ6, ánh xạ từ `chk_wallets_balance`). |
 | | `DEPOSIT_AMOUNT_INVALID` | **400** | Số tiền nạp cấp vào ví (`TOPUP`) hoặc tiền cọc phải lớn hơn 0 VNĐ. |
 | **6. Ghép đội (Matchmaking - Epic 6)** | `BOOKING_NOT_DEPOSITED` | **400** | Chỉ đơn đặt sân đã thanh toán cọc (`DEPOSITED`) mới được phép tạo bài đăng tìm đồng đội. |
-| | `TEAM_POST_CLOSED` | **400** | Bài đăng tìm đồng đội đã đủ người (`CLOSED`) hoặc đã bị hủy. |
+| | `TEAM_POST_CLOSED` | **400** | Chỉ có thể ứng tuyển hoặc xử lý đơn ứng tuyển khi bài ở trạng thái `OPEN`. |
 | | `CANNOT_APPLY_OWN_POST` | **400** | Không thể tự nộp đơn ứng tuyển vào chính bài đăng do mình tạo. |
-| | `APPLICATION_ALREADY_EXISTS` | **409** | Bạn đã nộp đơn ứng tuyển cho bài đăng này rồi, không thể nộp trùng lặp. |
+| | `APPLICATION_ALREADY_EXISTS` | **409** | Bạn đã có đơn ứng tuyển đang chờ duyệt hoặc đã được chấp thuận cho bài này. |
+| | `TEAM_POST_NOT_FOUND` | **404** | Không tìm thấy bài đăng ghép đội. |
+| | `TEAM_POST_ALREADY_EXISTS` | **409** | Đơn đặt sân đã có bài đăng ghép đội `OPEN`. |
+| | `APPLICATION_NOT_FOUND` | **404** | Không tìm thấy đơn ứng tuyển trong bài đăng được yêu cầu. |
+| | `APPLICATION_NOT_PENDING` | **400** | Chỉ chủ bài mới được duyệt hoặc từ chối đơn `PENDING`. |
 
-*(Lưu ý về quy định QĐ5: Trường hợp khách hủy đơn dưới 12 giờ trước giờ chơi, hệ thống vẫn xử lý hủy thành công 200 OK với tỉ lệ hoàn 0% và bồi thường 100% cho chủ sân; Backend không chặn lỗi 400).*
+*Theo QĐ5, hủy đơn `DEPOSITED` trong khoảng dưới 12 giờ và trước `start_at` trả `200 OK`, hoàn 0% và chuyển toàn bộ cọc cho chủ sân. Với đơn `PENDING_DEPOSIT` hủy hợp lệ, số tiền hoàn và bồi thường đều bằng 0 VNĐ, số dư giữ nguyên và không phát sinh giao dịch ví.*
 
 ---
 

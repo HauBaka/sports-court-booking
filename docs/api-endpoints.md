@@ -962,8 +962,11 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 * **Mô tả:** Lấy danh sách lịch đặt sân có phân trang và bộ lọc. Tự động áp dụng phân quyền: `customer` chỉ thấy đơn của mình, `owner` chỉ thấy đơn tại các cơ sở thuộc quyền sở hữu của mình, `admin` thấy toàn bộ.
 * **Quyền truy cập:** Đã đăng nhập (`customer`, `owner`, `admin`).
 * **Query Params:** `status`, `facility_id`, `court_id`, `from_date`, `to_date`, `page=1`, `limit=10`.
+  * `from_date` và `to_date` dùng định dạng `YYYY-MM-DD` và lọc trực tiếp theo `play_date` (ngày chơi theo giờ Việt Nam), bao gồm cả hai đầu mốc. Có thể truyền từng mốc riêng. Nếu `from_date > to_date`, trả `400 INVALID_REQUEST`.
+* **Sắp xếp mặc định:** `play_date DESC, start_at DESC, id DESC`, trước khi phân trang.
+* **Trường trả về:** `end_at` là thời điểm kết thúc khung giờ cuối của đơn (kể cả khung giờ đã nhả khi hủy), chuyển sang UTC theo quy tắc múi giờ tại 3.3. Chỉ phản hồi cho `owner` và `admin` mới có `customer_name` và `customer_phone` lấy từ hồ sơ người đặt.
 * **Database Transaction:** Không.
-* **Response (200 OK - Paginated List chuẩn 2.1.B):**
+* **Response (200 OK - Paginated List chuẩn 2.1.B, ví dụ cho `owner` hoặc `admin`):**
   ```json
   {
     "success": true,
@@ -977,6 +980,9 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
         "court_name": "Sân Cầu Lông 1 (Thảm Yonex)",
         "play_date": "2026-11-10",
         "start_at": "2026-11-10T09:00:00Z",
+        "end_at": "2026-11-10T11:00:00Z",
+        "customer_name": "Nguyễn Minh An",
+        "customer_phone": "0901234567",
         "total_amount": 270000,
         "deposit_amount": 81000,
         "status": "DEPOSITED",
@@ -996,6 +1002,8 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 * **Endpoint:** `GET /api/v1/bookings/{id}`
 * **Mô tả:** Lấy toàn bộ thông tin chi tiết một đơn đặt sân (khung giờ chi tiết, dịch vụ, bảng kê tiền).
 * **Quyền truy cập:** Đã đăng nhập (`customer` sở hữu đơn, `owner` quản lý cơ sở, `admin`).
+* **Lỗi nghiệp vụ:** `404 BOOKING_NOT_FOUND` nếu ID không tồn tại. Trả `403 AUTH_FORBIDDEN` nếu đơn tồn tại nhưng nằm ngoài phạm vi truy cập của người gọi.
+* **Trường trả về:** `customer_name` là tên người đặt. `cancel_reason` là lý do hủy hoặc `null` nếu chưa có lý do hủy.
 * **Database Transaction:** Không.
 * **Response (200 OK - Single Object chuẩn 2.1.A):**
   ```json
@@ -1005,6 +1013,7 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
     "data": {
       "id": 105,
       "user_id": 12,
+      "customer_name": "Nguyễn Minh An",
       "court_id": 101,
       "court_name": "Sân Cầu Lông 1 (Thảm Yonex)",
       "facility_name": "Cơ Sở Cầu Lông & Pickleball Kỳ Hòa",
@@ -1046,7 +1055,8 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
         "remaining_amount_due_at_court": 189000
       },
       "hold_expires_at": null,
-      "cancelled_at": null
+      "cancelled_at": null,
+      "cancel_reason": null
     }
   }
   ```
@@ -1091,15 +1101,17 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 * **Endpoint:** `GET /api/v1/bookings/{id}/cancel-preview`
 * **Mô tả:** **Server tính toán toàn bộ số tiền hoàn trả theo QĐ5**. Đo khoảng cách từ thời điểm hiện tại (`:now`) đến giờ bắt đầu chơi (`start_at`) và trả về chi tiết chính sách hoàn cọc để Frontend hiển thị hộp thoại xác nhận.
 * **Quyền truy cập:** Đã đăng nhập (`customer` sở hữu đơn đặt).
+* **Điều kiện hủy:** Đơn phải có trạng thái `PENDING_DEPOSIT` hoặc `DEPOSITED`, và `:now < start_at`. Trả `400 CANNOT_CANCEL_BOOKING` nếu không thỏa điều kiện, `404 BOOKING_NOT_FOUND` nếu đơn không tồn tại, hoặc `403 AUTH_FORBIDDEN` nếu người gọi không có quyền.
+* **Đơn `PENDING_DEPOSIT`:** Trả `deposit_amount_paid`, `refund_percentage`, `penalty_percentage`, `refund_amount_to_player` và `penalty_amount_to_facility` đều bằng `0`. `rule_matched` và `customer_display_message` cho biết đơn chưa thanh toán cọc. Xem trước chỉ đọc dữ liệu.
 * **Database Transaction:** Không.
-* **Response Payload (Frontend chỉ hiển thị, không tự tính):**
+* **Response (200 OK, đơn đã cọc 39.000đ, hủy trước giờ chơi 30 giờ):**
   ```json
   {
     "success": true,
     "message": "Tính toán chính sách hoàn cọc thành công.",
     "data": {
-      "booking_id": 105,
-      "deposit_amount_paid": 81000,
+      "booking_id": 106,
+      "deposit_amount_paid": 39000,
       "schedule_info": {
         "play_date": "2026-11-10",
         "start_at": "2026-11-10T09:00:00Z"
@@ -1112,9 +1124,9 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
         "penalty_percentage": 20
       },
       "financial_result": {
-        "refund_amount_to_player": 64800,
-        "penalty_amount_to_facility": 16200,
-        "customer_display_message": "Bạn đang yêu cầu hủy trước 30.0 giờ. Theo quy định QĐ5, bạn sẽ được hoàn lại 80% tiền cọc (64.800 VNĐ) vào ví nội bộ ngay lập tức."
+        "refund_amount_to_player": 31200,
+        "penalty_amount_to_facility": 7800,
+        "customer_display_message": "Bạn đang yêu cầu hủy trước giờ chơi 30 giờ. Khi xác nhận hủy, bạn sẽ được hoàn 31.200 VNĐ vào ví nội bộ theo QĐ5."
       }
     }
   }
@@ -1124,41 +1136,42 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 * **Endpoint:** `POST /api/v1/bookings/{id}/cancel`
 * **Mô tả:** Khách hàng hủy đơn đặt sân (áp dụng cho cả đơn `PENDING_DEPOSIT` và `DEPOSITED`). Nếu đơn đã cọc (`DEPOSITED`), tự động hoàn cọc vào ví khách (`REFUND`) và bồi thường cho chủ cơ sở (`FORFEIT`).
 * **Quyền truy cập:** Đã đăng nhập (`customer` sở hữu đơn hoặc `admin`).
+* **Lỗi nghiệp vụ:** `404 BOOKING_NOT_FOUND` nếu đơn không tồn tại, `403 AUTH_FORBIDDEN` nếu người gọi không có quyền, `400 CANNOT_CANCEL_BOOKING` nếu trạng thái hoặc thời điểm không cho phép hủy.
 * **Database Transaction:** **BẮT BUỘC (ACID TRANSACTION VỚI ROW LOCKING)**
-  * **Bước 1:** Khóa hàng (`SELECT ... FOR UPDATE`) đơn đặt trong bảng `bookings`. Kiểm tra điều kiện: trạng thái phải thuộc `('PENDING_DEPOSIT', 'DEPOSITED')` VÀ `:now < start_at`. Nếu không thỏa mãn ➔ Rollback báo lỗi `400 Bad Request` (`CANNOT_CANCEL_BOOKING`).
+  * **Bước 1:** Khóa hàng (`SELECT ... FOR UPDATE`) đơn đặt trong bảng `bookings`, kiểm tra quyền truy cập rồi đọc trạng thái và thời điểm để áp dụng điều kiện hủy tại 4.1. Nếu không thỏa điều kiện hủy, rollback và trả `400 CANNOT_CANCEL_BOOKING`.
   * **Bước 2:** Cập nhật bảng `bookings`: `status = 'CANCELLED'`, `cancelled_at = :now`, `cancel_reason = :cancel_reason`.
   * **Bước 3:** Cập nhật bảng `booking_slots`: `released_at = :now` (cột sinh `active_key` tự chuyển về `NULL` để mở lại khung giờ cho người khác đặt).
-  * **Bước 3b (Đóng bài đăng ghép đội liên quan):** Kiểm tra bảng `team_posts`. Nếu đơn đặt sân này có liên kết với bài đăng tìm đồng đội đang mở (`status = 'OPEN'`), cập nhật `team_posts.status = 'CANCELLED'`. Toàn bộ các đơn ứng tuyển `team_post_applications` đang ở trạng thái `PENDING` sẽ tự động chuyển thành `REJECTED`.
+  * **Bước 3b (Đóng bài đăng ghép đội liên quan):** Khóa bài đăng `OPEN` liên kết với đơn trước khi đổi `team_posts.status` thành `CANCELLED`. Chuyển các đơn ứng tuyển `PENDING` của bài thành `REJECTED` trong cùng transaction.
   * **Bước 4 (Chỉ khi trạng thái cũ là `DEPOSITED`):**
-    * Khóa hàng ví hệ thống trung gian và ví chủ cơ sở theo thứ tự `wallet.id` tăng dần.
     * Tính `hours_until_start = start_at - :now`:
       - `>= 24h`: `refund = deposit * 80 DIV 100`.
       - `12h <= x < 24h`: `refund = deposit * 50 DIV 100`.
       - `< 12h`: `refund = 0`.
       - `forfeit = deposit - refund`.
+    * Khóa các ví sẽ cập nhật số dư theo thứ tự `wallet.id` tăng dần, gồm ví hệ thống, ví khách nếu `refund > 0` và ví chủ cơ sở nếu `forfeit > 0`.
     * Trừ tiền ví hệ thống: `balance = balance - deposit_amount`.
     * **Nếu `refund > 0`**: Cộng ví khách và ghi `wallet_transactions` loại `REFUND` (`from_wallet_id = ví hệ thống`, `to_wallet_id = ví khách`, `related_booking_id = booking.id`).
     * **Nếu `forfeit > 0`**: Cộng ví chủ sân và ghi `wallet_transactions` loại `FORFEIT` (`from_wallet_id = ví hệ thống`, `to_wallet_id = ví chủ sân`, `related_booking_id = booking.id`).
-  * **Bước 5:** Commit Transaction.
+  * **Bước 5:** Commit Transaction. Với đơn `PENDING_DEPOSIT`, bỏ qua bước 4 và vẫn hủy đơn, nhả khung giờ. `refund_percentage`, `refunded_to_customer_wallet` và `compensated_to_facility_wallet` đều bằng `0`. Số dư ví khách giữ nguyên và không phát sinh giao dịch ví.
 * **Request Body:**
   ```json
   {
     "cancel_reason": "Bận việc gia đình đột xuất"
   }
   ```
-* **Response (200 OK):**
+* **Response (200 OK, đơn đã cọc 39.000đ, hủy trước giờ chơi 30 giờ):**
   ```json
   {
     "success": true,
     "message": "Hủy đơn đặt sân thành công. Tiền cọc đã được xử lý tự động theo quy định.",
     "data": {
-      "booking_id": 105,
+      "booking_id": 106,
       "status": "CANCELLED",
       "hours_until_start": 30.0,
       "refund_percentage": 80,
-      "refunded_to_customer_wallet": 64800,
-      "compensated_to_facility_wallet": 16200,
-      "customer_new_wallet_balance": 183800
+      "refunded_to_customer_wallet": 31200,
+      "compensated_to_facility_wallet": 7800,
+      "customer_new_wallet_balance": 92200
     }
   }
   ```
@@ -1167,9 +1180,10 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 * **Endpoint:** `POST /api/v1/bookings/{id}/complete`
 * **Mô tả:** Khi khách hàng đến nhận sân và hoàn tất buổi chơi (điều kiện `:now >= start_at`), Chủ cơ sở bấm xác nhận hoàn tất. Toàn bộ khoản tiền cọc 30% đang được giữ ở Ví hệ thống sẽ được **kết toán chuyển sang Ví của Chủ cơ sở (`SETTLE`)**, đơn chuyển sang trạng thái `COMPLETED` (QĐ7).
 * **Quyền truy cập:** `owner` (chủ sở hữu cơ sở thể thao) hoặc `admin`.
+* **Lỗi nghiệp vụ:** `404 BOOKING_NOT_FOUND` nếu đơn không tồn tại, `403 AUTH_FORBIDDEN` nếu người gọi không có quyền, `400 CANNOT_SETTLE_BOOKING` nếu trạng thái khác `DEPOSITED` (KT-03, KT-04), `400 CANNOT_SETTLE_BEFORE_START` nếu đơn đã cọc nhưng chưa đến giờ bắt đầu (KT-02).
 * **Database Transaction:** **BẮT BUỘC (ACID TRANSACTION VỚI ROW LOCKING)**
-  * **Bước 1:** Kiểm tra điều kiện thời gian: `:now >= start_at` (buổi chơi đã bắt đầu hoặc kết thúc). Nếu chưa đến giờ ➔ Báo lỗi `400 Bad Request` (`CANNOT_SETTLE_BEFORE_START`).
-  * **Bước 2:** Khóa hàng (`SELECT ... FOR UPDATE`) đơn đặt `bookings`. Kiểm tra `status == 'DEPOSITED'`.
+  * **Bước 1:** Khóa hàng (`SELECT ... FOR UPDATE`) đơn đặt trong `bookings` và kiểm tra quyền. Đọc trạng thái sau khi đã khóa. Nếu trạng thái khác `DEPOSITED`, kể cả `COMPLETED` sau lần kết toán trước, rollback và trả `400 CANNOT_SETTLE_BOOKING`.
+  * **Bước 2:** Kiểm tra `:now >= start_at`. Nếu chưa đến giờ, rollback và trả `400 CANNOT_SETTLE_BEFORE_START`.
   * **Bước 3:** Khóa hàng ví hệ thống trung gian (`is_system = true`) và ví chủ cơ sở (`facility.owner_id`) theo thứ tự `wallet.id` tăng dần.
   * **Bước 4:** Trừ số dư ví hệ thống: `balance = balance - deposit_amount`.
   * **Bước 5:** Cộng số dư ví chủ cơ sở: `balance = balance + deposit_amount`.
@@ -1340,8 +1354,9 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 #### 6.1 Xem danh sách bài đăng tìm đồng đội (Paginated List)
 * **Endpoint:** `GET /api/v1/team-posts`
 * **Mô tả:** Lấy danh sách các bài đăng tìm người chơi ghép trận (lọc theo trạng thái `OPEN`, `CLOSED`, `CANCELLED`).
-* **Quyền truy cập:** Public.
-* **Query Params:** `status=OPEN`, `page=1`, `limit=10`.
+* **Quyền truy cập:** Danh sách chung là public. `mine=true` yêu cầu đăng nhập, nếu thiếu token thì trả `401 AUTH_UNAUTHORIZED`.
+* **Query Params:** `status=OPEN`, `mine=false`, `page=1`, `limit=10`. `mine=true` lọc thêm theo `team_posts.user_id = current_user.id`. Bộ lọc `status` vẫn áp dụng, ví dụ `?mine=true&status=CLOSED` lấy các bài đã đóng của người gọi.
+* **Trường trả về:** `author_name` lấy từ hồ sơ người đăng. `facility_name`, `court_name`, `play_date` và `start_at` lấy theo đơn đặt liên kết. `accepted_count` là số đơn ứng tuyển có `status = 'ACCEPTED'` của bài, bằng `0` khi chưa duyệt ai.
 * **Database Transaction:** Không.
 * **Response (200 OK - Paginated List chuẩn 2.1.B):**
   ```json
@@ -1352,9 +1367,15 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
       {
         "id": 1,
         "user_id": 12,
+        "author_name": "Nguyễn Minh An",
         "booking_id": 105,
+        "facility_name": "Cơ Sở Cầu Lông & Pickleball Kỳ Hòa",
+        "court_name": "Sân Cầu Lông 1 (Thảm Yonex)",
+        "play_date": "2026-11-10",
+        "start_at": "2026-11-10T09:00:00Z",
         "title": "Cần tìm 2 bạn đánh đôi cầu lông trình độ trung bình khá",
         "players_needed": 2,
+        "accepted_count": 1,
         "status": "OPEN",
         "created_at": "2026-11-08T09:00:00Z"
       }
@@ -1374,12 +1395,12 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 * **Quyền truy cập:** `customer` (chủ sở hữu đơn đặt sân).
 * **Database Transaction:** **BẮT BUỘC (KIỂM TRA QUYỀN SỞ HỮU & TRẠNG THÁI ĐƠN)**
   * **Các bước kiểm tra ràng buộc nghiệp vụ:**
-    1. *Kiểm tra quyền sở hữu đơn đặt:* `SELECT * FROM bookings WHERE id = :booking_id`. Đơn phải tồn tại và `bookings.user_id == current_user.id` (nếu không khớp ➔ Báo lỗi `403 Forbidden`).
-    2. *Kiểm tra trạng thái đơn đặt:* Đơn bắt buộc phải đang ở trạng thái **`DEPOSITED`** (đã thanh toán cọc thành công). Không cho phép đăng bài với đơn `PENDING_DEPOSIT` (chưa cọc), `CANCELLED` hoặc `COMPLETED` ➔ Báo lỗi `400 Bad Request` (Mã lỗi `BOOKING_NOT_DEPOSITED`).
-    3. *Kiểm tra thời gian thi đấu:* Thời điểm bắt đầu chơi phải ở tương lai (`bookings.start_at > :now`).
-    4. *Kiểm tra trùng bài đăng:* Mỗi đơn đặt sân chỉ được tạo tối đa 1 bài đăng tìm đồng đội đang hoạt động (`status = 'OPEN'`).
+    1. *Kiểm tra quyền sở hữu đơn đặt:* Khóa hàng đơn đặt (`SELECT ... FOR UPDATE`). Trả `404 BOOKING_NOT_FOUND` nếu đơn không tồn tại hoặc `403 AUTH_FORBIDDEN` nếu `bookings.user_id` khác `current_user.id`.
+    2. *Kiểm tra trạng thái đơn đặt:* Nếu trạng thái khác `DEPOSITED`, trả `400 BOOKING_NOT_DEPOSITED`.
+    3. *Kiểm tra thời gian thi đấu:* Yêu cầu `bookings.start_at > :now`. Nếu đã đến giờ bắt đầu hoặc đã qua giờ chơi, trả `400 INVALID_BOOKING_TIME`.
+    4. *Kiểm tra trùng bài đăng:* Mỗi đơn đặt sân chỉ có tối đa một bài `OPEN`. Nếu đã có bài `OPEN` cho đơn này, trả `409 TEAM_POST_ALREADY_EXISTS`.
   * Thực hiện INSERT bản ghi `team_posts` với `status = 'OPEN'`.
-* **Request Body:**
+* **Request Body:** `title` tối đa 500 ký tự, `players_needed` là số nguyên từ `1` trở lên.
   ```json
   {
     "booking_id": 105,
@@ -1409,11 +1430,11 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 * **Quyền truy cập:** `customer`.
 * **Database Transaction:** **BẮT BUỘC (KIỂM TRA CHỐNG TỰ ỨNG TUYỂN & CHỐNG ỨNG TUYỂN TRÙNG LẶP)**
   * **Các bước kiểm tra ràng buộc nghiệp vụ:**
-    1. *Kiểm tra bài đăng:* Khóa dòng `SELECT ... FOR UPDATE` bài đăng trong `team_posts`. Bài đăng phải tồn tại và đang ở trạng thái `status == 'OPEN'` (nếu đã đóng hoặc hủy ➔ Báo lỗi `400 Bad Request`, Mã lỗi `TEAM_POST_CLOSED`).
-    2. *Chặn tự ứng tuyển vào bài của chính mình:* Kiểm tra `current_user.id != team_posts.user_id`. Người tạo bài không được phép tự ứng tuyển ➔ Báo lỗi `400 Bad Request` (Mã lỗi `CANNOT_APPLY_OWN_POST`).
-    3. *Chặn ứng tuyển trùng lặp:* Kiểm tra bảng `team_post_applications`. Nếu `current_user.id` đã có đơn ứng tuyển cho bài này với `status IN ('PENDING', 'ACCEPTED')` ➔ Báo lỗi `409 Conflict` (Mã lỗi `APPLICATION_ALREADY_EXISTS`).
-  * Thực hiện INSERT bản ghi `team_post_applications` với `status = 'PENDING'`.
-* **Request Body:**
+    1. *Kiểm tra bài đăng:* Khóa bài đăng (`SELECT ... FOR UPDATE`). Trả `404 TEAM_POST_NOT_FOUND` nếu bài không tồn tại hoặc `400 TEAM_POST_CLOSED` nếu trạng thái khác `OPEN`.
+    2. *Chặn tự ứng tuyển vào bài của chính mình:* Nếu `current_user.id = team_posts.user_id`, trả `400 CANNOT_APPLY_OWN_POST`.
+    3. *Chặn ứng tuyển trùng lặp:* Nếu đã có đơn `PENDING` hoặc `ACCEPTED` của người gọi cho bài này, trả `409 APPLICATION_ALREADY_EXISTS`.
+  * Nếu chưa có bản ghi, tạo đơn `PENDING`. Nếu đơn trước đó đã `REJECTED` và bài vẫn `OPEN`, dùng lại bản ghi theo khóa duy nhất `(post_id, user_id)`, đặt lại `status = 'PENDING'`, `message` và `created_at` theo lần gửi mới. Cả hai trường hợp trả `201`.
+* **Request Body:** `message` là chuỗi tùy chọn, có thể là `null`.
   ```json
   {
     "message": "Mình đánh cầu lông 2 năm, xin tham gia giao lưu nhé!"
@@ -1438,8 +1459,11 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 * **Endpoint:** `PATCH /api/v1/team-posts/{id}/applications/{app_id}`
 * **Mô tả:** Chủ bài đăng duyệt (`ACCEPTED`) hoặc từ chối (`REJECTED`) người đăng ký.
 * **Quyền truy cập:** `customer` (chủ sở hữu bài đăng).
-* **Database Transaction:** **BẮT BUỘC** (Khi duyệt `ACCEPTED`, kiểm tra số lượng ứng viên đã chấp thuận; nếu đủ `players_needed` thì tự động đổi `team_posts.status = 'CLOSED'`).
-* **Request Body:**
+* **Database Transaction:** **BẮT BUỘC**.
+  1. Khóa bài đăng (`SELECT ... FOR UPDATE`). Trả `404 TEAM_POST_NOT_FOUND` nếu bài không tồn tại, `403 AUTH_FORBIDDEN` nếu người gọi không phải chủ bài, hoặc `400 TEAM_POST_CLOSED` nếu trạng thái bài khác `OPEN`.
+  2. Khóa và kiểm tra đơn ứng tuyển. Trả `404 APPLICATION_NOT_FOUND` nếu `app_id` không tồn tại hoặc thuộc bài khác, và `400 APPLICATION_NOT_PENDING` nếu đơn có trạng thái khác `PENDING`.
+  3. Cập nhật trạng thái đơn. Khi duyệt `ACCEPTED`, nếu số đơn `ACCEPTED` đạt `players_needed`, đổi bài thành `CLOSED` và chuyển mọi đơn `PENDING` còn lại thành `REJECTED` trong cùng transaction.
+* **Request Body:** `status` chỉ nhận `ACCEPTED` hoặc `REJECTED`.
   ```json
   {
     "status": "ACCEPTED"
@@ -1455,6 +1479,36 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
       "post_id": 10,
       "user_id": 15,
       "status": "ACCEPTED"
+    }
+  }
+  ```
+
+#### 6.5 Xem danh sách ứng viên của bài đăng ghép đội (Paginated List)
+* **Endpoint:** `GET /api/v1/team-posts/{id}/applications`
+* **Quyền truy cập:** Chỉ người đã tạo bài (`team_posts.user_id = current_user.id`). Nếu bài không tồn tại, trả `404 TEAM_POST_NOT_FOUND`. Nếu người gọi không phải chủ bài, trả `403 AUTH_FORBIDDEN`.
+* **Query Params:** `page=1`, `limit=10`. Trả ứng tuyển ở mọi trạng thái, sắp xếp `created_at DESC, id DESC`. Nếu chưa có ứng viên, trả `200` với `data: []`.
+* **Trường trả về:** `id`, `user_id`, `name` lấy từ hồ sơ ứng viên, `message` (có thể là `null`), `status`, `created_at` (ISO 8601 UTC).
+* **Database Transaction:** Không.
+* **Response (200 OK - Paginated List chuẩn 2.1.B):**
+  ```json
+  {
+    "success": true,
+    "message": "Lấy danh sách ứng viên thành công.",
+    "data": [
+      {
+        "id": 25,
+        "user_id": 15,
+        "name": "Trần Ngọc Mai",
+        "message": "Mình đánh cầu lông 2 năm, xin tham gia giao lưu nhé!",
+        "status": "PENDING",
+        "created_at": "2026-11-08T10:00:00Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "limit": 10,
+      "total": 1,
+      "total_pages": 1
     }
   }
   ```
@@ -1485,15 +1539,20 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 | | `PRICING_NOT_FOUND` | **404** | Chưa cấu hình bảng giá cơ sở hoặc bảng giá theo thời điểm cho khung giờ này. |
 | **4. Đặt sân & Giữ chỗ** | `BOOKING_NOT_FOUND` | **404** | Không tìm thấy đơn đặt sân. |
 | | `SLOT_ALREADY_BOOKED` | **409** | Khung giờ đã có người đặt cọc hoặc đang trong thời gian giữ chỗ hợp lệ (QĐ3). |
-| | `INVALID_BOOKING_TIME` | **400** | Thời gian bắt đầu phải ở tương lai, không cho đặt khung giờ trong quá khứ. |
-| | `CANNOT_CANCEL_BOOKING` | **400** | Lịch đặt đã diễn ra (`:now >= start_at`) hoặc đã hoàn tất, không thể hủy. |
+| | `INVALID_BOOKING_TIME` | **400** | Giờ bắt đầu phải ở tương lai khi đặt sân hoặc tạo bài ghép đội. |
+| | `CANNOT_CANCEL_BOOKING` | **400** | Chỉ đơn `PENDING_DEPOSIT` hoặc `DEPOSITED` mới được hủy và chỉ khi `:now < start_at`. |
 | | `CANNOT_DEPOSIT_EXPIRED_BOOKING` | **400** | Đơn đặt sân đã quá hạn giữ chỗ 10 phút, không thể thanh toán cọc. |
 | | `CANNOT_SETTLE_BEFORE_START` | **400** | Buổi chơi chưa diễn ra (`:now < start_at`), không thể kết toán cọc cho chủ sân tại 4.3. |
+| | `CANNOT_SETTLE_BOOKING` | **400** | Chỉ kết toán đơn `DEPOSITED`. Áp dụng cả khi đơn đã `COMPLETED` do kết toán trước đó. |
 | **5. Ví & Tiền cọc** | `WALLET_NOT_FOUND` | **404** | Không tìm thấy ví nội bộ của người dùng trong hệ thống. |
 | | `WALLET_INSUFFICIENT_BALANCE` | **402** | Số dư ví hiện tại không đủ 30% tiền cọc (vi phạm ràng buộc số dư QĐ4, QĐ6, ánh xạ từ `chk_wallets_balance`). |
 | | `DEPOSIT_AMOUNT_INVALID` | **400** | Số tiền nạp cấp vào ví (`TOPUP`) hoặc tiền cọc phải lớn hơn 0 VNĐ. |
 | **6. Ghép đội & Dịch vụ** | `BOOKING_NOT_DEPOSITED` | **400** | Đơn đặt sân chưa thanh toán cọc `DEPOSITED`, không thể tạo bài tìm đồng đội. |
 | | `CANNOT_APPLY_OWN_POST` | **400** | Người tạo bài không thể tự gửi yêu cầu ứng tuyển vào bài đăng của chính mình. |
 | | `APPLICATION_ALREADY_EXISTS` | **409** | Bạn đã có đơn ứng tuyển đang chờ duyệt hoặc đã được chấp thuận cho bài này. |
-| | `TEAM_POST_CLOSED` | **400** | Bài đăng tìm đồng đội đã đủ người (`CLOSED`) hoặc đã bị hủy (`CANCELLED`). |
+| | `TEAM_POST_CLOSED` | **400** | Chỉ có thể ứng tuyển hoặc xử lý đơn ứng tuyển khi bài ở trạng thái `OPEN`. |
+| | `TEAM_POST_NOT_FOUND` | **404** | Không tìm thấy bài đăng ghép đội. |
+| | `TEAM_POST_ALREADY_EXISTS` | **409** | Đơn đặt sân đã có bài đăng ghép đội `OPEN`. |
+| | `APPLICATION_NOT_FOUND` | **404** | Không tìm thấy đơn ứng tuyển trong bài đăng được yêu cầu. |
+| | `APPLICATION_NOT_PENDING` | **400** | Chỉ chủ bài mới được duyệt hoặc từ chối đơn `PENDING`. |
 
