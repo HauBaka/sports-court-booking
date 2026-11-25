@@ -1,0 +1,10 @@
+node_modules/
+shots/
+# file của công cụ (taste-skill, impeccable, graphify), sinh lại được, không thuộc bản mẫu
+.taste-skill/
+.impeccable/
+.agents/
+site/.gitignore
+graphify-out/
+# gốc repo bỏ qua lib/ (mẫu Python), mở lại cho mã nguồn bản mẫu
+!app/src/lib/

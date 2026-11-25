@@ -1,0 +1,82 @@
+/* section motion, part a: the hero and #lich (a.js drives the builds; every hidden state below waits on a class a.js sets
+   or on the kit's head mark html.m-enter, and lifts by itself after 3 s if a.js never arrives) */
+
+/* skeleton layer: bars a.js lays over the parts that are still loading */
+.a-sk-layer { position: absolute; inset: 0; z-index: 1; pointer-events: none; animation: a-breathe 0.9s ease-in-out infinite alternate; }
+@keyframes a-breathe { to { opacity: 0.55; } }
+/* hero <-> #lich: the card under the travelling app (a.js), and #lich laid over the hero it is leaving */
+.a-halo { position: absolute; z-index: -1; background: #fff; transform-origin: 0 0; pointer-events: none; will-change: transform; }
+html.sc-fp main > #lich.a-over { position: relative; z-index: 4; }
+.a-sk-layer > i { position: absolute; }
+.a-sk-layer > .a-round { border-radius: 50%; }
+.a-sk-layer > .a-tab { height: 2px; border-radius: 0; background: var(--p-accent); transform-origin: 0 50%; }
+
+/* hero: the three sports in the heading carry an accent rule, drawn as the window lists each sport */
+.hero .a-nw { white-space: nowrap; }
+.hero .a-k { --a-uh: 0.26em; background: linear-gradient(100deg, transparent 0 0.12em, var(--sc-volt) 0.12em calc(100% - 0.12em), transparent calc(100% - 0.12em)) no-repeat 0 86% / 100% var(--a-uh); }
+.note__line i svg { display: block; }
+/* #lich: the price never jitters while it counts */
+#lich .slots__sum b { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* hero window and note wait for a.js; without it they fade in at 3 s */
+  html.m-enter:not([data-motion="off"]) .hero:not(.a-go, .a-free) :is(.ly-piece--main, .ly-piece--note) { opacity: 0; }
+  html.m-enter:not([data-motion="off"]) .hero:not(.a-hold, .a-go, .a-free) :is(.ly-piece--main, .ly-piece--note) { animation: a-show 0.4s linear 3s forwards; }
+  html.m-enter:not([data-motion="off"]) .hero[data-enter]:not(.a-free) .a-k { background-size: 0 var(--a-uh); transition: background-size 0.7s var(--sc-ease); }
+  html.m-enter:not([data-motion="off"]) .hero[data-enter]:not(.a-hold, .a-free) .a-k { animation: a-rule 0.7s var(--sc-ease) 3s forwards; }
+  html.m-enter:not([data-motion="off"]) .hero[data-enter]:is(.a-k0) .a-k[data-k="0"],
+  html.m-enter:not([data-motion="off"]) .hero[data-enter]:is(.a-k1) .a-k[data-k="1"],
+  html.m-enter:not([data-motion="off"]) .hero[data-enter]:is(.a-k2) .a-k[data-k="2"] { background-size: 100% var(--a-uh); }
+
+  /* hero text, on top of the kit's entrance (motion.js: words out of masks, then lead, buttons, facts):
+     the lead comes into focus, the facts arrive one by one, the header settles down */
+  html.m-enter:not([data-motion="off"]) .hero[data-enter]:is(.is-entering, .is-entered):not(.is-still) .hero__lead { animation: a-focus 0.7s var(--sc-ease) 0.44s backwards; }
+  html.m-enter:not([data-motion="off"]) .hero[data-enter]:is(.is-entering, .is-entered):not(.is-still) .hero__facts > div { animation: a-rise 0.6s var(--sc-ease) backwards; animation-delay: calc(0.62s + var(--a-i, 0) * 70ms); }
+  .hero__facts > div:nth-child(2) { --a-i: 1; }
+  .hero__facts > div:nth-child(3) { --a-i: 2; }
+  .hero__facts > div:nth-child(4) { --a-i: 3; }
+  html.m-enter:not([data-motion="off"]) header.nav .nav__bar { animation: a-drop 0.7s var(--sc-ease) 0.05s backwards; }
+
+  /* #lich: the panes stay empty until the section takes the screen and a.js loads them */
+  html.sc-ready #lich.a-hold:not(.is-in) .app__pane > * { opacity: 0; }
+  #lich .slot--pick { transition: background-color 0.18s var(--sc-ease-out), color 0.18s var(--sc-ease-out), border-color 0.18s var(--sc-ease-out); }
+  #lich .slot--pick.a-unpick { background: transparent; color: var(--u-muted); border-color: var(--u-line); font-weight: 400; }
+}
+
+@keyframes a-show { to { opacity: 1; } }
+@keyframes a-rule { to { background-size: 100% var(--a-uh); } }
+@keyframes a-focus { from { filter: blur(8px); } }
+@keyframes a-rise { from { opacity: 0; transform: translateY(10px); } }
+@keyframes a-drop { from { opacity: 0; transform: translateY(-10px); } }
+
+/* the hero window and the #lich app, softer (the row geometry is left as it is: the hero <-> #lich carry lays one
+   on the other): one 20px corner, a hairline ring and long low shadows in place of a border, a quiet side panel
+   with a raised pill for the open sport, dividers that start after the avatar, filled status pills, and the hero
+   window's rows thinning out where the frame cuts them */
+.hero .ly-piece--main, #lich .app.ui {
+  border: 0; border-radius: 20px; background: #fff;
+  box-shadow: 0 0 0 1px rgb(22 40 28 / 0.045), 0 1px 2px rgb(22 40 28 / 0.04), 0 16px 36px -14px rgb(22 40 28 / 0.13), 0 44px 90px -40px rgb(22 40 28 / 0.2);
+}
+.hero .ly-piece--main { mask-image: linear-gradient(to bottom, #000 calc(100% - 170px), transparent calc(100% - 40px)); }
+:is(.hero .ly-piece--main, #lich .app) .ui-win__bar { border-bottom-color: rgb(22 40 28 / 0.05); }
+:is(.hero .ly-piece--main, #lich .app) .ui-dots i { width: 9px; height: 9px; background: #e7e8e2; box-shadow: none; }
+:is(.hero .ly-piece--main, #lich .app) .ui-win__side { border-right: 0; background: #f9f9f6; gap: 2px; }
+:is(.hero .ly-piece--main, #lich .app) .ui-win__nav { border-radius: 10px; }
+:is(.hero .ly-piece--main, #lich .app) .ui-win__nav.is-on { background: #fff; box-shadow: 0 0 0 1px rgb(22 40 28 / 0.04), 0 2px 6px -2px rgb(22 40 28 / 0.1); }
+:is(.hero .ly-piece--main, #lich .app) .ui-win__search { border-radius: 999px; box-shadow: none; background: #f4f5f0; }
+:is(.hero .ly-piece--main, #lich .app) .ui-win__row { position: relative; }
+:is(.hero .ly-piece--main, #lich .app) .ui-win__row + .ui-win__row { box-shadow: none; }
+:is(.hero .ly-piece--main, #lich .app) .ui-win__row + .ui-win__row::before { content: ""; position: absolute; top: 0; left: 52px; right: 14px; height: 1px; background: rgb(22 40 28 / 0.055); }
+:is(.hero .ly-piece--main, #lich .app) .ui-win__row.is-sel { background: color-mix(in oklab, var(--p-accent) 5%, #fff); }
+:is(.hero .ly-piece--main, #lich .app) .ui-avatar { box-shadow: none; }
+:is(.hero .ly-piece--main, #lich .app) .ui-win__st { height: 24px; padding: 0 10px; box-shadow: none; background: color-mix(in oklab, var(--p-accent) 8%, #fff); color: color-mix(in oklab, var(--p-accent) 85%, #000); }
+:is(.hero .ly-piece--main, #lich .app) .ui-win__st.is-done { background: #efefea; color: #5c5e58; }
+:is(.hero .ly-piece--main, #lich .app) .ui-win__st.is-done::before { opacity: 0.45; }
+:is(.hero .ly-piece--main, #lich .app) .ui-win__st.is-you { background: var(--p-accent); color: var(--p-accent-ink); box-shadow: 0 4px 10px -4px color-mix(in oklab, var(--p-accent) 60%, transparent); }
+:is(.hero .ly-piece--main, #lich .app) .ui-win__st.is-you::before { background: currentColor; }
+#lich .app > .app__pane + .app__pane { border-left-color: rgb(22 40 28 / 0.05); }
+/* white panes, so the free hours read as soft tiles rather than outlines; the open pane's fade only takes the
+   legend the frame cuts, never the price row */
+#lich .app { --fx-bg: #fff; }
+#lich .app .slot:not(.slot--held) { border-color: transparent; }
+#lich .app > .app__pane--open::after { height: 34px; }
