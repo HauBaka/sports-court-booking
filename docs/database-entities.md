@@ -81,8 +81,8 @@
     | FORFEIT | ví hệ thống | ví chủ sân | NULL | booking id |
     | SETTLE | ví hệ thống | ví chủ sân | NULL | booking id |
 
-*   **`email_otps`**: `id` (BIGINT PK), `email` (VARCHAR), `purpose` (ENUM: `REGISTER`, `RESET_PASSWORD`), `code_hash` (VARCHAR, bcrypt), `expires_at` (DATETIME), `attempts` (INT NOT NULL DEFAULT 0, CHECK attempts >= 0), `consumed_at` (DATETIME, nullable), `created_at` (DATETIME). Index `(email, purpose)`.
-    > Không có khóa ngoại tới `users` vì lúc đăng ký tài khoản chưa tồn tại. `code_hash` lưu bản băm bcrypt của mã OTP, không lưu mã gốc. `consumed_at` là NULL khi mã chưa dùng.
+*   **`email_otps`**: `id` (BIGINT PK), `email` (VARCHAR), `purpose` (ENUM: `REGISTER`, `RESET_PASSWORD`), `code_hash` (CHAR(64), HMAC-SHA256), `expires_at` (DATETIME), `attempts` (INT NOT NULL DEFAULT 0, CHECK attempts >= 0), `consumed_at` (DATETIME, nullable), `created_at` (DATETIME). Index `(email, purpose)`.
+    > Không có khóa ngoại tới `users` vì lúc đăng ký tài khoản chưa tồn tại. `code_hash` lưu HMAC-SHA256 của chuỗi `email|purpose|code` với khóa `JWT_SECRET` (64 ký tự hex), không lưu mã gốc. `consumed_at` là NULL khi mã chưa dùng.
 
 ### Nhóm 2 — Sân bãi & Bảng giá
 
