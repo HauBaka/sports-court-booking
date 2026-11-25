@@ -5,11 +5,12 @@ from datetime import date, timedelta
 import pytest
 
 from .helpers import (
-    ADMIN, API, CUSTOMER_A, CUSTOMER_B, OWNER, auth, balance, book, deposit, execute, new_customer, next_tuesday,
-    scalar, slot_status, system_balance,
+    ADMIN, API, CUSTOMER_A, CUSTOMER_B, OWNER, OWNER2, auth, balance, book, day_u, deposit, execute, new_customer,
+    next_tuesday, scalar, slot_status, system_balance, wait_for,
 )
 
 T = next_tuesday()
+U = day_u()  # DAT-07, DAT-08 đặt ngày U (mục 7)
 TOMORROW = date.today() + timedelta(days=1)
 
 
@@ -84,6 +85,30 @@ def test_dat_06_chua_dang_nhap(client):
     res = book(client, {}, 1, T, [11])
     assert res.status_code == 401
     assert res.json()["error"]["code"] == "AUTH_UNAUTHORIZED"
+
+
+@wait_for("SCB-254")
+def test_dat_07_chu_san_dat_san_co_so_khac(client):
+    client.post(f"{API}/admin/wallet-topups", headers=auth(client, ADMIN), json={"user_id": 4, "amount": 100000})
+    before = balance(OWNER2)
+    owner2 = auth(client, OWNER2)
+    res = book(client, owner2, 2, U, [21])
+    assert res.status_code == 201
+    assert res.json()["data"]["status"] == "PENDING_DEPOSIT"
+    paid = deposit(client, owner2, res.json()["data"]["booking_id"])
+    assert paid.status_code == 200
+    assert paid.json()["data"]["status"] == "DEPOSITED"
+    assert paid.json()["data"]["deposit_amount_paid"] == 30000
+    assert balance(OWNER2) == before - 30000
+
+
+@wait_for("SCB-254")
+def test_dat_08_chu_san_dat_san_co_so_minh(client):
+    bookings_before = scalar("SELECT COUNT(*) FROM bookings")
+    res = book(client, auth(client, OWNER), 2, U, [22])
+    assert res.status_code == 400
+    assert res.json()["error"]["code"] == "CANNOT_BOOK_OWN_FACILITY"
+    assert scalar("SELECT COUNT(*) FROM bookings") == bookings_before
 
 
 def test_coc_01_coc_don_hop_le(client):

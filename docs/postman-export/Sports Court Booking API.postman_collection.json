@@ -6,6 +6,25 @@
   },
   "item": [
     {
+      "name": "Health check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        },
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      }
+    },
+    {
       "name": "Epic 1 - Auth",
       "item": [
         {
@@ -1217,6 +1236,24 @@
                   "language": "json"
                 }
               }
+            }
+          }
+        },
+        {
+          "name": "2.8b Xem quy tắc giá hiện tại của cơ sở",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/facilities/{{facility_id}}/pricing-rules",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "facilities",
+                "{{facility_id}}",
+                "pricing-rules"
+              ]
             }
           }
         },
@@ -3107,6 +3144,163 @@
                 },
                 "auth": {
                   "type": "noauth"
+                }
+              }
+            },
+            {
+              "name": "3.4 Thanh toán tiền cọc 30% qua ví nội bộ - DAT-07",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const U = new Date(T); U.setDate(U.getDate() + 7); // ngày U, mục 7",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_u\", fmt(U));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "const book = (token, court, hour, cb) => call(\"POST\", \"/bookings\", token,",
+                      "  {court_id: court, play_date: pm.variables.get(\"date_u\"), time_slot_ids: [slot(hour)], services: []}, r => cb(r.json().data.booking_id));",
+                      "const bookPaid = (token, court, hour, cb) => book(token, court, hour, id => call(\"POST\", \"/bookings/\" + id + \"/deposit\", token, null, () => cb(id)));",
+                      "login(\"admin@scb.vn\", tadm => call(\"POST\", \"/admin/wallet-topups\", tadm, {user_id: 4, amount: 100000}, () =>",
+                      "  login(\"owner2@scb.vn\", t => {",
+                      "    pm.variables.set(\"case_token\", t);",
+                      "    book(t, 2, 21, id => pm.variables.set(\"booking_id\", id));",
+                      "  })));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const d = pm.response.json().data;",
+                      "pm.test(\"DAT-07: chủ sân 2 cọc đơn sân 2 (cơ sở 1), DEPOSITED, cọc 30.000đ\", () => {",
+                      "  pm.expect(d.status).to.eql(\"DEPOSITED\");",
+                      "  pm.expect(d.deposit_amount_paid).to.eql(30000);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/bookings/{{booking_id}}/deposit",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings",
+                    "{{booking_id}}",
+                    "deposit"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{case_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "3.3 Tạo lịch đặt sân và giữ chỗ tạm - DAT-08",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const base = pm.environment.get(\"base_url\");",
+                      "const pad = n => String(n).padStart(2, \"0\");",
+                      "const fmt = d => d.getFullYear() + \"-\" + pad(d.getMonth() + 1) + \"-\" + pad(d.getDate());",
+                      "const T = new Date(); T.setDate(T.getDate() + ((2 - T.getDay() + 7) % 7 || 7)); // thứ Ba kế tiếp",
+                      "const U = new Date(T); U.setDate(U.getDate() + 7); // ngày U, mục 7",
+                      "const TOMORROW = new Date(); TOMORROW.setDate(TOMORROW.getDate() + 1);",
+                      "pm.variables.set(\"date_u\", fmt(U));",
+                      "pm.variables.set(\"date_tomorrow\", fmt(TOMORROW));",
+                      "const slot = hour => hour - 5; // time_slots seed: id 1 là 06:00",
+                      "const call = (method, path, token, body, cb) => pm.sendRequest({",
+                      "  url: base + path, method,",
+                      "  header: Object.assign({\"Content-Type\": \"application/json\"}, token ? {Authorization: \"Bearer \" + token} : {}),",
+                      "  body: body ? {mode: \"raw\", raw: JSON.stringify(body)} : undefined,",
+                      "}, (e, r) => cb(r));",
+                      "const login = (email, cb) => call(\"POST\", \"/auth/login\", null,",
+                      "  {email, password: pm.environment.get(\"user_password\")}, r => cb(r.json().data.access_token));",
+                      "const book = (token, court, hour, cb) => call(\"POST\", \"/bookings\", token,",
+                      "  {court_id: court, play_date: pm.variables.get(\"date_u\"), time_slot_ids: [slot(hour)], services: []}, r => cb(r.json().data.booking_id));",
+                      "const bookPaid = (token, court, hour, cb) => book(token, court, hour, id => call(\"POST\", \"/bookings/\" + id + \"/deposit\", token, null, () => cb(id)));",
+                      "login(\"owner1@scb.vn\", t => pm.variables.set(\"case_token\", t));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"DAT-08: 400 CANNOT_BOOK_OWN_FACILITY\", () => {",
+                      "  pm.response.to.have.status(400);",
+                      "  pm.expect(pm.response.json().error.code).to.eql(\"CANNOT_BOOK_OWN_FACILITY\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/bookings",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"court_id\": 2,\n  \"play_date\": \"{{date_u}}\",\n  \"time_slot_ids\": [17],\n  \"services\": []\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{case_token}}",
+                      "type": "string"
+                    }
+                  ]
                 }
               }
             }

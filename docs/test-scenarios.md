@@ -54,6 +54,8 @@ Cột "Cấp" là nơi nên kiểm: Unit (hàm tính, không cần CSDL), DB (r�
 | DAT-04 | Đặt khung giờ đã qua hoặc đang diễn ra | Bị từ chối | QĐ3 | API |
 | DAT-05 | Đặt ngoài giờ hoạt động của sân, hoặc sân tạm dừng | Bị từ chối | QĐ3 | DB |
 | DAT-06 | Chưa đăng nhập | Bị từ chối 401 | QĐ7 | API |
+| DAT-07 | Chủ sân đặt sân của cơ sở khác | Đặt và cọc như khách | QĐ7 | API |
+| DAT-08 | Chủ sân đặt sân của cơ sở mình | Bị từ chối | QĐ7 | API |
 
 ### Đặt cọc
 
@@ -257,7 +259,7 @@ Khung giờ đã dùng, để thêm ca mới không trùng: sân 1 ngày T dùng
 
 ## 7. Kịch bản lịch đặt, hủy, kết toán và ghép đội - Epic 3, 4, 6 (SCB-232)
 
-Mục này ghi đủ dữ liệu, các bước và số tiền cho nhóm HUY, KT, VI-05, LICH, GHEP. Khuôn giống mục 6.
+Mục này ghi đủ dữ liệu, các bước và số tiền cho nhóm HUY, KT, VI-05, LICH, GHEP và DAT-07, DAT-08 (chủ sân đặt sân, SCB-254). Khuôn giống mục 6.
 
 Endpoint, ngoài các endpoint ở mục 6:
 
@@ -288,6 +290,8 @@ Mã lỗi 403 của 3.6 và 6.5 chưa có trong spec, tạm ghi `AUTH_FORBIDDEN`
 
 | Mã | Story | QĐ | Điều kiện trước | Các bước | Kết quả mong đợi |
 | --- | --- | --- | --- | --- | --- |
+| DAT-07 | Chủ sân đặt sân cơ sở khác | QĐ4, QĐ7 | Admin cấp 100.000đ cho Chủ sân cơ sở 2 (`user_id` 4) bằng 5.3 | 1. Chủ sân cơ sở 2 gọi 3.3 đặt sân 2, ngày U, 21:00 đến 22:00<br>2. Gọi 3.4 | Bước 1: 201, `PENDING_DEPOSIT`<br>Bước 2: `DEPOSITED`, `deposit_amount_paid` 30.000đ, ví chủ sân 2 giảm 30.000đ |
+| DAT-08 | Chủ sân đặt sân cơ sở mình | QĐ7 | Chủ sân cơ sở 1 đã đăng nhập | Gọi 3.3 đặt sân 2, ngày U, 22:00 đến 23:00 | 400 `CANNOT_BOOK_OWN_FACILITY`. Không tạo đơn |
 | HUY-01 | Hủy từ 24 giờ trở lên | QĐ5 | Khách mới | 1. Gọi 3.3 đặt sân 1, ngày U, 18:00 đến 19:00, rồi 3.4<br>2. Gọi 4.2<br>3. Gọi 3.1 sân 1 ngày U | Bước 2: `CANCELLED`, `refund_percentage` 80, `refunded_to_customer_wallet` 31.200đ, `compensated_to_facility_wallet` 7.800đ, `customer_new_wallet_balance` 92.200đ<br>Ví chủ sân 1 tăng 7.800đ, ví hệ thống giảm 39.000đ, có 1 `REFUND` và 1 `FORFEIT`<br>Bước 3: khung 18:00 là `AVAILABLE` |
 | HUY-02 | Hủy từ 12 đến dưới 24 giờ | QĐ5 | Khách mới. Chỉ chạy bằng pytest | 1. Gọi 3.3 đặt sân 1, ngày U, 19:00 đến 20:00, rồi 3.4<br>2. Sửa DB: `start_at` = giờ VN + 18 giờ<br>3. Gọi 4.2 | `refund_percentage` 50, hoàn 19.500đ, chủ sân nhận 19.500đ |
 | HUY-03 | Hủy dưới 12 giờ | QĐ5 | Khách mới. Chỉ chạy bằng pytest | 1. Gọi 3.3 đặt sân 1, ngày U, 20:00 đến 21:00, rồi 3.4<br>2. Sửa DB: `start_at` = giờ VN + 6 giờ<br>3. Gọi 4.2 | `refund_percentage` 0, không có `REFUND`<br>Chủ sân nhận 39.000đ qua 1 `FORFEIT`, ví khách vẫn 61.000đ |
@@ -320,4 +324,4 @@ Mã lỗi 403 của 3.6 và 6.5 chưa có trong spec, tạm ghi `AUTH_FORBIDDEN`
 | GHEP-08 | Người khác duyệt hoặc xem ứng viên | QĐ7 | Khách mới, Khách A, Khách B | 1. Khách mới gọi 3.3 đặt sân 1, ngày U, 15:00 đến 16:00, 3.4, rồi 6.2<br>2. Khách B gọi 6.3<br>3. Khách A gọi 6.4 với `status` `ACCEPTED` cho đơn của Khách B<br>4. Khách A gọi 6.5 | Bước 3, 4: 403 `AUTH_FORBIDDEN`. Đơn của Khách B vẫn `PENDING` |
 | GHEP-09 | Hủy đơn thì đóng bài | QĐ5 | Khách mới, Khách B | 1. Khách mới gọi 3.3 đặt sân 1, ngày U, 16:00 đến 17:00, 3.4, rồi 6.2<br>2. Khách B gọi 6.3<br>3. Khách mới gọi 4.2<br>4. Gọi 6.1 với `status` `CANCELLED` | Bước 4: có bài, `status` `CANCELLED`<br>Đơn ứng tuyển của Khách B chuyển `REJECTED` |
 
-Khung giờ đã dùng ngày U: sân 1 từ 06:00 đến 22:00, sân 2 từ 10:00 đến 21:00, sân 3 từ 08:00 đến 09:00.
+Khung giờ đã dùng ngày U: sân 1 từ 06:00 đến 22:00, sân 2 từ 10:00 đến 23:00, sân 3 từ 08:00 đến 09:00.
