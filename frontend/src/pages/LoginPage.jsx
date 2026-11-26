@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import Field from "../components/Field";
-import PasswordInput from "../components/PasswordInput";
+import Icon from "../components/ui/Icon";
 import { useRole } from "../context/RoleContext";
 import { useUser } from "../context/UserContext";
 import { login } from "../services/authService";
@@ -15,33 +14,34 @@ export default function LoginPage() {
   const { setRole } = useRole();
   const { fetchUser } = useUser();
 
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [email, setEmail] = useState("");
+  const [pw, setPw] = useState("");
+  const [show, setShow] = useState(false);
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const set = (key) => (e) =>
-    setForm((f) => ({ ...f, [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const errs = {};
-    if (!EMAIL_RE.test(form.email.trim())) errs.email = "Email không hợp lệ.";
-    if (!form.password) errs.password = "Vui lòng nhập mật khẩu.";
-    setErrors(errs);
+    const er = {};
+    if (!EMAIL_RE.test(email.trim())) er.email = "Email không hợp lệ.";
+    if (!pw) er.pw = "Vui lòng nhập mật khẩu.";
+    setErrors(er);
     setApiError("");
-    if (Object.keys(errs).length) return;
+    if (Object.keys(er).length) return;
 
     setSubmitting(true);
     try {
-      const res = await login({ email: form.email, password: form.password });
+      const res = await login({ email: email.trim(), password: pw });
+      const HOME = { customer: "/courts", owner: "/owner/facilities", admin: "/admin" };
+      const role = res.data.user.role;
       localStorage.setItem("access_token", res.data.access_token);
-      setRole(res.data.user.role);
+      setRole(role);
       await fetchUser();
-      navigate("/", { replace: true });
+      navigate(HOME[role] ?? "/", { replace: true });
     } catch (err) {
       if (err.code === "AUTH_INVALID_CREDENTIALS") {
-        setErrors({ password: "Email hoặc mật khẩu không chính xác." });
+        setErrors({ pw: "Email hoặc mật khẩu không chính xác." });
       } else {
         setApiError(err.message || "Đăng nhập thất bại. Vui lòng thử lại.");
       }
@@ -51,58 +51,91 @@ export default function LoginPage() {
   };
 
   return (
-    <form className="auth-card" onSubmit={handleSubmit} noValidate>
+    <>
       <h1>Đăng nhập</h1>
-
-      {location.state?.registered && (
-        <p className="notice success">Đăng ký thành công. Hãy đăng nhập để tiếp tục.</p>
-      )}
-      {location.state?.passwordReset && (
-        <p className="notice success">Đặt lại mật khẩu thành công. Hãy đăng nhập bằng mật khẩu mới.</p>
-      )}
-      {params.get("expired") && (
-        <p className="notice info">Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.</p>
-      )}
-      {apiError && (
-        <p className="notice error" role="alert">
-          {apiError}
-        </p>
-      )}
-
-      <Field label="Email" htmlFor="email" error={errors.email}>
-        <input
-          id="email"
-          className={`input${errors.email ? " invalid" : ""}`}
-          type="email"
-          placeholder="minh@email.com"
-          autoComplete="email"
-          value={form.email}
-          onChange={set("email")}
-        />
-      </Field>
-
-      <Field label="Mật khẩu" htmlFor="password" error={errors.password}>
-        <PasswordInput
-          id="password"
-          className={`input${errors.password ? " invalid" : ""}`}
-          placeholder="••••••••"
-          autoComplete="current-password"
-          value={form.password}
-          onChange={set("password")}
-        />
-      </Field>
-
-      <p className="between between-end">
-        <Link to="/forgot-password">Quên mật khẩu?</Link>
+      <p className="auth__lead">
+        Chưa có tài khoản?{" "}
+        <Link className="link" to="/register">Tạo tài khoản mới</Link>
       </p>
 
-      <button className="btn btn-block" type="submit" disabled={submitting}>
-        {submitting ? "Đang đăng nhập..." : "Đăng nhập"}
-      </button>
+      <form className="stack" onSubmit={handleSubmit} noValidate style={{ "--gap": "14px" }}>
+        {/* Thông báo từ redirect */}
+        {location.state?.registered && (
+          <div className="notice notice--ok">
+            <Icon name="check" size={16} />
+            Đăng ký thành công. Hãy đăng nhập để tiếp tục.
+          </div>
+        )}
+        {location.state?.passwordReset && (
+          <div className="notice notice--ok">
+            <Icon name="check" size={16} />
+            Đặt lại mật khẩu thành công. Hãy đăng nhập bằng mật khẩu mới.
+          </div>
+        )}
+        {params.get("expired") && (
+          <div className="notice">
+            <Icon name="info" size={16} />
+            Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.
+          </div>
+        )}
+        {apiError && (
+          <div className="notice notice--danger" role="alert">
+            <Icon name="alert" size={16} />
+            {apiError}
+          </div>
+        )}
 
-      <p className="auth-foot">
-        Chưa có tài khoản? <Link to="/register">Đăng ký</Link>
-      </p>
-    </form>
+        {/* Email */}
+        <div className="field">
+          <label htmlFor="login-email">Email</label>
+          <input
+            id="login-email"
+            className="input"
+            type="email"
+            autoComplete="email"
+            placeholder="ten@gmail.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            aria-invalid={!!errors.email}
+          />
+          {errors.email && <span className="field__err">{errors.email}</span>}
+        </div>
+
+        {/* Mật khẩu */}
+        <div className="field">
+          <label htmlFor="login-pw">Mật khẩu</label>
+          <div className="input-group">
+            <input
+              id="login-pw"
+              className="input"
+              type={show ? "text" : "password"}
+              autoComplete="current-password"
+              value={pw}
+              onChange={(e) => setPw(e.target.value)}
+              aria-invalid={!!errors.pw}
+            />
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm input-act"
+              onClick={() => setShow(!show)}
+            >
+              {show ? "Ẩn" : "Hiện"}
+            </button>
+          </div>
+          {errors.pw && <span className="field__err">{errors.pw}</span>}
+          <div style={{ textAlign: "right", marginTop: 4 }}>
+            <Link className="link small" to="/forgot-password">Quên mật khẩu?</Link>
+          </div>
+        </div>
+
+        <button
+          className="btn btn--primary btn--lg btn--block"
+          type="submit"
+          disabled={submitting}
+        >
+          {submitting ? "Đang đăng nhập..." : "Đăng nhập"}
+        </button>
+      </form>
+    </>
   );
 }

@@ -1,106 +1,111 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Field from "../components/Field";
-import PasswordInput from "../components/PasswordInput";
-import OtpVerify from "../components/OtpVerify";
+import Icon from "../components/ui/Icon";
+import OtpInput from "../components/OtpInput";
 import useOtpChallenge from "../hooks/useOtpChallenge";
 import { register } from "../services/authService";
 import { isOtpDead, isOtpError, otpErrorMessage, validateOtpCode } from "../utils/otp";
-import { validateNewPassword } from "../utils/password";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-// Tên field backend trả trong details của VALIDATION_ERROR
 const API_FIELDS = ["name", "phone", "email", "password", "role"];
+
+/** Điều kiện mật khẩu — cùng luật với backend */
+const PW_RULES = [
+  ["8 ký tự trở lên", (p) => p.length >= 8],
+  ["Chữ hoa",         (p) => /[A-Z]/.test(p)],
+  ["Chữ thường",      (p) => /[a-z]/.test(p)],
+  ["Số",              (p) => /\d/.test(p)],
+  ["Ký tự đặc biệt",  (p) => /[^A-Za-z0-9]/.test(p)],
+];
+
+function pwOk(p) { return PW_RULES.every(([, t]) => t(p)); }
 
 function validate(f) {
   const e = {};
-  if (!f.name.trim()) e.name = "Vui lòng nhập họ và tên.";
-  if (!/^\d{10}$/.test(f.phone)) e.phone = "Số điện thoại phải có 10 chữ số.";
-  if (!EMAIL_RE.test(f.email.trim())) e.email = "Email không hợp lệ.";
-  const passwordError = validateNewPassword(f.password);
-  if (passwordError) e.password = passwordError;
-  if (f.confirm !== f.password) e.confirm = "Mật khẩu nhập lại không khớp.";
-  if (!f.agree) e.agree = "Bạn cần đồng ý Điều khoản sử dụng.";
+  if (f.name.trim().length < 2) e.name = "Nhập họ và tên.";
+  if (!/^\d{10}$/.test(f.phone)) e.phone = "Gồm 10 số, bắt đầu bằng 0.";
+  if (!EMAIL_RE.test(f.email.trim())) e.email = "Nhập email có dấu @, ví dụ minh@gmail.com.";
+  if (!pwOk(f.password)) e.password = "Mật khẩu chưa đủ các điều kiện bên dưới.";
   return e;
 }
 
-// 422 mà lỗi nằm ở ô otp_code (không đúng 6 chữ số)
 const otpFieldInvalid = (err) =>
-  err.code === "VALIDATION_ERROR" && Array.isArray(err.details) && err.details.some((d) => d.field === "otp_code");
+  err.code === "VALIDATION_ERROR" &&
+  Array.isArray(err.details) &&
+  err.details.some((d) => d.field === "otp_code");
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    role: "customer",
-    password: "",
-    confirm: "",
-    agree: false,
+    name: "", phone: "", email: "", password: "", role: "customer",
   });
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  // "form": nhập thông tin; "otp": nhập mã xác nhận gửi qua email
-  const [step, setStep] = useState("form");
+  const [showPw, setShowPw] = useState(false);
+
+  /* ── OTP inline (gửi mã ngay trong form) ─────────────────── */
   const otp = useOtpChallenge("REGISTER");
+  // sentTo: email đã gửi OTP đến; verified: email đã xác minh thành công
+  const [sentTo, setSentTo] = useState("");
+  const [verified, setVerified] = useState("");
+  const otpInputRef = useRef(null);
+
+  const emailOk   = EMAIL_RE.test(form.email.trim());
+  const isVerified = verified && verified === form.email.trim();
+  const codeOpen   = sentTo && sentTo === form.email.trim() && !isVerified;
 
   const set = (key) => (e) =>
-    setForm((f) => ({ ...f, [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
+    setForm((f) => ({ ...f, [key]: e.target.value }));
 
   const setPhone = (e) =>
     setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }));
+
+  /* Gửi OTP xác minh email */
+  const sendCode = async () => {
+    if (!emailOk) return setErrors((p) => ({ ...p, email: "Nhập email có dấu @, ví dụ minh@gmail.com." }));
+    setErrors((p) => ({ ...p, email: undefined }));
+    otp.reset();
+    setSentTo(form.email.trim());
+    const err = await otp.send(form.email.trim());
+    if (err && err.code !== "AUTH_OTP_TOO_SOON") {
+      setErrors((p) => ({ ...p, email: err.message || "Không gửi được mã." }));
+      setSentTo("");
+    }
+    setTimeout(() => otpInputRef.current?.querySelector("input")?.focus(), 50);
+  };
+
+  /* Tự kiểm tra OTP khi đủ 6 số */
+  useEffect(() => {
+    if (!codeOpen || otp.code.length < 6) return;
+    // Prototype gọi API ngay; thực tế OTP verify ở bước submit — ở đây ta mark verified khi code đủ dài
+    // để UI mở khóa nút submit (kiểm tra thực sự ở handleSubmit)
+    setVerified(sentTo);
+    setErrors((p) => ({ ...p, email: undefined }));
+  }, [otp.code]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const showApiError = (err) => {
     if (err.code === "AUTH_EMAIL_EXISTS") return setErrors({ email: err.message });
     if (err.code === "AUTH_PHONE_EXISTS") return setErrors({ phone: err.message });
     if (err.code === "VALIDATION_ERROR" && Array.isArray(err.details)) {
-      const fieldErrors = {};
-      for (const { field, issue } of err.details) {
-        if (API_FIELDS.includes(field)) fieldErrors[field] = issue;
-      }
-      if (Object.keys(fieldErrors).length) return setErrors(fieldErrors);
+      const fe = {};
+      for (const { field, issue } of err.details)
+        if (API_FIELDS.includes(field)) fe[field] = issue;
+      if (Object.keys(fe).length) return setErrors(fe);
     }
-    return setApiError(err.message || "Đăng ký thất bại. Vui lòng thử lại.");
+    setApiError(err.message || "Đăng ký thất bại. Vui lòng thử lại.");
   };
 
-  // Bước 1: kiểm tra form rồi gửi OTP tới email
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const errs = validate(form);
-    setErrors(errs);
+    const er = validate(form);
+    if (!isVerified) er.email = er.email ?? "Bấm Gửi mã và nhập mã 6 số để xác minh email.";
+    setErrors(er);
     setApiError("");
-    if (Object.keys(errs).length) return;
+    if (Object.keys(er).length) return;
 
-    setSubmitting(true);
-    const err = await otp.send(form.email);
-    setSubmitting(false);
-    if (!err) return setStep("otp");
-    // Vừa gửi mã cách đây chưa tới 60 giây: người dùng có thể đã có mã trong hộp thư.
-    if (err.code === "AUTH_OTP_TOO_SOON") {
-      otp.setError(otpErrorMessage(err));
-      return setStep("otp");
-    }
-    showApiError(err);
-  };
-
-  const handleResend = async () => {
-    const err = await otp.send(form.email, { resend: true });
-    if (err) otp.setError(otpErrorMessage(err));
-  };
-
-  const backToForm = () => {
-    otp.reset();
-    setStep("form");
-  };
-
-  // Bước 2: gửi thông tin đăng ký kèm mã OTP
-  const handleConfirm = async (e) => {
-    e.preventDefault();
     const codeError = validateOtpCode(otp.code);
-    otp.setError(codeError);
-    if (codeError) return;
+    if (codeError) { otp.setError(codeError); return; }
 
     setSubmitting(true);
     try {
@@ -116,11 +121,9 @@ export default function RegisterPage() {
     } catch (err) {
       if (isOtpError(err) || otpFieldInvalid(err)) {
         otp.setError(otpErrorMessage(err));
-        if (isOtpDead(err)) otp.setCode("");
+        if (isOtpDead(err)) { otp.setCode(""); setVerified(""); }
       } else {
-        // Lỗi thuộc về thông tin ở bước 1 (trùng số điện thoại, sai định dạng...): quay lại form để sửa.
-        otp.reset();
-        setStep("form");
+        otp.reset(); setVerified(""); setSentTo("");
         showApiError(err);
       }
     } finally {
@@ -128,128 +131,191 @@ export default function RegisterPage() {
     }
   };
 
-  const cls = (key) => `input${errors[key] ? " invalid" : ""}`;
+  return (
+    <>
+      <h1>Tạo tài khoản</h1>
+      <p className="auth__lead">
+        Đã có tài khoản?{" "}
+        <Link className="link" to="/login">Đăng nhập</Link>
+      </p>
 
-  if (step === "otp") {
-    return (
-      <form className="auth-card" onSubmit={handleConfirm} noValidate>
-        <h1>Xác nhận email</h1>
+      <form className="reg" onSubmit={handleSubmit} noValidate>
+        {/* Lỗi API chung */}
+        {apiError && (
+          <div className="notice notice--danger wide" role="alert">
+            <Icon name="alert" size={16} />{apiError}
+          </div>
+        )}
 
-        <OtpVerify
-          lead="Mã gồm 6 chữ số đã được gửi tới"
-          email={form.email.trim()}
-          code={otp.code}
-          onCodeChange={otp.setCode}
-          error={otp.error}
-          notice={otp.notice}
-          seconds={otp.seconds}
-          sending={otp.sending}
-          onResend={handleResend}
-          onChangeEmail={backToForm}
-        />
+        {/* ── Role picker ─────────────────────────────────────── */}
+        <div className="seg wide" role="radiogroup" aria-label="Bạn là">
+          {[["customer", "Người chơi"], ["owner", "Chủ sân"]].map(([v, l]) => (
+            <button
+              key={v}
+              type="button"
+              role="radio"
+              aria-checked={form.role === v}
+              className={form.role === v ? "on" : ""}
+              onClick={() => setForm((f) => ({ ...f, role: v }))}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
 
-        <button className="btn btn-block" type="submit" disabled={submitting}>
-          {submitting ? "Đang đăng ký..." : "Xác nhận và đăng ký"}
+        {/* ── Họ và tên ─────────────────────────────────────── */}
+        <div className="field">
+          <label htmlFor="reg-name">Họ và tên</label>
+          <input
+            id="reg-name"
+            className="input"
+            type="text"
+            placeholder="Nguyễn Văn Minh"
+            autoComplete="name"
+            value={form.name}
+            onChange={set("name")}
+            aria-invalid={!!errors.name}
+          />
+          {errors.name && <span className="field__err">{errors.name}</span>}
+        </div>
+
+        {/* ── Số điện thoại ────────────────────────────────── */}
+        <div className="field">
+          <label htmlFor="reg-phone">Số điện thoại</label>
+          <input
+            id="reg-phone"
+            className="input"
+            type="tel"
+            inputMode="numeric"
+            placeholder="0901234567"
+            autoComplete="tel"
+            value={form.phone}
+            onChange={setPhone}
+            aria-invalid={!!errors.phone}
+          />
+          {errors.phone && <span className="field__err">{errors.phone}</span>}
+        </div>
+
+        {/* ── Email + OTP inline ──────────────────────────── */}
+        <div className="field wide">
+          <div className="row between">
+            <label htmlFor="reg-email">Email</label>
+            {isVerified && (
+              <span className="verified">
+                <i><Icon name="check" size={12} /></i>
+                Đã xác minh
+              </span>
+            )}
+          </div>
+          <div className="input-group">
+            <input
+              id="reg-email"
+              className="input"
+              type="email"
+              placeholder="ten@gmail.com"
+              autoComplete="email"
+              value={form.email}
+              onChange={(e) => {
+                set("email")(e);
+                // Reset xác minh khi đổi email
+                if (verified && verified !== e.target.value.trim()) {
+                  setVerified(""); setSentTo(""); otp.reset();
+                }
+              }}
+              aria-invalid={!!errors.email}
+            />
+            {!isVerified && (
+              <button
+                type="button"
+                className={"btn btn--sm input-act" + (emailOk ? " btn--primary" : "")}
+                disabled={!emailOk || otp.sending || (codeOpen && otp.seconds > 0)}
+                onClick={sendCode}
+              >
+                {otp.sending ? "Đang gửi..." : codeOpen ? "Đã gửi" : "Gửi mã"}
+              </button>
+            )}
+          </div>
+          {errors.email && <span className="field__err">{errors.email}</span>}
+
+          {/* Khối nhập OTP */}
+          {codeOpen && (
+            <div className="verify" ref={otpInputRef}>
+              <div className="verify__row">
+                <div role="group" aria-label="Mã xác minh 6 số">
+                  <OtpInput
+                    value={otp.code}
+                    onChange={otp.setCode}
+                    length={6}
+                    invalid={!!otp.error}
+                  />
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div className="mono small">
+                    {otp.seconds > 0 ? `${otp.seconds}s` : "Hết hạn"}
+                  </div>
+                  <button
+                    type="button"
+                    className="link small"
+                    disabled={otp.seconds > 0 || otp.sending}
+                    onClick={sendCode}
+                  >
+                    Gửi lại mã
+                  </button>
+                </div>
+              </div>
+              {otp.error && <span className="field__err">{otp.error}</span>}
+              {otp.notice && (
+                <span className="form-note" style={{ color: "var(--accent)" }}>
+                  {otp.notice}
+                </span>
+              )}
+              <span className="form-note">Đã gửi tới {sentTo}.</span>
+            </div>
+          )}
+        </div>
+
+        {/* ── Mật khẩu + pw-rules ─────────────────────────── */}
+        <div className="field wide">
+          <label htmlFor="reg-pw">Mật khẩu</label>
+          <div className="input-group">
+            <input
+              id="reg-pw"
+              className="input"
+              type={showPw ? "text" : "password"}
+              autoComplete="new-password"
+              value={form.password}
+              onChange={set("password")}
+              aria-invalid={!!errors.password}
+            />
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm input-act"
+              onClick={() => setShowPw(!showPw)}
+            >
+              {showPw ? "Ẩn" : "Hiện"}
+            </button>
+          </div>
+          {errors.password && <span className="field__err">{errors.password}</span>}
+
+          {/* Điều kiện mật khẩu */}
+          <div className="pw-rules" aria-label="Điều kiện mật khẩu">
+            {PW_RULES.map(([label, test]) => (
+              <span key={label} className={test(form.password) ? "ok" : ""}>
+                <Icon name={test(form.password) ? "check" : "x"} size={12} />
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <button
+          className="btn btn--primary btn--lg btn--block wide"
+          type="submit"
+          disabled={submitting}
+        >
+          {submitting ? "Đang đăng ký..." : "Tạo tài khoản"}
         </button>
       </form>
-    );
-  }
-
-  return (
-    <form className="auth-card" onSubmit={handleSubmit} noValidate>
-      <h1>Tạo tài khoản</h1>
-
-      {apiError && (
-        <p className="notice error" role="alert">
-          {apiError}
-        </p>
-      )}
-
-      <Field label="Họ và tên" htmlFor="name" error={errors.name}>
-        <input
-          id="name"
-          className={cls("name")}
-          type="text"
-          placeholder="Nguyễn Văn Minh"
-          autoComplete="name"
-          value={form.name}
-          onChange={set("name")}
-        />
-      </Field>
-
-      <Field label="Số điện thoại" htmlFor="phone" error={errors.phone}>
-        <input
-          id="phone"
-          className={cls("phone")}
-          type="tel"
-          inputMode="numeric"
-          placeholder="09xx xxx xxx"
-          autoComplete="tel"
-          value={form.phone}
-          onChange={setPhone}
-        />
-      </Field>
-
-      <Field label="Email" htmlFor="email" error={errors.email}>
-        <input
-          id="email"
-          className={cls("email")}
-          type="email"
-          placeholder="minh@email.com"
-          autoComplete="email"
-          value={form.email}
-          onChange={set("email")}
-        />
-      </Field>
-
-      <Field label="Vai trò" htmlFor="role" error={errors.role}>
-        <select id="role" className={cls("role")} value={form.role} onChange={set("role")}>
-          <option value="customer">Khách hàng</option>
-          <option value="owner">Chủ sân</option>
-        </select>
-      </Field>
-
-      <Field label="Mật khẩu" htmlFor="password" error={errors.password}>
-        <PasswordInput
-          id="password"
-          className={cls("password")}
-          placeholder="••••••••"
-          autoComplete="new-password"
-          value={form.password}
-          onChange={set("password")}
-        />
-      </Field>
-
-      <Field label="Nhập lại mật khẩu" htmlFor="confirm" error={errors.confirm}>
-        <PasswordInput
-          id="confirm"
-          className={cls("confirm")}
-          placeholder="••••••••"
-          autoComplete="new-password"
-          value={form.confirm}
-          onChange={set("confirm")}
-        />
-      </Field>
-
-      <div className="field">
-        <label className="check">
-          <input type="checkbox" checked={form.agree} onChange={set("agree")} />
-          Tôi đồng ý Điều khoản sử dụng
-        </label>
-        {errors.agree && (
-          <p className="field-error" role="alert">
-            {errors.agree}
-          </p>
-        )}
-      </div>
-
-      <button className="btn btn-block" type="submit" disabled={submitting}>
-        {submitting ? "Đang gửi mã..." : "Đăng ký"}
-      </button>
-
-      <p className="auth-foot">
-        Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
-      </p>
-    </form>
+    </>
   );
 }
