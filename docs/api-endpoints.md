@@ -1356,7 +1356,8 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 * **Mô tả:** Lấy danh sách các bài đăng tìm người chơi ghép trận (lọc theo trạng thái `OPEN`, `CLOSED`, `CANCELLED`).
 * **Quyền truy cập:** Danh sách chung là public. `mine=true` yêu cầu đăng nhập, nếu thiếu token thì trả `401 AUTH_UNAUTHORIZED`.
 * **Query Params:** `status=OPEN`, `mine=false`, `page=1`, `limit=10`. `mine=true` lọc thêm theo `team_posts.user_id = current_user.id`. Bộ lọc `status` vẫn áp dụng, ví dụ `?mine=true&status=CLOSED` lấy các bài đã đóng của người gọi.
-* **Trường trả về:** `author_name` lấy từ hồ sơ người đăng. `facility_name`, `court_name`, `play_date` và `start_at` lấy theo đơn đặt liên kết. `accepted_count` là số đơn ứng tuyển có `status = 'ACCEPTED'` của bài, bằng `0` khi chưa duyệt ai.
+* **Sắp xếp mặc định:** `created_at DESC, id DESC` theo bài đăng, trước khi phân trang.
+* **Trường trả về:** `author_name` lấy từ hồ sơ người đăng. `facility_name`, `court_name`, `play_date` và `start_at` lấy theo đơn đặt liên kết. Backend chuyển `start_at` từ giờ Việt Nam (UTC+7) sang UTC trước khi trả về theo định dạng ISO 8601 với hậu tố `Z`, theo quy tắc tại 3.3. `play_date` giữ nguyên ngày chơi theo giờ Việt Nam. `accepted_count` là số đơn ứng tuyển có `status = 'ACCEPTED'` của bài, bằng `0` khi chưa duyệt ai.
 * **Database Transaction:** Không.
 * **Response (200 OK - Paginated List chuẩn 2.1.B):**
   ```json
@@ -1539,7 +1540,7 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 | | `PRICING_NOT_FOUND` | **404** | Chưa cấu hình bảng giá cơ sở hoặc bảng giá theo thời điểm cho khung giờ này. |
 | **4. Đặt sân & Giữ chỗ** | `BOOKING_NOT_FOUND` | **404** | Không tìm thấy đơn đặt sân. |
 | | `SLOT_ALREADY_BOOKED` | **409** | Khung giờ đã có người đặt cọc hoặc đang trong thời gian giữ chỗ hợp lệ (QĐ3). |
-| | `INVALID_BOOKING_TIME` | **400** | Giờ bắt đầu phải ở tương lai khi đặt sân hoặc tạo bài ghép đội. |
+| | `INVALID_BOOKING_TIME` | **400** | Khung giờ đặt nằm ngoài giờ hoạt động của sân hoặc cơ sở, hoặc giờ bắt đầu không ở tương lai khi đặt sân hay tạo bài ghép đội. |
 | | `CANNOT_CANCEL_BOOKING` | **400** | Chỉ đơn `PENDING_DEPOSIT` hoặc `DEPOSITED` mới được hủy và chỉ khi `:now < start_at`. |
 | | `CANNOT_DEPOSIT_EXPIRED_BOOKING` | **400** | Đơn đặt sân đã quá hạn giữ chỗ 10 phút, không thể thanh toán cọc. |
 | | `CANNOT_SETTLE_BEFORE_START` | **400** | Buổi chơi chưa diễn ra (`:now < start_at`), không thể kết toán cọc cho chủ sân tại 4.3. |
@@ -1554,5 +1555,5 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 | | `TEAM_POST_NOT_FOUND` | **404** | Không tìm thấy bài đăng ghép đội. |
 | | `TEAM_POST_ALREADY_EXISTS` | **409** | Đơn đặt sân đã có bài đăng ghép đội `OPEN`. |
 | | `APPLICATION_NOT_FOUND` | **404** | Không tìm thấy đơn ứng tuyển trong bài đăng được yêu cầu. |
-| | `APPLICATION_NOT_PENDING` | **400** | Chỉ chủ bài mới được duyệt hoặc từ chối đơn `PENDING`. |
+| | `APPLICATION_NOT_PENDING` | **400** | Đơn ứng tuyển không còn ở trạng thái `PENDING` nên không thể duyệt hoặc từ chối. |
 

@@ -172,7 +172,7 @@ Khi xảy ra lỗi (HTTP Status >= 400), response trả về luôn tuân theo m�
 | | `HOLIDAY_DATE_EXISTS` | **409** | Ngày lễ (`holiday_date`) đã có trong danh sách, không được tạo trùng (ánh xạ từ `uq_holidays_date`). |
 | **4. Đặt sân & Giữ chỗ (Bookings)** | `BOOKING_NOT_FOUND` | **404** | Không tìm thấy đơn đặt sân. |
 | | `SLOT_ALREADY_BOOKED` | **409** | Khung giờ đã có người đặt cọc (`DEPOSITED`) hoặc đang trong thời gian giữ chỗ hợp lệ (`PENDING_DEPOSIT`). |
-| | `INVALID_BOOKING_TIME` | **400** | Giờ bắt đầu phải ở tương lai khi đặt sân hoặc tạo bài ghép đội. |
+| | `INVALID_BOOKING_TIME` | **400** | Khung giờ đặt nằm ngoài giờ hoạt động của sân hoặc cơ sở, hoặc giờ bắt đầu không ở tương lai khi đặt sân hay tạo bài ghép đội. |
 | | `CANNOT_CANCEL_BOOKING` | **400** | Chỉ đơn `PENDING_DEPOSIT` hoặc `DEPOSITED` mới được hủy và chỉ khi `:now < start_at`. |
 | | `CANNOT_DEPOSIT_EXPIRED_BOOKING` | **400** | Đơn đặt sân đã quá hạn giữ chỗ 10 phút, không thể thanh toán cọc. |
 | | `CANNOT_SETTLE_BEFORE_START` | **400** | Buổi chơi chưa diễn ra (`:now < start_at`), không thể kết toán cọc cho chủ sân. |
@@ -187,7 +187,7 @@ Khi xảy ra lỗi (HTTP Status >= 400), response trả về luôn tuân theo m�
 | | `TEAM_POST_NOT_FOUND` | **404** | Không tìm thấy bài đăng ghép đội. |
 | | `TEAM_POST_ALREADY_EXISTS` | **409** | Đơn đặt sân đã có bài đăng ghép đội `OPEN`. |
 | | `APPLICATION_NOT_FOUND` | **404** | Không tìm thấy đơn ứng tuyển trong bài đăng được yêu cầu. |
-| | `APPLICATION_NOT_PENDING` | **400** | Chỉ chủ bài mới được duyệt hoặc từ chối đơn `PENDING`. |
+| | `APPLICATION_NOT_PENDING` | **400** | Đơn ứng tuyển không còn ở trạng thái `PENDING` nên không thể duyệt hoặc từ chối. |
 
 *Theo QĐ5, hủy đơn `DEPOSITED` trong khoảng dưới 12 giờ và trước `start_at` trả `200 OK`, hoàn 0% và chuyển toàn bộ cọc cho chủ sân. Với đơn `PENDING_DEPOSIT` hủy hợp lệ, số tiền hoàn và bồi thường đều bằng 0 VNĐ, số dư giữ nguyên và không phát sinh giao dịch ví.*
 
