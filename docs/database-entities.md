@@ -25,8 +25,8 @@
 | 14 | `services` | Dịch vụ đi kèm của từng cụm sân. | 5 | QĐ2 | **[PHÁC THẢO]** |
 | 15 | `booking_services` | Dịch vụ đi kèm trong lịch đặt. | 5 | QĐ2 | **[PHÁC THẢO]** |
 | 16 | `reviews` | Đánh giá sân sau khi chơi. | 5 | – | **[PHÁC THẢO]** |
-| 17 | `team_posts` | Bài đăng tìm đồng đội. | 4 | – | **[PHÁC THẢO]** |
-| 18 | `team_post_applications` | Lượt đăng ký tham gia ghép đội. | 4 | – | **[PHÁC THẢO]** |
+| 17 | `team_posts` | Bài đăng tìm đồng đội. | 4 | – | Chính thức |
+| 18 | `team_post_applications` | Lượt đăng ký tham gia ghép đội. | 4 | – | Chính thức |
 | 19 | `email_otps` | Mã OTP gửi qua email để xác thực (đăng ký, quên mật khẩu). | 1 | – | Chính thức |
 
 ### 1.2 Bảng quan hệ thực thể
@@ -55,10 +55,10 @@
 | `services` | `booking_services` | `service_id` | **[PHÁC THẢO]** |
 | `bookings` | `booking_services` | `booking_id` | **[PHÁC THẢO]** |
 | `bookings` | `reviews` | `booking_id` | 1-1 (Mỗi lịch 1 review) **[PHÁC THẢO]** |
-| `users` | `team_posts` | `user_id` | Người đăng **[PHÁC THẢO]** |
-| `bookings` | `team_posts` | `booking_id` | Liên kết lịch đặt với bài ghép đội **[PHÁC THẢO]** |
-| `team_posts` | `team_post_applications` | `post_id` | **[PHÁC THẢO]** |
-| `users` | `team_post_applications` | `user_id` | Người ứng tuyển **[PHÁC THẢO]** |
+| `users` | `team_posts` | `user_id` | Người đăng |
+| `bookings` | `team_posts` | `booking_id` | Liên kết lịch đặt với bài ghép đội |
+| `team_posts` | `team_post_applications` | `post_id` | Một bài có nhiều đơn ứng tuyển |
+| `users` | `team_post_applications` | `user_id` | Người ứng tuyển |
 
 ---
 
@@ -126,13 +126,19 @@
 *   **`email_otps`**: `id` (BIGINT PK), `email` (VARCHAR(255)), `purpose` (VARCHAR(20), CHECK IN (`REGISTER`, `RESET_PASSWORD`)), `code_hash` (CHAR(64), HMAC-SHA256, không lưu mã thô), `attempts` (INT DEFAULT 0), `created_at` (DATETIME), `expires_at` (DATETIME, +5 phút), `consumed_at` (DATETIME, nullable — đã dùng hoặc đã bị hủy do sai đủ 5 lần).
     *Ràng buộc:* `UNIQUE (email, purpose)` (mã mới ghi đè mã cũ). Không có khóa ngoại tới `users` để `RESET_PASSWORD` với email lạ vẫn có dòng và áp cooldown 60 giây như email thật. Migration: `V3__create_email_otps.sql` (tạo bảng) và `V4__add_unique_constraint_email_otps.sql` (thêm UNIQUE).
 
-### Nhóm 4 — Phác thảo (CN 4, 5)
+### Nhóm 4 — Phác thảo (CN 5)
 
 *   **`services`**: `id` (INT PK), `facility_id` (BIGINT FK), `name` (VARCHAR), `unit_price` (BIGINT, CHECK >= 0), `unit` (VARCHAR), `is_active` (BOOLEAN).
 *   **`booking_services`**: `id` (BIGINT PK), `booking_id` (BIGINT FK), `service_id` (INT FK), `quantity` (INT, CHECK >= 1), `unit_price`, `total_price` (BIGINT).
 *   **`reviews`**: `id` (BIGINT PK), `booking_id` (BIGINT FK UNIQUE), `rating` (TINYINT, CHECK 1-5), `comment` (TEXT), `created_at` (DATETIME DEFAULT NOW()).
-*   **`team_posts`**: `id` (BIGINT PK), `user_id` (BIGINT FK), `booking_id` (BIGINT FK), `title` (VARCHAR), `players_needed` (INT, CHECK >= 1), `status` (ENUM: `OPEN`, `CLOSED`, `CANCELLED`), `created_at` (DATETIME DEFAULT NOW()).
-*   **`team_post_applications`**: `id` (BIGINT PK), `post_id` (BIGINT FK), `user_id` (BIGINT FK), `status` (ENUM: `PENDING`, `ACCEPTED`, `REJECTED`), `message` (TEXT).
+
+### Nhóm 5 — Ghép đội (CN 4)
+
+*   **`team_posts`**: `id` (BIGINT PK), `user_id` (BIGINT FK → `users`, người đăng), `booking_id` (BIGINT FK → `bookings`), `title` (VARCHAR(500)), `players_needed` (INT, CHECK `players_needed >= 1`), `status` (ENUM: `OPEN`, `CLOSED`, `CANCELLED`, DEFAULT `OPEN`), `created_at` (DATETIME DEFAULT CURRENT_TIMESTAMP).
+    *Ràng buộc:* `chk_tp_players`; khóa ngoại `RESTRICT`. Index `idx_team_posts_status_created (status, created_at)` để liệt kê bài đang mở theo thời gian đăng.
+*   **`team_post_applications`**: `id` (BIGINT PK), `post_id` (BIGINT FK → `team_posts`), `user_id` (BIGINT FK → `users`, người ứng tuyển), `status` (ENUM: `PENDING`, `ACCEPTED`, `REJECTED`, DEFAULT `PENDING`), `message` (TEXT), `created_at` (DATETIME DEFAULT CURRENT_TIMESTAMP).
+    *Ràng buộc:* `UNIQUE (post_id, user_id)` (`uq_tpa_post_user`, mỗi người một đơn cho mỗi bài, đồng thời là index tra cứu theo bài); khóa ngoại `RESTRICT`.
+    > Migration: hai bảng được tạo ở `V1__create_all_tables.sql`, `team_posts.created_at` thêm ở `V2__add_missing_columns_and_tables.sql`. `V5__team_posts_indexes.sql` thêm `team_post_applications.created_at` và index `(status, created_at)`. Kiểm thử CHECK: `database/tests/T5__team_posts_constraint_tests.sql`.
 
 ---
 
