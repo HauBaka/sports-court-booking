@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from sqlalchemy import (
     BigInteger,
     Column,
@@ -30,6 +32,8 @@ class Booking(Base):
     hold_expires_at = Column(DateTime, nullable=True)
     cancelled_at = Column(DateTime, nullable=True)
     cancel_reason = Column(Text, nullable=True)
+    # Lưu UTC (giống wallet_transactions.created_at), khác start_at / hold_expires_at / cancelled_at lưu giờ VN
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
 
     court = relationship("Court", back_populates="bookings")
     slots = relationship("BookingSlot", back_populates="booking", cascade="all, delete-orphan")

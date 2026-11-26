@@ -1,13 +1,14 @@
 # pyright: reportAttributeAccessIssue=false
 import logging
+import math
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Optional, cast
-from fastapi import APIRouter, BackgroundTasks, Depends, status
+from typing import Literal, Optional, cast
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 from fastapi.responses import JSONResponse
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_current_user, get_db, require_role
 from app.core.exceptions import BusinessException
@@ -20,7 +21,7 @@ from app.core.pricing import (
     calculate_booking_price,
 )
 from app.models.booking import Booking, BookingService, BookingSlot
-from app.models.facility import Court, CourtSlot, Service, TimeSlot
+from app.models.facility import Court, CourtSlot, Facility, Service, TimeSlot
 from app.models.pricing import Holiday, PricingRule
 from app.models.user import User
 from app.models.wallet import Wallet
@@ -33,6 +34,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 VN_TZ = timezone(timedelta(hours=7))
+
+BookingStatus = Literal["PENDING_DEPOSIT", "DEPOSITED", "COMPLETED", "CANCELLED"]
 
 
 def now_vn() -> datetime:
@@ -571,6 +574,266 @@ def create_booking(
             },
         },
     )
+
+
+# ==============================================================================
+# 3.5 Tra cứu danh sách lịch đặt sân (phân quyền theo vai trò)
+# ==============================================================================
+@router.get("/bookings", summary="Tra cứu danh sách lịch đặt sân")
+def list_bookings(
+    booking_status: Optional[BookingStatus] = Query(None, alias="status"),
+    facility_id: Optional[int] = Query(None),
+    court_id: Optional[int] = Query(None),
+    from_date: Optional[date] = Query(None, description="Lọc play_date từ ngày (YYYY-MM-DD, tính cả ngày này)"),
+    to_date: Optional[date] = Query(None, description="Lọc play_date đến ngày (YYYY-MM-DD, tính cả ngày này)"),
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if from_date is not None and to_date is not None and from_date > to_date:
+        raise BusinessException(
+            status.HTTP_400_BAD_REQUEST, "INVALID_REQUEST", "from_date không được sau to_date."
+        )
+
+    query = (
+        db.query(
+            Booking,
+            Court.name.label("court_name"),
+            Facility.id.label("facility_id"),
+            Facility.name.label("facility_name"),
+            User.name.label("customer_name"),
+            User.phone.label("customer_phone"),
+        )
+        .join(Court, Court.id == Booking.court_id)
+        .join(Facility, Facility.id == Court.facility_id)
+        .join(User, User.id == Booking.user_id)
+    )
+
+    # Phạm vi theo vai trò đặt trước, bộ lọc của client chỉ thu hẹp thêm trong phạm vi đó.
+    is_admin = current_user.has_role("admin")
+    is_owner = current_user.has_role("owner")
+    if not is_admin:
+        if is_owner:
+            query = query.filter(Facility.owner_id == current_user.id)
+        else:
+            query = query.filter(Booking.user_id == current_user.id)
+
+    if booking_status is not None:
+        query = query.filter(Booking.status == booking_status)
+    if facility_id is not None:
+        query = query.filter(Court.facility_id == facility_id)
+    if court_id is not None:
+        query = query.filter(Booking.court_id == court_id)
+    if from_date is not None:
+        query = query.filter(Booking.play_date >= from_date)
+    if to_date is not None:
+        query = query.filter(Booking.play_date <= to_date)
+
+    total = query.count()
+    rows = (
+        query.order_by(Booking.play_date.desc(), Booking.start_at.desc(), Booking.id.desc())
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .all()
+    )
+
+    # Giờ kết thúc khung cuối của các đơn trong trang, tính cả khung đã nhả khi hủy.
+    end_times = dict(
+        db.query(BookingSlot.booking_id, func.max(TimeSlot.end_time))
+        .join(TimeSlot, TimeSlot.id == BookingSlot.time_slot_id)
+        .filter(BookingSlot.booking_id.in_([row.Booking.id for row in rows]))
+        .group_by(BookingSlot.booking_id)
+        .all()
+    )
+
+    data = []
+    for row in rows:
+        b = row.Booking
+        end_time = end_times.get(b.id)
+        item = {
+            "id": b.id,
+            "facility_id": row.facility_id,
+            "facility_name": row.facility_name,
+            "court_id": b.court_id,
+            "court_name": row.court_name,
+            "play_date": b.play_date.strftime("%Y-%m-%d"),
+            "start_at": _format_utc_timestamp(b.start_at),
+            "end_at": _format_utc_timestamp(datetime.combine(b.play_date, end_time)) if end_time else None,
+            "total_amount": b.total_amount,
+            "deposit_amount": b.deposit_amount,
+            "status": b.status,
+            "created_at": b.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+        # Thông tin liên hệ của người đặt chỉ trả cho chủ sân và admin.
+        if is_admin or is_owner:
+            item["customer_name"] = row.customer_name
+            item["customer_phone"] = row.customer_phone
+        data.append(item)
+
+    return {
+        "success": True,
+        "message": "Lấy danh sách lịch đặt sân thành công.",
+        "data": data,
+        "meta": {
+            "page": page,
+            "limit": limit,
+            "total": total,
+            "total_pages": math.ceil(total / limit),
+        },
+    }
+
+
+# ==============================================================================
+# 3.6 Xem chi tiết đơn đặt sân
+# ==============================================================================
+@router.get("/bookings/{id}", summary="Xem chi tiết đơn đặt sân")
+def get_booking_detail(
+    id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    booking = (
+        db.query(Booking)
+        .options(selectinload(Booking.slots), selectinload(Booking.services).selectinload(BookingService.service))
+        .filter(Booking.id == id)
+        .first()
+    )
+    if not booking:
+        raise BusinessException(status.HTTP_404_NOT_FOUND, "BOOKING_NOT_FOUND", "Không tìm thấy đơn đặt sân.")
+
+    court = booking.court
+    facility = court.facility
+    if not (
+        current_user.has_role("admin")
+        or booking.user_id == current_user.id
+        or facility.owner_id == current_user.id
+    ):
+        raise BusinessException(status.HTTP_403_FORBIDDEN, "AUTH_FORBIDDEN", "Bạn không có quyền xem đơn đặt sân này.")
+
+    return {
+        "success": True,
+        "message": "Lấy chi tiết đơn đặt sân thành công.",
+        "data": {
+            "id": booking.id,
+            "user_id": booking.user_id,
+            "customer_name": db.query(User.name).filter(User.id == booking.user_id).scalar(),
+            "court_id": court.id,
+            "court_name": court.name,
+            "facility_name": facility.name,
+            "play_date": booking.play_date.strftime("%Y-%m-%d"),
+            "start_at": _format_utc_timestamp(booking.start_at),
+            "status": booking.status,
+            "slots": [
+                {
+                    "time_slot_id": s.time_slot_id,
+                    "start_time": s.time_slot.start_time.strftime("%H:%M:%S"),
+                    "end_time": s.time_slot.end_time.strftime("%H:%M:%S"),
+                    "base_price": s.base_price,
+                    "multiplier": float(s.multiplier),
+                    "final_price": s.final_price,
+                }
+                for s in sorted(booking.slots, key=lambda s: s.time_slot.start_time)
+            ],
+            "services": [
+                {
+                    "service_id": s.service_id,
+                    "name": s.service.name,
+                    "quantity": s.quantity,
+                    "unit_price": s.unit_price,
+                    "total_price": s.total_price,
+                }
+                for s in sorted(booking.services, key=lambda s: s.id)
+            ],
+            # Số đã chốt lúc tạo đơn, không tính lại theo bảng giá hiện tại (QĐ2)
+            "pricing_summary": {
+                "subtotal": booking.subtotal,
+                "service_total": booking.service_total,
+                "total_amount": booking.total_amount,
+                "deposit_amount": booking.deposit_amount,
+                "remaining_amount_due_at_court": booking.total_amount - booking.deposit_amount,
+            },
+            "hold_expires_at": (
+                _format_utc_timestamp(booking.hold_expires_at) if booking.hold_expires_at else None
+            ),
+            "cancelled_at": _format_utc_timestamp(booking.cancelled_at) if booking.cancelled_at else None,
+            "cancel_reason": booking.cancel_reason,
+        },
+    }
+
+
+# ==============================================================================
+# 4.3 Xác nhận hoàn tất buổi chơi và kết toán cọc cho chủ sân (COMPLETED + sinh SETTLE)
+# ==============================================================================
+@router.post("/bookings/{id}/complete", summary="Xác nhận hoàn tất buổi chơi và kết toán cọc")
+def complete_booking(
+    id: int,
+    current_user: User = Depends(require_role("owner", "admin")),
+    db: Session = Depends(get_db),
+):
+    booking = db.query(Booking).filter(Booking.id == id).first()
+    if not booking:
+        raise BusinessException(status.HTTP_404_NOT_FOUND, "BOOKING_NOT_FOUND", "Không tìm thấy đơn đặt sân.")
+    owner_id = booking.court.facility.owner_id
+    if not current_user.has_role("admin") and owner_id != current_user.id:
+        raise BusinessException(
+            status.HTTP_403_FORBIDDEN, "AUTH_FORBIDDEN", "Bạn không có quyền kết toán đơn của cơ sở này."
+        )
+
+    try:
+        system_wallet_id = get_system_wallet(db).id
+        owner_wallet_id = get_wallet_by_user(db, owner_id).id
+        # Đóng transaction chỉ đọc ở trên để transaction ghi bắt đầu bằng lệnh khóa. Nếu không, MariaDB bật
+        # innodb_snapshot_isolation (mặc định từ 11.6) báo lỗi khi dòng cần khóa vừa được request khác sửa.
+        db.rollback()
+
+        # Bước 1: khóa đơn rồi mới đọc trạng thái (quyền đã kiểm ở trên, chủ cơ sở không đổi).
+        # populate_existing() bỏ giá trị cũ trong session.
+        locked = db.query(Booking).filter(Booking.id == id).with_for_update().populate_existing().one()
+        if locked.status != "DEPOSITED":
+            raise BusinessException(
+                status.HTTP_400_BAD_REQUEST,
+                "CANNOT_SETTLE_BOOKING",
+                "Chỉ kết toán được đơn đang ở trạng thái đã đặt cọc.",
+            )
+        # Bước 2: chỉ kết toán khi đã đến giờ chơi (start_at lưu giờ VN).
+        if now_vn().replace(tzinfo=None) < cast(datetime, locked.start_at):
+            raise BusinessException(
+                status.HTTP_400_BAD_REQUEST,
+                "CANNOT_SETTLE_BEFORE_START",
+                "Buổi chơi chưa diễn ra, không thể kết toán cọc cho chủ sân.",
+            )
+        amount = locked.deposit_amount
+
+        # Bước 3: khóa ví hệ thống + ví chủ sân theo wallet.id tăng dần.
+        lock_wallets(db, [system_wallet_id, owner_wallet_id])
+
+        # Bước 4-6: trừ ví hệ thống, cộng ví chủ sân, ghi SETTLE (một chỗ duy nhất trong transfer()).
+        transfer(
+            db,
+            type="SETTLE",
+            amount=amount,
+            from_wallet_id=system_wallet_id,
+            to_wallet_id=owner_wallet_id,
+            related_booking_id=id,
+        )
+        locked.status = "COMPLETED"  # Bước 7
+        db.commit()  # Bước 8
+    except Exception:
+        db.rollback()
+        raise
+
+    return {
+        "success": True,
+        "message": "Xác nhận hoàn tất buổi chơi và kết toán tiền cọc cho chủ sân thành công.",
+        "data": {
+            "booking_id": id,
+            "status": "COMPLETED",
+            "settled_deposit_amount": amount,
+            "transferred_to_owner_wallet_id": owner_wallet_id,
+            "transaction_type": "SETTLE",
+        },
+    }
 
 
 # ==============================================================================
