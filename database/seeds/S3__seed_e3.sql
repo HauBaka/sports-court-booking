@@ -1,6 +1,7 @@
 -- S3__seed_e3.sql
 -- Dữ liệu mẫu E3: OTP đăng ký / quên mật khẩu, ví khách và đơn DEPOSITED ngày mai
--- Mã OTP mẫu cho mọi dòng: 123456 (bcrypt rounds = 12)
+-- Mã OTP mẫu: 123456. code_hash = HMAC-SHA256("email|purpose|123456") với khóa JWT_SECRET
+-- mặc định của CI (your_jwt_secret_key_change_in_production). Đổi JWT_SECRET thì phải tính lại hash
 -- Chạy sau S2. Chạy lại được: TRUNCATE email_otps, wallet_transactions,
 -- booking_slots, bookings rồi nạp lại, không nhân đôi dữ liệu
 -- Ngày giờ tính theo lúc nạp seed nên nạp lại trước mỗi lần test
@@ -13,15 +14,15 @@ TRUNCATE TABLE booking_slots;
 TRUNCATE TABLE bookings;
 INSERT INTO email_otps(email, purpose, code_hash, expires_at, attempts, consumed_at) values
 -- còn hạn, chưa dùng
-('newuser@scb.vn', 'REGISTER', '$2b$12$COnbRlcG9kJHkL4cgjSXR.eq7rCGI0YeQ/8Z7ny2QjjR0o8rpK.w', NOW() + INTERVAL 5 MINUTE, 0, NULL),
+('newuser@scb.vn', 'REGISTER', 'fd3bc5ecc5338bf50c0c2f8aa1bd357142f7ad8b8da1850d1bdf8b1c1da5f5da', NOW() + INTERVAL 5 MINUTE, 0, NULL),
 -- đã hết hạn
 ('late@scb.vn', 'REGISTER', '$2b$12$COnbRlcG9kJHkL4cgjSXR.eq7rCGI0YeQ/8Z7ny2QjjR0o8rpK.w', NOW() - INTERVAL 1 MINUTE, 0, NULL),
--- sai 5 lần, bị khóa
-('locked@scb.vn', 'REGISTER', '$2b$12$COnbRlcG9kJHkL4cgjSXR.eq7rCGI0YeQ/8Z7ny2QjjR0o8rpK.w', NOW() + INTERVAL 5 MINUTE, 5, NULL),
+-- sai 5 lần, bị khóa (BE khóa mã bằng cách gán consumed_at)
+('locked@scb.vn', 'REGISTER', '1dc3539100b5a352e846ece42da7b453670d4f21dc44db135b25b600560c281d', NOW() + INTERVAL 5 MINUTE, 5, NOW()),
 -- đã dùng xong
 ('done@scb.vn', 'REGISTER', '$2b$12$COnbRlcG9kJHkL4cgjSXR.eq7rCGI0YeQ/8Z7ny2QjjR0o8rpK.w', NOW() + INTERVAL 5 MINUTE, 0, NOW()),
 -- quên mk của tk có thật trong S2
-('customer.a@scb.vn', 'RESET_PASSWORD', '$2b$12$COnbRlcG9kJHkL4cgjSXR.eq7rCGI0YeQ/8Z7ny2QjjR0o8rpK.w', NOW() + INTERVAL 5 MINUTE, 0, NULL);
+('customer.a@scb.vn', 'RESET_PASSWORD', 'b421d7e411bf71c695a2ab9c5a3ea9a023e7580799b1ac397d7954acca9fb2b3', NOW() + INTERVAL 5 MINUTE, 0, NULL);
 
 -- Đơn DEPOSITED ngày mai của khách B, sân cầu lông 1, 08:00–10:00
 -- multiplier cố định 1.00 để tiền không đổi theo thứ trong tuần
