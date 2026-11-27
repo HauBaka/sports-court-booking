@@ -272,15 +272,17 @@ def pay_deposit(
     current_user: User = Depends(require_role("customer")),
     db: Session = Depends(get_db),
 ):
-    booking = db.query(Booking).filter(Booking.id == id).first()
-    if not booking:
-        raise BusinessException(status.HTTP_404_NOT_FOUND, "BOOKING_NOT_FOUND", "Không tìm thấy đơn đặt sân.")
-    if booking.user_id != current_user.id:
-        raise BusinessException(
-            status.HTTP_403_FORBIDDEN, "AUTH_FORBIDDEN", "Bạn không có quyền thanh toán cọc cho đơn này."
-        )
-
     try:
+        # Cùng thứ tự khóa với 4.2 và 4.3: đơn trước, ví sau. Ngược thứ tự thì request cọc gửi lại
+        # và kết toán cùng đơn deadlock.
+        booking = db.query(Booking).filter(Booking.id == id).with_for_update().populate_existing().first()
+        if not booking:
+            raise BusinessException(status.HTTP_404_NOT_FOUND, "BOOKING_NOT_FOUND", "Không tìm thấy đơn đặt sân.")
+        if booking.user_id != current_user.id:
+            raise BusinessException(
+                status.HTTP_403_FORBIDDEN, "AUTH_FORBIDDEN", "Bạn không có quyền thanh toán cọc cho đơn này."
+            )
+
         # Bước 1: khóa ví khách + ví hệ thống theo wallet.id tăng dần.
         customer_wallet = get_wallet_by_user(db, current_user.id)
         system_wallet = get_system_wallet(db)
@@ -805,10 +807,8 @@ def complete_booking(
             )
         amount = locked.deposit_amount
 
-        # Bước 3: khóa ví hệ thống + ví chủ sân theo wallet.id tăng dần.
-        lock_wallets(db, [system_wallet_id, owner_wallet_id])
-
-        # Bước 4-6: trừ ví hệ thống, cộng ví chủ sân, ghi SETTLE (một chỗ duy nhất trong transfer()).
+        # Bước 3-6: transfer() khóa hai ví theo wallet.id tăng dần (lock_wallets), trừ ví hệ thống,
+        # cộng ví chủ sân và ghi SETTLE.
         transfer(
             db,
             type="SETTLE",
