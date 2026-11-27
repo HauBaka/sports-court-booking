@@ -13,7 +13,7 @@ const FORM_FIELDS = Object.keys(EMPTY_FORM);
 export default function FacilityCreatePage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState("info");
-  const [form, setForm] = useState({ ...EMPTY_FORM, city: "Hồ Chí Minh", open_time: "06:00", close_time: "22:00" });
+  const [form, setForm] = useState({ ...EMPTY_FORM });
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -130,7 +130,8 @@ export default function FacilityCreatePage() {
 
               {/* Quận huyện */}
               <div className="field">
-                <label htmlFor="fc-dist">Quận, huyện <span className="muted small">(không bắt buộc)</span></label>
+                <label htmlFor="fc-dist">Quận, huyện</label>
+                <span className="muted small"> (không bắt buộc)</span>
                 <input id="fc-dist" className="input" type="text"
                   placeholder="Quận Tân Bình"
                   value={form.district} onChange={set("district")} />
@@ -139,7 +140,8 @@ export default function FacilityCreatePage() {
 
               {/* Vĩ độ */}
               <div className="field">
-                <label htmlFor="fc-lat">Vĩ độ <span className="muted small">(không bắt buộc)</span></label>
+                <label htmlFor="fc-lat">Vĩ độ</label>
+                <span className="muted small"> (không bắt buộc)</span>
                 <input id="fc-lat" className="input mono" type="text"
                   inputMode="decimal" placeholder="10.7992"
                   value={form.latitude} onChange={set("latitude")}
@@ -149,7 +151,8 @@ export default function FacilityCreatePage() {
 
               {/* Kinh độ */}
               <div className="field">
-                <label htmlFor="fc-lng">Kinh độ <span className="muted small">(không bắt buộc)</span></label>
+                <label htmlFor="fc-lng">Kinh độ</label>
+                <span className="muted small"> (không bắt buộc)</span>
                 <input id="fc-lng" className="input mono" type="text"
                   inputMode="decimal" placeholder="106.6501"
                   value={form.longitude} onChange={set("longitude")}
@@ -159,7 +162,8 @@ export default function FacilityCreatePage() {
 
               {/* Mô tả — full width */}
               <div className="field full">
-                <label htmlFor="fc-desc">Mô tả <span className="muted small">(không bắt buộc)</span></label>
+                <label htmlFor="fc-desc">Mô tả</label>
+                <span className="muted small"> (không bắt buộc)</span>
                 <textarea id="fc-desc" className="textarea"
                   placeholder="Số sân, mặt sân, chỗ để xe..."
                   value={form.description} onChange={set("description")} />
@@ -174,22 +178,24 @@ export default function FacilityCreatePage() {
 
             {/* Giờ mở cửa */}
             <div>
-              <h3>Giờ mở cửa</h3>
+              <h3>Giờ mở / đóng cửa</h3>
               <div className="grid-2" style={{ gap:12, marginTop:12 }}>
                 <div className="field">
-                  <label htmlFor="fc-open">Mở</label>
+                  <label htmlFor="fc-open">Giờ mở cửa</label>
                   <select id="fc-open" className="select mono"
                     value={form.open_time} onChange={set("open_time")}
                     aria-invalid={!!errors.open_time}>
+                    <option value="">-- Chọn giờ --</option>
                     {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
                   </select>
                   {errors.open_time && <span className="field__err">{errors.open_time}</span>}
                 </div>
                 <div className="field">
-                  <label htmlFor="fc-close">Đóng</label>
+                  <label htmlFor="fc-close">Giờ đóng cửa</label>
                   <select id="fc-close" className="select mono"
                     value={form.close_time} onChange={set("close_time")}
                     aria-invalid={!!errors.close_time}>
+                    <option value="">-- Chọn giờ --</option>
                     {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
                   </select>
                   {errors.close_time && <span className="field__err">{errors.close_time}</span>}
