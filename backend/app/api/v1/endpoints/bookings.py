@@ -1,6 +1,6 @@
 # pyright: reportAttributeAccessIssue=false
 import logging
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Optional, cast
 from fastapi import APIRouter, BackgroundTasks, Depends, status
@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db, require_role
+from app.core.booking_time import VN_TZ, booking_time_to_utc
 from app.core.exceptions import BusinessException
 from app.core.pricing import (
     OrderPricingResult,
@@ -32,8 +33,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-VN_TZ = timezone(timedelta(hours=7))
-
 
 def now_vn() -> datetime:
     """Trả về thời gian hiện tại theo múi giờ Việt Nam (UTC+7)."""
@@ -42,9 +41,7 @@ def now_vn() -> datetime:
 
 def _format_utc_timestamp(value: datetime) -> str:
     """Đổi DATETIME giờ Việt Nam trong booking sang UTC trước khi gắn hậu tố Z."""
-    if value.tzinfo is None:
-        value = value.replace(tzinfo=VN_TZ)
-    return value.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return booking_time_to_utc(value).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _prepare_pricing(
