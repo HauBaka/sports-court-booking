@@ -928,7 +928,7 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 * **Mô tả:** Khách hàng xác nhận thanh toán cọc 30% từ ví nội bộ cho đơn đang giữ chỗ. Tiền cọc được chuyển từ ví khách sang ví hệ thống trung gian (`is_system = true`).
 * **Quyền truy cập:** Đã đăng nhập (`customer` sở hữu đơn).
 * **Database Transaction:** **BẮT BUỘC (ACID TRANSACTION VỚI SELECT ... FOR UPDATE)**
-  * **Bước 1:** Khóa hàng (`SELECT ... FOR UPDATE`) ví khách hàng và ví hệ thống theo thứ tự `wallet.id` tăng dần (chống Deadlock).
+  * **Bước 1:** Khóa hàng đơn đặt (`SELECT ... FOR UPDATE`) và kiểm tra quyền sở hữu. Sau đó khóa ví khách hàng và ví hệ thống theo thứ tự `wallet.id` tăng dần để dùng cùng thứ tự khóa với 4.2.
   * **Bước 2:** Cập nhật đơn đặt:
     ```sql
     UPDATE bookings 

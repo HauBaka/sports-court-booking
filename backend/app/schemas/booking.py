@@ -76,6 +76,10 @@ class BookingCreateResponseData(BaseModel):
     hold_expires_at: str
 
 
+class BookingCancelIn(BaseModel):
+    cancel_reason: str
+
+
 class ExpireHoldsResponseData(BaseModel):
     total_expired_bookings_cancelled: int
     total_slots_released: int
