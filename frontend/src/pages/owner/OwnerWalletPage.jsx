@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { getMyWallet, getMyTransactions } from "../../services/walletService";
 import { TX_TYPE_LABEL } from "../../utils/wallet";
 import { formatVnd } from "../../utils/format";

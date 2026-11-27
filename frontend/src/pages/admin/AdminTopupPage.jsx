@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { searchUsers, topupWallet, getTopupHistory } from "../../services/adminService";
+import { searchUsers, topupWallet } from "../../services/adminService";
 import { formatVnd } from "../../utils/format";
 import Icon from "../../components/ui/Icon";
 
@@ -16,13 +16,6 @@ const ROLE_LABEL = { customer: "Khách hàng", owner: "Chủ sân", admin: "Admi
 function initials(name = "") {
   return name.split(" ").filter(Boolean).slice(-2).map((w) => w[0].toUpperCase()).join("");
 }
-function fmtDateTime(iso) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const WD = ["CN","T2","T3","T4","T5","T6","T7"];
-  return `${WD[d.getDay()]} ${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")} · ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-}
-
 export default function AdminTopupPage() {
   /* ── Danh sách người dùng ── */
   const [keyword,   setKeyword]   = useState("");
@@ -40,8 +33,7 @@ export default function AdminTopupPage() {
   const [formErr,  setFormErr]  = useState("");
   const [done,     setDone]     = useState(null);
 
-  /* ── Lần cấp gần đây ── */
-  const [recent, setRecent] = useState([]);
+
 
   /* Load danh sách user */
   useEffect(() => {
@@ -60,13 +52,6 @@ export default function AdminTopupPage() {
       });
     return () => { cancelled = true; };
   }, [query, page, roleFilter, reload]);
-
-  /* Load lịch sử cấp gần đây */
-  useEffect(() => {
-    getTopupHistory({ limit: 5 })
-      .then((r) => setRecent(r.data ?? []))
-      .catch(() => {});
-  }, [done]); // reload sau mỗi lần cấp thành công
 
   const onSearch = (e) => {
     e.preventDefault();
@@ -392,24 +377,6 @@ export default function AdminTopupPage() {
             )}
           </section>
 
-          {/* Lần cấp gần đây */}
-          <section className="card topup__recent">
-            <h3 style={{ marginBottom:12, fontSize:16, fontWeight:500 }}>Lần cấp gần đây</h3>
-            {recent.length === 0 && (
-              <p className="muted small">Chưa có lần cấp nào.</p>
-            )}
-            {recent.map((t) => (
-              <div key={t.id} className="bill-row">
-                <span>
-                  {t.user_name ?? t.user?.name ?? "—"}
-                  <small className="muted mono" style={{ display:"block", fontSize:12, marginTop:2 }}>
-                    {fmtDateTime(t.created_at)}
-                  </small>
-                </span>
-                <span className="num mono amount-in">+{formatVnd(t.amount)}</span>
-              </div>
-            ))}
-          </section>
         </aside>
 
       </div>

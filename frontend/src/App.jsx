@@ -63,13 +63,13 @@ export default function App() {
               <Route element={<ConsoleLayout role="admin" />}>
                 <Route path="admin" element={<AdminTopupPage />} />
                 <Route path="admin/holidays" element={<AdminHolidaysPage />} />
-                <Route path="health" element={<HealthCheckPage />} />
               </Route>
             </Route>
 
             {/* ── Customer / public (topnav) ───────────────────── */}
             <Route element={<CustomerLayout />}>
               <Route path="unauthorized" element={<UnauthorizedPage />} />
+              <Route path="health" element={<HealthCheckPage />} />
 
               {/* Yêu cầu đăng nhập */}
               <Route element={<RequireAuth />}>

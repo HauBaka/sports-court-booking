@@ -10,10 +10,6 @@ export const searchUsers = ({ search, page = 1, limit = 10 } = {}) =>
 export const topupWallet = ({ user_id, amount, reason }) =>
   api.post("/admin/wallet-topups", { user_id, amount, reason });
 
-// GET /admin/wallet-topups — lịch sử cấp tiền gần đây
-export const getTopupHistory = ({ page = 1, limit = 5 } = {}) =>
-  api.get("/admin/wallet-topups", { params: { page, limit } });
-
 // GET /holidays — danh mục ngày lễ (spec 2.9, public)
 export const listHolidays = () => api.get("/holidays");
 

@@ -110,8 +110,26 @@ export default function SlotGrid({ slots = [], selected = [], onToggle, showPric
   );
 }
 
-/** Chú thích màu sắc cho SlotGrid (customer mode) */
-export function SlotLegend() {
+/**
+ * SlotLegend — chú thích màu sắc cho lưới giờ.
+ *
+ * @param {{ owner?: boolean }} props
+ *   owner=true  → chú giải cho view chủ sân (6 mục)
+ *   owner=false → chú giải cho view khách đặt sân (5 mục, mặc định)
+ */
+export function SlotLegend({ owner = false }) {
+  if (owner) {
+    return (
+      <div className="legend">
+        <span><i />Trống</span>
+        <span><i style={{ borderStyle: "dashed", borderColor: "var(--warn)" }} />Chờ cọc</span>
+        <span><i style={{ background: "var(--accent-soft)", borderColor: "rgba(31,107,58,.3)" }} />Đã cọc</span>
+        <span><i style={{ background: "var(--info-soft)", borderColor: "transparent" }} />Hoàn tất</span>
+        <span><i style={{ borderStyle: "dotted" }} />Đã hủy</span>
+        <span><i style={{ background: "var(--surface-3)", borderColor: "transparent" }} />Khóa</span>
+      </div>
+    );
+  }
   return (
     <div className="legend">
       <span><i />Trống</span>

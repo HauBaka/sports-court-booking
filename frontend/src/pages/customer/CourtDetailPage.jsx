@@ -5,6 +5,8 @@ import { getCourtSlots } from "../../services/courtService";
 import { calculatePrice } from "../../services/bookingService";
 import { formatTime, formatVnd } from "../../utils/format";
 import Icon from "../../components/ui/Icon";
+import DayStrip from "../../components/DayStrip";
+import { SlotLegend } from "../../components/SlotGrid";
 
 /* ── Helpers ──────────────────────────────────────────────────── */
 function getTodayStr() {
@@ -18,40 +20,8 @@ function timeToMin(t = "") {
   const [h, m] = t.split(":"); return Number(h)*60 + Number(m||0);
 }
 
-const WD = ["CN","T2","T3","T4","T5","T6","T7"];
 
-/* ── DayStrip ─────────────────────────────────────────────────── */
-function DayStrip({ dates, value, onChange }) {
-  return (
-    <div className="days" role="tablist" aria-label="Chọn ngày">
-      {dates.map((d, i) => {
-        const dt   = new Date(d + "T00:00:00");
-        const dow  = i === 0 ? "Hôm nay" : WD[dt.getDay()];
-        const date = dt.getDate();
-        const mon  = `Th${dt.getMonth()+1}`;
-        return (
-          <button key={d} role="tab" aria-selected={d === value}
-            className={"day" + (d === value ? " on" : "")}
-            onClick={() => onChange(d)}>
-            <span>{dow}</span><b>{date}</b><span>{mon}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
-/* ── SlotLegend ───────────────────────────────────────────────── */
-function SlotLegend() {
-  return (
-    <div className="legend">
-      <span><i />Trống</span>
-      <span><i style={{ background:"var(--accent)", borderColor:"transparent" }} />Đang chọn</span>
-      <span><i style={{ borderStyle:"dashed", borderColor:"rgb(138 83 0/.45)", background:"var(--warn-soft)" }} />Người khác đang giữ</span>
-      <span><i style={{ background:"var(--accent-soft)", borderColor:"rgb(31 107 58/.3)" }} />Đã cọc</span>
-    </div>
-  );
-}
 
 /* ── SlotRow — một hàng sân trong lưới ───────────────────────── */
 function SlotRow({ court, slots, selected, onToggle }) {

@@ -163,11 +163,8 @@ export default function OwnerPricingPage() {
     const d = new Date(); d.setDate(d.getDate()+i); return d;
   });
 
-  /* Sân đầu tiên để preview giá */
+  /* Sân đầu tiên để preview — chưa dùng, giữ courts để render bảng */
   const firstCourt = courts[0];
-  const basePrice  = firstCourt ? (prices[firstCourt.id] ?? 0) : 0;
-
-  const fac = facilities.find((f) => f.id === facId);
 
   return (
     <form onSubmit={handleSave} noValidate>

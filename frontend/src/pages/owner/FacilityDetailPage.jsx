@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useOutletContext, useParams } from "react-router-dom";
-import PricingRulesSection from "../../components/PricingRulesSection";
 import { createCourt, getFacility } from "../../services/facilityService";
 import { formatTime } from "../../utils/format";
 import Icon from "../../components/ui/Icon";
@@ -13,10 +12,6 @@ const SPORTS = [
   { id: 3, label: "Bóng đá mini" },
 ];
 const SPORT_LABEL = Object.fromEntries(SPORTS.map((s) => [s.id, s.label]));
-const ENVIRONMENTS = [
-  { value: "INDOOR",  label: "Trong nhà (Indoor)" },
-  { value: "OUTDOOR", label: "Ngoài trời (Outdoor)" },
-];
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 const HOURS = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2,"0")}:00`);
 
@@ -62,10 +57,6 @@ export default function FacilityDetailPage() {
 
   /* ── Sửa thông tin cơ sở ── */
   const [form,       setForm]       = useState(null);
-  const [formErrors, setFormErrors] = useState({});
-  const [formApiErr, setFormApiErr] = useState("");
-  const [saving,     setSaving]     = useState(false);
-  const [savedMsg,   setSavedMsg]   = useState("");
 
   /* ── Sửa sân con ── */
   const [editCourt,     setEditCourt]     = useState(null); // court object đang sửa
@@ -113,45 +104,6 @@ export default function FacilityDetailPage() {
   }, [id, user.id, navigate]);
 
   const setF = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
-
-  /* Lưu thông tin cơ sở */
-  const handleSave = async (e) => {
-    e.preventDefault();
-    const errs = {};
-    if (!form.name.trim())    errs.name    = "Vui lòng nhập tên cơ sở.";
-    if (!form.address.trim()) errs.address = "Vui lòng nhập địa chỉ.";
-    if (!form.city.trim())    errs.city    = "Vui lòng nhập thành phố.";
-    if (!TIME_RE.test(form.open_time))  errs.open_time  = "Vui lòng chọn giờ mở cửa.";
-    if (!TIME_RE.test(form.close_time)) errs.close_time = "Vui lòng chọn giờ đóng cửa.";
-    if (!errs.open_time && !errs.close_time && form.open_time >= form.close_time)
-      errs.close_time = "Giờ đóng cửa phải sau giờ mở cửa.";
-    setFormErrors(errs);
-    setFormApiErr("");
-    if (Object.keys(errs).length) return;
-
-    setSaving(true);
-    setSavedMsg("");
-    try {
-      const payload = {
-        name:        form.name.trim(),
-        address:     form.address.trim(),
-        city:        form.city.trim(),
-        district:    form.district.trim() || null,
-        latitude:    form.latitude  ? Number(form.latitude)  : null,
-        longitude:   form.longitude ? Number(form.longitude) : null,
-        open_time:   `${form.open_time}:00`,
-        close_time:  `${form.close_time}:00`,
-        description: form.description.trim() || null,
-      };
-      const res = await api.patch(`/facilities/${id}`, payload);
-      setFacility(res.data);
-      setSavedMsg("Đã lưu thay đổi.");
-    } catch (err) {
-      setFormApiErr(err.message || "Không lưu được.");
-    } finally {
-      setSaving(false);
-    }
-  };
 
   /* Thêm sân con */
   const handleAddCourt = async (e) => {
@@ -258,9 +210,6 @@ export default function FacilityDetailPage() {
           <button key={k} type="button" role="tab"
             aria-selected={tab===k} className={tab===k?"on":""}
             onClick={() => setTab(k)}>{l}
-            {k==="info" && Object.keys(formErrors).length > 0 && (
-              <span style={{ width:6,height:6,borderRadius:"50%",background:"var(--danger)",display:"inline-block",marginLeft:6,verticalAlign:1 }} />
-            )}
           </button>
         ))}
       </div>
@@ -269,17 +218,6 @@ export default function FacilityDetailPage() {
       {tab === "info" && (
         <div className="fedit__info">
           <section className="card">
-            {savedMsg && (
-              <div className="notice notice--ok" style={{ marginBottom:16 }}>
-                <Icon name="check" size={16} />{savedMsg}
-              </div>
-            )}
-            {formApiErr && (
-              <div className="notice notice--danger" style={{ marginBottom:16 }}>
-                <Icon name="alert" size={16} />{formApiErr}
-              </div>
-            )}
-
             <div className="form-grid">
               <div className="field full">
                 <label htmlFor="fe-name">Tên cơ sở</label>
