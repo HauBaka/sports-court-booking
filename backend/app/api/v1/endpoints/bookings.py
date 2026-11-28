@@ -277,7 +277,7 @@ def calculate_booking_price_preview(
 def pay_deposit(
     id: int,
     background_tasks: BackgroundTasks,
-    current_user: User = Depends(require_role("customer")),
+    current_user: User = Depends(require_role("customer", "owner")),
     db: Session = Depends(get_db),
 ):
     try:
@@ -371,6 +371,12 @@ def create_booking(
             status_code=status.HTTP_404_NOT_FOUND,
             code="COURT_NOT_FOUND",
             message=f"Sân con với ID {body.court_id} không tồn tại hoặc đã tạm dừng hoạt động.",
+        )
+    if current_user.has_role("owner") and court.facility.owner_id == current_user.id:
+        raise BusinessException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="CANNOT_BOOK_OWN_FACILITY",
+            message="Chủ sân không thể đặt sân tại cơ sở của mình.",
         )
 
     # Lấy các khung giờ thuộc sân con
@@ -622,7 +628,7 @@ def list_bookings(
     is_owner = current_user.has_role("owner")
     if not is_admin:
         if is_owner:
-            query = query.filter(Facility.owner_id == current_user.id)
+            query = query.filter(or_(Facility.owner_id == current_user.id, Booking.user_id == current_user.id))
         else:
             query = query.filter(Booking.user_id == current_user.id)
 
@@ -955,7 +961,7 @@ def _evaluate_cancellation(
 @router.get("/bookings/{id}/cancel-preview", summary="Xem trước số tiền hoàn khi hủy lịch")
 def preview_booking_cancellation(
     id: int,
-    current_user: User = Depends(require_role("customer")),
+    current_user: User = Depends(require_role("customer", "owner")),
     db: Session = Depends(get_db),
 ):
     booking = _get_booking(db, id)
@@ -1032,7 +1038,7 @@ def _refund_cancelled_booking(db: Session, booking: Booking, amounts: Cancellati
 def cancel_booking(
     id: int,
     body: BookingCancelIn,
-    current_user: User = Depends(require_role("customer", "admin")),
+    current_user: User = Depends(require_role("customer", "owner", "admin")),
     db: Session = Depends(get_db),
 ):
     try:

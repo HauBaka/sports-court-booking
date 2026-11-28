@@ -14,7 +14,7 @@
   - **Xác thực:** Bearer Token (JSON Web Token - JWT) HMAC-SHA256 truyền qua Header `Authorization: Bearer <access_token>`.
   - **Phân quyền người dùng (User Roles):** Ánh xạ từ bảng `roles` trong CSDL (`CUSTOMER`, `OWNER`, `ADMIN`) sang định dạng chữ thường trong Token JWT và API:
     - `customer`: Khách hàng tìm kiếm, đặt sân, giữ chỗ, nạp cọc, xem ví cá nhân, hủy lịch và nhận hoàn cọc.
-    - `owner`: Chủ cơ sở thể thao quản lý cơ sở (`facilities`), sân con (`courts`), giờ mở/đóng cửa, bảng giá thời điểm (`pricing_rules`), xác nhận hoàn tất buổi chơi và nhận tiền kết toán.
+    - `owner`: Chủ cơ sở thể thao quản lý cơ sở (`facilities`), sân con (`courts`), giờ mở/đóng cửa, bảng giá thời điểm (`pricing_rules`), xác nhận hoàn tất buổi chơi và nhận tiền kết toán. Chủ sân cũng có thể đặt sân ở cơ sở khác, thanh toán cọc và hủy đơn do mình đặt.
     - `admin`: Quản trị viên cấp cao, quản lý tài khoản người dùng và cấp số dư trải nghiệm (`TOPUP`) vào ví nội bộ (QĐ6).
 
 ---
@@ -791,7 +791,7 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 #### 3.2 Xem trước tính tiền đặt sân và tiền cọc (Frontend Zero-Math)
 * **Endpoint:** `POST /api/v1/bookings/calculate-price`
 * **Mô tả:** **Server tính toán toàn bộ chi phí theo QĐ1, QĐ2, QĐ4**. Trả về mảng chi tiết hệ số cho từng khung giờ riêng biệt (`slots_breakdown`). Frontend tuyệt đối không tự tính.
-* **Quyền truy cập:** Đã đăng nhập (`customer`).
+* **Quyền truy cập:** Đã đăng nhập với vai trò `customer` hoặc `owner`.
 * **Database Transaction:** Không.
 * **Request Body:**
   ```json
@@ -862,7 +862,8 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 * **Endpoint:** `POST /api/v1/bookings`
 * **Mô tả:** Tạo đơn đặt sân tạm thời và khóa giữ chỗ trong 10 phút. Chưa trừ tiền ví, chưa ghi sổ cái `wallet_transactions`.
 * **Múi giờ:** `play_date` và giờ của slot được hiểu theo giờ Việt Nam (UTC+7). Response chuyển `start_at`, `hold_expires_at` sang UTC trước khi gắn `Z`: ví dụ 08:00 giờ Việt Nam là 01:00Z; ngày của timestamp UTC có thể khác `play_date`.
-* **Quyền truy cập:** Đã đăng nhập (`customer`).
+* **Quyền truy cập:** Đã đăng nhập với vai trò `customer` hoặc `owner`. Đơn được tạo với `user_id` của người gọi.
+* **Lỗi nghiệp vụ:** Trả `400 CANNOT_BOOK_OWN_FACILITY` khi `owner` đặt sân thuộc cơ sở do chính mình sở hữu (`facility.owner_id = current_user.id`).
 * **Database Transaction:** **BẮT BUỘC (ACID TRANSACTION VỚI LAZY RELEASE VÀ ROW LOCKING)**
   * **Bước 1 (Dọn dẹp lười giữ chỗ quá hạn - Opportunistic / Lazy Release):**
     Trước khi kiểm tra xung đột, thực thi lệnh UPDATE để giải phóng ngay các đơn hold đã quá hạn trên chính các khung giờ đang đặt:
@@ -925,8 +926,8 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 
 #### 3.4 Thanh toán tiền cọc 30% qua ví nội bộ (Luồng 2 CSDL - `DEPOSITED` & Sinh `DEPOSIT`)
 * **Endpoint:** `POST /api/v1/bookings/{id}/deposit`
-* **Mô tả:** Khách hàng xác nhận thanh toán cọc 30% từ ví nội bộ cho đơn đang giữ chỗ. Tiền cọc được chuyển từ ví khách sang ví hệ thống trung gian (`is_system = true`).
-* **Quyền truy cập:** Đã đăng nhập (`customer` sở hữu đơn).
+* **Mô tả:** Người đặt sân xác nhận thanh toán cọc 30% từ ví nội bộ cho đơn đang giữ chỗ. Tiền cọc được chuyển từ ví của người đặt sang ví hệ thống trung gian (`is_system = true`).
+* **Quyền truy cập:** `customer` hoặc `owner` sở hữu đơn (`booking.user_id = current_user.id`). Trả `403 AUTH_FORBIDDEN` nếu người gọi không phải chủ đơn.
 * **Database Transaction:** **BẮT BUỘC (ACID TRANSACTION VỚI SELECT ... FOR UPDATE)**
   * **Bước 1:** Khóa hàng đơn đặt (`SELECT ... FOR UPDATE`) và kiểm tra quyền sở hữu. Sau đó khóa ví khách hàng và ví hệ thống theo thứ tự `wallet.id` tăng dần để dùng cùng thứ tự khóa với 4.2.
   * **Bước 2:** Cập nhật đơn đặt:
@@ -959,8 +960,8 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 
 #### 3.5 Tra cứu danh sách lịch đặt sân (Paginated List)
 * **Endpoint:** `GET /api/v1/bookings`
-* **Mô tả:** Lấy danh sách lịch đặt sân có phân trang và bộ lọc. Tự động áp dụng phân quyền: `customer` chỉ thấy đơn của mình, `owner` chỉ thấy đơn tại các cơ sở thuộc quyền sở hữu của mình, `admin` thấy toàn bộ.
-* **Quyền truy cập:** Đã đăng nhập (`customer`, `owner`, `admin`).
+* **Mô tả:** Lấy danh sách lịch đặt sân có phân trang và bộ lọc.
+* **Quyền truy cập:** `customer` chỉ thấy đơn do mình đặt. `owner` thấy các đơn tại cơ sở do mình sở hữu và các đơn do mình đặt (`booking.user_id = current_user.id`), kể cả ở cơ sở khác. `admin` thấy toàn bộ.
 * **Query Params:** `status`, `facility_id`, `court_id`, `from_date`, `to_date`, `page=1`, `limit=10`.
   * `from_date` và `to_date` dùng định dạng `YYYY-MM-DD` và lọc trực tiếp theo `play_date` (ngày chơi theo giờ Việt Nam), bao gồm cả hai đầu mốc. Có thể truyền từng mốc riêng. Nếu `from_date > to_date`, trả `400 INVALID_REQUEST`.
 * **Sắp xếp mặc định:** `play_date DESC, start_at DESC, id DESC`, trước khi phân trang.
@@ -1001,7 +1002,7 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 #### 3.6 Xem thông tin chi tiết đơn đặt sân (Single Object)
 * **Endpoint:** `GET /api/v1/bookings/{id}`
 * **Mô tả:** Lấy toàn bộ thông tin chi tiết một đơn đặt sân (khung giờ chi tiết, dịch vụ, bảng kê tiền).
-* **Quyền truy cập:** Đã đăng nhập (`customer` sở hữu đơn, `owner` quản lý cơ sở, `admin`).
+* **Quyền truy cập:** `customer` hoặc `owner` sở hữu đơn (`booking.user_id = current_user.id`). `owner` cũng được xem đơn tại cơ sở do mình sở hữu. `admin` xem được mọi đơn.
 * **Lỗi nghiệp vụ:** `404 BOOKING_NOT_FOUND` nếu ID không tồn tại. Trả `403 AUTH_FORBIDDEN` nếu đơn tồn tại nhưng nằm ngoài phạm vi truy cập của người gọi.
 * **Trường trả về:** `customer_name` là tên người đặt. `cancel_reason` là lý do hủy hoặc `null` nếu chưa có lý do hủy.
 * **Database Transaction:** Không.
@@ -1100,7 +1101,7 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 #### 4.1 Xem trước số tiền hoàn khi hủy lịch (Frontend Zero-Math)
 * **Endpoint:** `GET /api/v1/bookings/{id}/cancel-preview`
 * **Mô tả:** **Server tính toán toàn bộ số tiền hoàn trả theo QĐ5**. Đo khoảng cách từ thời điểm hiện tại (`:now`) đến giờ bắt đầu chơi (`start_at`) và trả về chi tiết chính sách hoàn cọc để Frontend hiển thị hộp thoại xác nhận.
-* **Quyền truy cập:** Đã đăng nhập (`customer` sở hữu đơn đặt).
+* **Quyền truy cập:** Chỉ `customer` hoặc `owner` sở hữu đơn (`booking.user_id = current_user.id`).
 * **Điều kiện hủy:** Đơn phải có trạng thái `PENDING_DEPOSIT` hoặc `DEPOSITED`, và `:now < start_at`. Trả `400 CANNOT_CANCEL_BOOKING` nếu không thỏa điều kiện, `404 BOOKING_NOT_FOUND` nếu đơn không tồn tại, hoặc `403 AUTH_FORBIDDEN` nếu người gọi không có quyền.
 * **Thời gian còn lại:** `hours_until_start` trong phản hồi 4.1 và 4.2 được làm tròn đến một chữ số thập phân. Mức hoàn cọc được tính theo thời gian thực đến `start_at` trước khi làm tròn.
 * **Đơn `PENDING_DEPOSIT`:** Trả `deposit_amount_paid`, `refund_percentage`, `penalty_percentage`, `refund_amount_to_player` và `penalty_amount_to_facility` đều bằng `0`. `rule_matched` và `customer_display_message` cho biết đơn chưa thanh toán cọc. Xem trước chỉ đọc dữ liệu.
@@ -1135,8 +1136,8 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 
 #### 4.2 Thực hiện hủy lịch và xử lý cọc tự động (Luồng 3 CSDL - Sinh `REFUND` và/hoặc `FORFEIT`)
 * **Endpoint:** `POST /api/v1/bookings/{id}/cancel`
-* **Mô tả:** Khách hàng hủy đơn đặt sân (áp dụng cho cả đơn `PENDING_DEPOSIT` và `DEPOSITED`). Nếu đơn đã cọc (`DEPOSITED`), tự động hoàn cọc vào ví khách (`REFUND`) và bồi thường cho chủ cơ sở (`FORFEIT`).
-* **Quyền truy cập:** Đã đăng nhập (`customer` sở hữu đơn hoặc `admin`).
+* **Mô tả:** Hủy đơn đặt sân ở trạng thái `PENDING_DEPOSIT` hoặc `DEPOSITED`. Nếu đơn đã cọc (`DEPOSITED`), hệ thống tự động hoàn cọc vào ví người đặt (`REFUND`) và bồi thường cho chủ cơ sở (`FORFEIT`).
+* **Quyền truy cập:** `customer` hoặc `owner` sở hữu đơn (`booking.user_id = current_user.id`), hoặc `admin`.
 * **Lỗi nghiệp vụ:** `404 BOOKING_NOT_FOUND` nếu đơn không tồn tại, `403 AUTH_FORBIDDEN` nếu người gọi không có quyền, `400 CANNOT_CANCEL_BOOKING` nếu trạng thái hoặc thời điểm không cho phép hủy.
 * **Database Transaction:** **BẮT BUỘC (ACID TRANSACTION VỚI ROW LOCKING)**
   * **Bước 1:** Khóa hàng (`SELECT ... FOR UPDATE`) đơn đặt trong bảng `bookings`, kiểm tra quyền truy cập rồi đọc trạng thái và thời điểm để áp dụng điều kiện hủy tại 4.1. Nếu không thỏa điều kiện hủy, rollback và trả `400 CANNOT_CANCEL_BOOKING`.
@@ -1541,6 +1542,7 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 | | `PRICING_NOT_FOUND` | **404** | Chưa cấu hình bảng giá cơ sở hoặc bảng giá theo thời điểm cho khung giờ này. |
 | **4. Đặt sân & Giữ chỗ** | `BOOKING_NOT_FOUND` | **404** | Không tìm thấy đơn đặt sân. |
 | | `SLOT_ALREADY_BOOKED` | **409** | Khung giờ đã có người đặt cọc hoặc đang trong thời gian giữ chỗ hợp lệ (QĐ3). |
+| | `CANNOT_BOOK_OWN_FACILITY` | **400** | Chủ sân không thể đặt sân tại cơ sở do mình sở hữu. |
 | | `INVALID_BOOKING_TIME` | **400** | Khung giờ đặt nằm ngoài giờ hoạt động của sân hoặc cơ sở, hoặc giờ bắt đầu không ở tương lai khi đặt sân hay tạo bài ghép đội. |
 | | `CANNOT_CANCEL_BOOKING` | **400** | Chỉ đơn `PENDING_DEPOSIT` hoặc `DEPOSITED` mới được hủy và chỉ khi `:now < start_at`. |
 | | `CANNOT_DEPOSIT_EXPIRED_BOOKING` | **400** | Đơn đặt sân đã quá hạn giữ chỗ 10 phút, không thể thanh toán cọc. |
