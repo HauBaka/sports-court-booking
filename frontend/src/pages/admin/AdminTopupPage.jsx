@@ -1,49 +1,57 @@
 import { useEffect, useState } from "react";
 import { searchUsers, topupWallet } from "../../services/adminService";
 import { formatVnd } from "../../utils/format";
-import "../../styles/wallet.css";
-import "../../styles/admin.css";
+import Icon from "../../components/ui/Icon";
 
-const LIMIT = 10;
-const MAX_REASON = 500; // khớp giới hạn của backend
-const MAX_DIGITS = 12; // chặn gõ quá dài, tránh số vượt giới hạn an toàn
-const QUICK_AMOUNTS = [50000, 100000, 500000];
+const PAGE_LIMIT = 5;
+const MAX_REASON = 500;
+const QUICK = [
+  { v: 100_000,   l: "100k" },
+  { v: 200_000,   l: "200k" },
+  { v: 500_000,   l: "500k" },
+  { v: 1_000_000, l: "1 triệu" },
+];
+const ROLE_LABEL = { customer: "Khách hàng", owner: "Chủ sân", admin: "Admin" };
 
-const ROLE_LABEL = {
-  customer: "Khách hàng",
-  owner: "Chủ sân",
-  admin: "Quản trị viên",
-};
-
+function initials(name = "") {
+  return name.split(" ").filter(Boolean).slice(-2).map((w) => w[0].toUpperCase()).join("");
+}
 export default function AdminTopupPage() {
-  // ── Tìm người dùng ──
-  const [keyword, setKeyword] = useState(""); // ô đang gõ
-  const [query, setQuery] = useState(""); // từ khóa đã bấm Tìm
-  const [page, setPage] = useState(1);
-  const [reloadKey, setReloadKey] = useState(0);
-  const [list, setList] = useState({ status: "loading", items: [], meta: null, error: "" });
+  /* ── Danh sách người dùng ── */
+  const [keyword,   setKeyword]   = useState("");
+  const [query,     setQuery]     = useState("");
+  const [roleFilter,setRoleFilter]= useState("all");
+  const [page,      setPage]      = useState(1);
+  const [reload,    setReload]    = useState(0);
+  const [userList,  setUserList]  = useState({ status: "loading", items: [], meta: null, error: "" });
 
-  // ── Cấp tiền ──
+  /* ── Form cấp tiền ── */
   const [selected, setSelected] = useState(null);
-  const [amount, setAmount] = useState("");
-  const [reason, setReason] = useState("");
-  const [step, setStep] = useState("form"); // form | confirm | sending
-  const [error, setError] = useState("");
-  const [done, setDone] = useState(null);
+  const [amount,   setAmount]   = useState("");
+  const [reason,   setReason]   = useState("");
+  const [step,     setStep]     = useState("form"); // form | confirm | sending
+  const [formErr,  setFormErr]  = useState("");
+  const [done,     setDone]     = useState(null);
 
+
+
+  /* Load danh sách user */
   useEffect(() => {
     let cancelled = false;
-    setList((l) => ({ ...l, status: "loading" }));
-    searchUsers({ search: query, page, limit: LIMIT })
+    setUserList((s) => ({ ...s, status: "loading" }));
+    const params = { page, limit: PAGE_LIMIT };
+    if (query) params.search = query;
+    searchUsers(params)
       .then((res) => {
-        if (!cancelled) setList({ status: "ready", items: res.data, meta: res.meta, error: "" });
+        if (!cancelled)
+          setUserList({ status: "ready", items: res.data ?? [], meta: res.meta, error: "" });
       })
       .catch((err) => {
         if (!cancelled)
-          setList({ status: "error", items: [], meta: null, error: err.message || "Không tải được danh sách." });
+          setUserList({ status: "error", items: [], meta: null, error: err.message || "Không tải được danh sách." });
       });
     return () => { cancelled = true; };
-  }, [query, page, reloadKey]);
+  }, [query, page, roleFilter, reload]);
 
   const onSearch = (e) => {
     e.preventDefault();
@@ -51,228 +59,327 @@ export default function AdminTopupPage() {
     setQuery(keyword.trim());
   };
 
-  const selectUser = (user) => {
-    setSelected(user);
+  const selectUser = (u) => {
+    setSelected(u);
     setAmount("");
     setReason("");
     setStep("form");
-    setError("");
+    setFormErr("");
     setDone(null);
   };
 
-  const onAmountChange = (e) => {
-    // chỉ nhận chữ số
-    setAmount(e.target.value.replace(/\D/g, "").slice(0, MAX_DIGITS));
-  };
-
-  const amountNumber = Number(amount);
-  const amountOk = amount !== "" && Number.isSafeInteger(amountNumber) && amountNumber > 0;
-  const reasonTrimmed = reason.trim();
-  const reasonOk = reasonTrimmed.length > 0 && reasonTrimmed.length <= MAX_REASON;
-  const canSubmit = Boolean(selected) && amountOk && reasonOk;
+  const n = Number(amount.replace(/\D/g, ""));
+  const reasonOk = reason.trim().length > 0 && reason.trim().length <= MAX_REASON;
+  const canSubmit = selected && n > 0 && reasonOk;
 
   const onSubmit = (e) => {
     e.preventDefault();
     if (!canSubmit) return;
-    setError("");
+    setFormErr("");
     setStep("confirm");
   };
 
   const onConfirm = async () => {
-    if (!canSubmit || step === "sending") return;
+    if (step === "sending") return;
     setStep("sending");
-    setError("");
+    setFormErr("");
     try {
-      const res = await topupWallet({
-        user_id: selected.id,
-        amount: amountNumber,
-        reason: reasonTrimmed,
-      });
-      const newBalance = res.data.new_balance;
-      setList((l) => ({
-        ...l,
-        items: l.items.map((u) => (u.id === selected.id ? { ...u, balance: newBalance } : u)),
+      const res = await topupWallet({ user_id: selected.id, amount: n, reason: reason.trim() });
+      const newBal = res.data.new_balance;
+      setUserList((s) => ({
+        ...s,
+        items: s.items.map((u) => u.id === selected.id ? { ...u, balance: newBal } : u),
       }));
-      setSelected((s) => ({ ...s, balance: newBalance }));
-      setDone({ name: selected.name, amount: res.data.granted_amount, balance: newBalance });
+      setSelected((s) => ({ ...s, balance: newBal }));
+      setDone({ name: selected.name, amount: res.data.granted_amount, before: selected.balance, after: newBal });
       setAmount("");
       setReason("");
       setStep("form");
     } catch (err) {
-      setError(err.message || "Không cấp được tiền. Vui lòng thử lại.");
+      setFormErr(err.message || "Không cấp được tiền. Vui lòng thử lại.");
       setStep("form");
     }
   };
 
-  const { status, items, meta, error: listError } = list;
+  const { status, items, meta, error: listError } = userList;
   const sending = step === "sending";
+  const bal = selected?.balance ?? 0;
 
   return (
-    <div className="wallet-page admin-page">
-      <div className="wallet-head">
-        <h1>Cấp tiền vào ví</h1>
-        <p>Tìm người dùng, nhập số tiền và lý do để cấp số dư trải nghiệm.</p>
+    <>
+      <div className="page-head">
+        <div><h1>Cấp tiền vào ví</h1></div>
       </div>
 
-      <div className="admin-grid">
-        {/* ── Cột trái: tìm và chọn người dùng ── */}
-        <section className="history-card" aria-label="Danh sách người dùng">
-          <form className="admin-search" role="search" onSubmit={onSearch}>
-            <input
-              type="search"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              placeholder="Tìm theo tên, email hoặc số điện thoại"
-              aria-label="Tìm người dùng"
-            />
-            <button type="submit" className="wallet-retry">Tìm</button>
-          </form>
+      <div className="topup">
 
-          {status === "loading" && <p className="wallet-state" aria-busy="true">Đang tải...</p>}
+        {/* ── Cột trái: bảng người dùng ── */}
+        <section className="card card--flush topup__users">
 
-          {status === "error" && (
-            <div className="wallet-state">
-              <p className="wallet-error" role="alert">{listError}</p>
-              <button className="wallet-retry" type="button" onClick={() => setReloadKey((k) => k + 1)}>
-                Thử lại
-              </button>
-            </div>
-          )}
-
-          {status === "ready" && items.length === 0 && (
-            <p className="wallet-state">
-              {query ? `Không tìm thấy người dùng nào khớp “${query}”.` : "Chưa có người dùng nào."}
-            </p>
-          )}
-
-          {status === "ready" && items.length > 0 && (
-            <>
-              <p className="history-total">{meta.total} người dùng</p>
-              <ul className="tx-list">
-                {items.map((u) => {
-                  const isSelected = selected?.id === u.id;
-                  return (
-                    <li key={u.id} className={`user-row${isSelected ? " selected" : ""}`}>
-                      <div className="tx-main">
-                        <div className="tx-type">{u.name}</div>
-                        <div className="tx-meta">{u.email} · {u.phone}</div>
-                        <div className="tx-meta">
-                          {u.roles.map((r) => ROLE_LABEL[r] ?? r).join(", ")} · Số dư {formatVnd(u.balance)}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        className="chip"
-                        aria-pressed={isSelected}
-                        onClick={() => selectUser(u)}
-                      >
-                        {isSelected ? "Đang chọn" : "Chọn"}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-
-              {meta.total_pages > 1 && (
-                <div className="pager">
-                  <button type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Trước</button>
-                  <span>Trang {meta.page} / {meta.total_pages}</span>
-                  <button type="button" disabled={page >= meta.total_pages} onClick={() => setPage((p) => p + 1)}>Sau</button>
-                </div>
-              )}
-            </>
-          )}
-        </section>
-
-        {/* ── Cột phải: form cấp tiền ── */}
-        <section className="history-card topup-card" aria-label="Cấp tiền">
-          {!selected && (
-            <p className="wallet-state">Chọn một người dùng ở danh sách để cấp tiền.</p>
-          )}
-
-          {selected && (
-            <form onSubmit={onSubmit} noValidate>
-              <h2 className="topup-title">Cấp tiền cho {selected.name}</h2>
-              <p className="tx-meta">{selected.email} · Số dư hiện tại {formatVnd(selected.balance)}</p>
-
-              {done && (
-                <p className="notice success" role="status">
-                  Đã cấp {formatVnd(done.amount)} cho {done.name}. Số dư mới: {formatVnd(done.balance)}.
-                </p>
-              )}
-              {error && <p className="wallet-error" role="alert">{error}</p>}
-
-              <label className="topup-label" htmlFor="topup-amount">Số tiền (₫)</label>
+          {/* Thanh tìm + filter role */}
+          <div className="topup__bar">
+            <form
+              className="input-group"
+              style={{ flex: 1, maxWidth: 360 }}
+              role="search"
+              onSubmit={onSearch}
+            >
               <input
-                id="topup-amount"
-                className="topup-input"
-                inputMode="numeric"
-                autoComplete="off"
-                value={amount}
-                onChange={onAmountChange}
-                disabled={step !== "form"}
-                placeholder="Ví dụ 100000"
+                className="input"
+                placeholder="Tìm theo tên, email hoặc SĐT"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                aria-label="Tìm người dùng"
               />
-              <div className="topup-hint">
-                {amountOk ? `= ${formatVnd(amountNumber)}` : "Nhập số nguyên lớn hơn 0."}
-              </div>
-              <div className="filter-chips">
-                {QUICK_AMOUNTS.map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    className="chip"
-                    disabled={step !== "form"}
-                    onClick={() => setAmount(String(v))}
-                  >
-                    {formatVnd(v)}
-                  </button>
+              <button type="submit" className="icon-btn" style={{ position: "absolute", right: 6, top: 6 }}>
+                <Icon name="search" size={16} />
+              </button>
+            </form>
+            <div className="seg">
+              {[["all","Tất cả"],["customer","Khách hàng"],["owner","Chủ sân"]].map(([k,l]) => (
+                <button key={k} type="button"
+                  className={roleFilter === k ? "on" : ""}
+                  onClick={() => { setRoleFilter(k); setPage(1); }}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Danh sách */}
+          <div className="topup__list">
+            {status === "loading" && (
+              <div className="stack" style={{ "--gap":"0", padding: "8px 24px" }} aria-hidden="true">
+                {[1,2,3,4,5].map((i) => (
+                  <div key={i} className="skel-row">
+                    <div className="skel skel-line" style={{ width:32, height:32, borderRadius:"50%" }} />
+                    <div className="skel skel-line" style={{ width:"55%" }} />
+                    <div className="skel skel-line" style={{ width:"20%", justifySelf:"end" }} />
+                  </div>
                 ))}
               </div>
+            )}
 
-              <label className="topup-label" htmlFor="topup-reason">Lý do (bắt buộc)</label>
-              <textarea
-                id="topup-reason"
-                className="topup-input"
-                rows={3}
-                maxLength={MAX_REASON}
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                disabled={step !== "form"}
-                placeholder="Ví dụ: Cấp số dư trải nghiệm đồ án môn học"
-              />
-              <div className="topup-hint">
-                {reasonTrimmed.length === 0 && reason.length > 0
-                  ? "Lý do không được chỉ có khoảng trắng."
-                  : `${reasonTrimmed.length}/${MAX_REASON}`}
+            {status === "error" && (
+              <div className="notice notice--danger" style={{ margin:16 }}>
+                <Icon name="alert" size={16} />{listError}
+                <button className="btn btn--sm btn--ghost" style={{ marginLeft:"auto" }}
+                  onClick={() => setReload((k) => k+1)}>Thử lại</button>
               </div>
+            )}
 
-              {step === "form" && (
-                <button type="submit" className="wallet-retry topup-submit" disabled={!canSubmit}>
-                  Cấp tiền
-                </button>
-              )}
+            {status === "ready" && items.length === 0 && (
+              <p className="muted small" style={{ padding:"24px 24px" }}>
+                {query ? `Không tìm thấy "${query}".` : "Chưa có người dùng nào."}
+              </p>
+            )}
 
-              {step !== "form" && (
-                <div className="topup-confirm" role="group" aria-label="Xác nhận cấp tiền">
-                  <p>
-                    Cấp <strong>{formatVnd(amountNumber)}</strong> cho <strong>{selected.name}</strong>?
-                    Giao dịch này không thể hoàn tác.
-                  </p>
-                  <div className="topup-confirm-actions">
-                    <button type="button" className="chip" disabled={sending} onClick={() => setStep("form")}>
-                      Quay lại
-                    </button>
-                    <button type="button" className="wallet-retry" disabled={sending} onClick={onConfirm}>
-                      {sending ? "Đang cấp..." : "Xác nhận cấp"}
-                    </button>
+            {status === "ready" && items.length > 0 && (() => {
+              const filtered = roleFilter === "all"
+                ? items
+                : items.filter((u) => (u.roles ?? (u.role ? [u.role] : [])).includes(roleFilter));
+              return filtered.length === 0 ? (
+                <p className="muted small" style={{ padding:"24px 24px" }}>
+                  Không có người dùng nào với vai trò này trong trang hiện tại.
+                </p>
+              ) : (
+              <div className="table-wrap flat">
+                <table className="table table--pick">
+                  <thead>
+                    <tr>
+                      <th>Người dùng</th>
+                      <th>Vai trò</th>
+                      <th className="r">Số dư</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((u) => {
+                      const isOn = selected?.id === u.id;
+                      const roles = u.roles ?? (u.role ? [u.role] : []);
+                      return (
+                        <tr key={u.id}
+                          className={isOn ? "on" : ""}
+                          onClick={() => selectUser(u)}
+                          tabIndex={0}
+                          aria-selected={isOn}
+                          onKeyDown={(e) => e.key === "Enter" && selectUser(u)}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <td>
+                            <div className="row" style={{ "--gap":"10px" }}>
+                              <span className="avatar" style={{ width:32, height:32, fontSize:12, flexShrink:0 }}>
+                                {initials(u.name)}
+                              </span>
+                              <span>
+                                {u.name}
+                                <small className="muted" style={{ display:"block" }}>{u.email}</small>
+                              </span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className="tag">
+                              {roles.map((r) => ROLE_LABEL[r] ?? r).join(", ")}
+                            </span>
+                          </td>
+                          <td className="r num">
+                            {formatVnd(u.balance ?? 0)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              );
+            })()}
+
+            {/* Phân trang */}
+            {status === "ready" && meta && meta.total_pages > 1 && (
+              <div className="topup__pager">
+                <nav className="pager" aria-label="Phân trang">
+                  <span className="pager__count mono">
+                    {(page-1)*PAGE_LIMIT+1}–{Math.min(meta.total, page*PAGE_LIMIT)} / {meta.total}
+                  </span>
+                  <button className="pager__btn" disabled={page<=1}
+                    onClick={() => setPage((p) => p-1)} aria-label="Trang trước">
+                    <Icon name="chevL" size={16} />
+                  </button>
+                  <button className="pager__btn" disabled={page>=meta.total_pages}
+                    onClick={() => setPage((p) => p+1)} aria-label="Trang sau">
+                    <Icon name="chevR" size={16} />
+                  </button>
+                </nav>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── Cột phải: form + recent ── */}
+        <aside className="topup__side">
+
+          {/* Form cấp tiền */}
+          <section className="card topup__form" aria-label="Cấp tiền">
+            {!selected && (
+              <p className="muted small" style={{ padding:"8px 0" }}>
+                Chọn một người dùng ở danh sách để cấp tiền.
+              </p>
+            )}
+
+            {selected && (
+              <form onSubmit={onSubmit} noValidate>
+                {/* Header người được chọn */}
+                <div className="row" style={{ "--gap":"12px", marginBottom:16 }}>
+                  <span className="avatar">{initials(selected.name)}</span>
+                  <div>
+                    <div style={{ fontWeight:500 }}>{selected.name}</div>
+                    <div className="small muted">
+                      {(selected.roles ?? [selected.role]).map((r) => ROLE_LABEL[r] ?? r).join(", ")}
+                      {" · "}{selected.email}
+                    </div>
                   </div>
                 </div>
-              )}
-            </form>
-          )}
-        </section>
+
+                {/* Số dư hiện tại */}
+                <div className="topup__bal">
+                  <span className="small muted">Số dư hiện tại</span>
+                  <b className="mono">{formatVnd(bal)}</b>
+                </div>
+
+                {/* Thông báo kết quả */}
+                {done?.name === selected.name && (
+                  <div className="notice notice--ok" style={{ marginBottom:12 }}>
+                    <Icon name="check" size={16} />
+                    Đã cấp <b className="mono">+{formatVnd(done.amount)}</b> cho {done.name}.
+                    Số dư <span className="mono">{formatVnd(done.before)}</span> → <b className="mono">{formatVnd(done.after)}</b>
+                  </div>
+                )}
+                {formErr && (
+                  <div className="notice notice--danger" style={{ marginBottom:12 }}>
+                    <Icon name="alert" size={16} />{formErr}
+                  </div>
+                )}
+
+                {/* Input số tiền */}
+                <div className="field" style={{ marginBottom:8 }}>
+                  <label htmlFor="topup-amt">Số tiền cấp (đ)</label>
+                  <input
+                    id="topup-amt"
+                    className="input mono"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder="200.000"
+                    value={n ? n.toLocaleString("vi-VN") : ""}
+                    onChange={(e) => setAmount(e.target.value.replace(/\D/g,""))}
+                    disabled={step !== "form"}
+                    aria-invalid={amount !== "" && n <= 0}
+                  />
+                </div>
+
+                {/* Quick amounts */}
+                <div className="topup__quick">
+                  {QUICK.map(({ v, l }) => (
+                    <button key={v} type="button"
+                      className={"chip" + (n === v ? " on" : "")}
+                      disabled={step !== "form"}
+                      onClick={() => { setAmount(String(v)); setDone(null); }}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Input nội dung */}
+                <div className="field" style={{ marginTop:12 }}>
+                  <label htmlFor="topup-reason">Nội dung (bắt buộc)</label>
+                  <input
+                    id="topup-reason"
+                    className="input"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    disabled={step !== "form"}
+                    placeholder="Admin cấp tiền trải nghiệm"
+                    maxLength={MAX_REASON}
+                  />
+                </div>
+
+                {/* Preview số dư sau */}
+                <div className="bill-row topup__after">
+                  <span className="muted small">Số dư sau khi cấp</span>
+                  <span className="num mono">{formatVnd(bal + (n || 0))}</span>
+                </div>
+
+                {/* Nút submit / confirm */}
+                {step === "form" && (
+                  <button className="btn btn--primary btn--block" type="submit" disabled={!canSubmit}>
+                    Cấp {n ? formatVnd(n) : "tiền"} cho {selected.name.split(" ").at(-1)}
+                  </button>
+                )}
+
+                {step !== "form" && (
+                  <div className="topup__confirm">
+                    <p>
+                      Cấp <b className="mono">{formatVnd(n)}</b> cho <b>{selected.name}</b>?
+                      <br />
+                      <span className="muted small">Giao dịch này không thể hoàn tác.</span>
+                    </p>
+                    <div className="row" style={{ "--gap":"8px", justifyContent:"flex-end", marginTop:12 }}>
+                      <button type="button" className="btn btn--ghost btn--sm"
+                        disabled={sending} onClick={() => setStep("form")}>
+                        Quay lại
+                      </button>
+                      <button type="button" className="btn btn--primary btn--sm"
+                        disabled={sending} onClick={onConfirm}>
+                        {sending ? "Đang cấp…" : "Xác nhận cấp"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </form>
+            )}
+          </section>
+
+        </aside>
+
       </div>
-    </div>
+    </>
   );
 }

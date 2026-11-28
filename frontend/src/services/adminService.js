@@ -9,3 +9,10 @@ export const searchUsers = ({ search, page = 1, limit = 10 } = {}) =>
 // POST /admin/wallet-topups — admin cấp tiền vào ví người dùng (spec 5.3)
 export const topupWallet = ({ user_id, amount, reason }) =>
   api.post("/admin/wallet-topups", { user_id, amount, reason });
+
+// GET /holidays — danh mục ngày lễ (spec 2.9, public)
+export const listHolidays = () => api.get("/holidays");
+
+// POST /admin/holidays — thêm ngày lễ mới (spec 2.10, admin only)
+export const createHoliday = ({ name, holiday_date, recurring_yearly }) =>
+  api.post("/admin/holidays", { name, holiday_date, recurring_yearly });

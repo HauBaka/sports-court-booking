@@ -15,3 +15,7 @@ export const getBookingDetail = (bookingId) =>
 // POST /api/v1/bookings/:id/deposit — thanh toán cọc 30% qua ví (spec 3.4).
 export const depositBooking = (bookingId) =>
   api.post(`/bookings/${bookingId}/deposit`);
+
+// GET /api/v1/bookings — danh sách lịch đặt (spec 3.5). Customer tự động thấy đơn của mình.
+export const listBookings = (params = {}) =>
+  api.get("/bookings", { params });
