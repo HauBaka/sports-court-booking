@@ -1,14 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { listFacilities } from "../../services/facilityService";
 import { formatVnd } from "../../utils/format";
-import Icon from "../../components/ui/Icon";
-import Pager from "../../components/ui/Pager";
+import "../../styles/find-courts.css";
 
-/* Leaflet default icon fix */
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -18,42 +16,39 @@ L.Icon.Default.mergeOptions({
 
 const SPORTS = [
   { id: "",  name: "Tất cả môn" },
-  { id: "1", name: "Cầu lông" },
-  { id: "2", name: "Pickleball" },
-  { id: "3", name: "Bóng đá mini" },
+  { id: 1,   name: "Cầu lông" },
+  { id: 2,   name: "Pickleball" },
+  { id: 3,   name: "Bóng đá mini" },
 ];
 
-const PAGE_LIMIT = 6;
-const DEFAULT_CENTER = [10.7769, 106.7009];
-const DEFAULT_ZOOM   = 12;
+const PAGE_LIMIT = 10;
 
 export default function FindCourtsPage() {
-  /* ── Bộ lọc (đang nhập) ── */
-  const [q,        setQ]        = useState("");
-  const [city,     setCity]     = useState("");
-  const [district, setDistrict] = useState("");
-  const [sport,    setSport]    = useState("");
+  // ── Bộ lọc (đang nhập) ──
+  const [search,  setSearch]  = useState("");
+  const [city,    setCity]    = useState("");
+  const [sportId, setSportId] = useState("");
 
-  /* ── Dữ liệu ── */
-  const [items,      setItems]      = useState([]);
-  const [total,      setTotal]      = useState(0);
+  // ── Params đã áp dụng ──
+  const [applied, setApplied] = useState({ search: "", city: "", sportId: "" });
+
+  // ── Phân trang ──
+  const [page,       setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [page,       setPage]       = useState(0);
-  const [status,     setStatus]     = useState("loading");
-  const [errorMsg,   setErrorMsg]   = useState("");
+  const [total,      setTotal]      = useState(0);
 
-  const [hot, setHot] = useState(null);
-  const nav = useNavigate();
-  const resultsRef = useRef(null);
+  // ── Dữ liệu ──
+  const [items,    setItems]    = useState([]);
+  const [status,   setStatus]   = useState("loading");
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const fetchFacilities = useCallback(async (params, pg0) => {
+  const fetchFacilities = useCallback(async (params, pg) => {
     setStatus("loading");
     try {
-      const query = { page: pg0 + 1, limit: PAGE_LIMIT };
-      if (params.q.trim())       query.search   = params.q.trim();
+      const query = { page: pg, limit: PAGE_LIMIT };
+      if (params.search.trim())  query.search   = params.search.trim();
       if (params.city.trim())    query.city     = params.city.trim();
-      if (params.district.trim())query.district = params.district.trim();
-      if (params.sport)          query.sport_id = params.sport;
+      if (params.sportId !== "") query.sport_id = params.sportId;
       const res = await listFacilities(query);
       setItems(res.data ?? []);
       setTotal(res.meta?.total ?? 0);
@@ -65,274 +60,241 @@ export default function FindCourtsPage() {
     }
   }, []);
 
-  const [applied, setApplied] = useState({ q: "", city: "", district: "", sport: "" });
+  useEffect(() => { fetchFacilities(applied, 1); }, [fetchFacilities]); // eslint-disable-line
 
-  useEffect(() => { fetchFacilities(applied, 0); }, [fetchFacilities]); // eslint-disable-line
-
-  const applyFilters = () => {
-    const params = { q, city, district, sport };
-    setApplied(params);
-    setPage(0);
-    fetchFacilities(params, 0);
+  const goToPage = (pg) => {
+    setPage(pg);
+    fetchFacilities(applied, pg);
+    document.querySelector(".fc-main")?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const goPage = (pg0) => {
-    setPage(pg0);
-    fetchFacilities(applied, pg0);
-    resultsRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  const handleSearch = () => {
+    const params = { search, city, sportId };
+    setApplied(params);
+    setPage(1);
+    fetchFacilities(params, 1);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") handleSearch();
   };
 
   return (
-    <main className="page">
-      <div className="wrap">
-        <h1 className="sr-only">Tìm sân còn trống</h1>
+    <div className="fc-page">
+      {/* Hero */}
+      <div className="fc-hero">
+        <div className="fc-hero-inner">
+          <h1 className="fc-hero-title">Tìm sân thể thao</h1>
+          <p className="fc-hero-sub">Tìm sân gần bạn, đặt ngay trong vài giây</p>
+        </div>
+      </div>
 
-        {/* ── Search bar: tên + thành phố + quận ── */}
-        <form
-          className="sbar"
-          role="search"
-          onSubmit={(e) => { e.preventDefault(); applyFilters(); }}
-        >
-          <label className="sbar__seg sbar__seg--q">
-            <span>Tìm theo tên</span>
+      {/* Filter bar */}
+      <div className="fc-filter-bar" onKeyDown={handleKeyDown}>
+        <div className="fc-filter-group fc-filter-group--search">
+          <label className="fc-filter-label">Tên cơ sở</label>
+          <div className="fc-search-wrap">
             <input
-              placeholder="Tên sân hoặc tên đường, ví dụ Cộng Hòa"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
+              className="fc-search-input"
+              type="text"
+              placeholder="Nhập tên sân..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
-            {q && (
-              <button
-                type="button"
-                className="sbar__clear"
-                aria-label="Xóa từ khóa"
-                onClick={() => setQ("")}
-              >
-                <Icon name="x" size={12} />
-              </button>
+            {search && (
+              <button className="fc-search-clear" type="button" onClick={() => setSearch("")} title="Xóa">✕</button>
             )}
-          </label>
+          </div>
+        </div>
 
-          <label className="sbar__seg">
-            <span>Thành phố</span>
+        <div className="fc-filter-group">
+          <label className="fc-filter-label">Thành phố</label>
+          <div className="fc-search-wrap">
             <input
-              className="sbar__sel"
-              placeholder="TPHCM"
+              className="fc-search-input"
+              type="text"
+              placeholder="VD: Hồ Chí Minh"
               value={city}
               onChange={(e) => setCity(e.target.value)}
             />
-          </label>
-
-          <label className="sbar__seg">
-            <span>Quận, huyện</span>
-            <input
-              className="sbar__sel"
-              placeholder="Tất cả quận"
-              value={district}
-              onChange={(e) => setDistrict(e.target.value)}
-            />
-          </label>
-
-          <button className="sbar__go" type="submit">
-            <Icon name="search" size={18} />Tìm sân
-          </button>
-        </form>
-
-        {/* ── Chip môn + số kết quả ── */}
-        <div className="result-bar">
-          <div className="chips" role="group" aria-label="Môn thể thao">
-            {SPORTS.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                className={"chip" + (sport === s.id ? " on" : "")}
-                onClick={() => {
-                  setSport(s.id);
-                  const np = { ...applied, sport: s.id };
-                  setApplied(np);
-                  setPage(0);
-                  fetchFacilities(np, 0);
-                }}
-              >
-                {s.name}
-              </button>
-            ))}
+            {city && (
+              <button className="fc-search-clear" type="button" onClick={() => setCity("")} title="Xóa">✕</button>
+            )}
           </div>
-          <span className="muted small">
-            {status === "loading"
-              ? "Đang tìm…"
-              : `${total} cơ sở${applied.district ? ` ở ${applied.district}` : applied.city ? ` ở ${applied.city}` : ""}`}
-          </span>
         </div>
 
-        {/* ── Split: danh sách | bản đồ ── */}
-        <div className="split split--search">
+        <div className="fc-filter-group">
+          <label className="fc-filter-label">Môn thể thao</label>
+          <select
+            className="fc-select"
+            value={sportId}
+            onChange={(e) => setSportId(e.target.value === "" ? "" : Number(e.target.value))}
+          >
+            {SPORTS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
 
-          <div className="results" ref={resultsRef}>
-            {status === "loading" && (
-              <div className="fac-grid stagger">
-                {[0,1,2,3].map((i) => <SkeletonCard key={i} />)}
+        <div className="fc-filter-action">
+          <label className="fc-filter-label">&nbsp;</label>
+          <button className="fc-btn-search" type="button" onClick={handleSearch}>
+            Tìm sân
+          </button>
+        </div>
+      </div>
+
+      {/* Body: danh sách + bản đồ */}
+      <div className="fc-body">
+
+        {/* Cột trái */}
+        <div className="fc-main">
+          {status === "loading" && (
+            <div className="fc-state-box">
+              <div className="fc-spinner" />
+              <p>Đang tải danh sách sân...</p>
+            </div>
+          )}
+
+          {status === "error" && (
+            <div className="fc-state-box">
+              <p className="fc-error-msg">{errorMsg}</p>
+              <button className="fc-btn-search" type="button" onClick={() => fetchFacilities(applied, page)}>
+                Thử lại
+              </button>
+            </div>
+          )}
+
+          {status === "ready" && (
+            <>
+              {/* Result bar: chỉ còn số kết quả */}
+              <div className="fc-result-bar">
+                <span className="fc-result-count">
+                  <strong>{total}</strong> sân phù hợp
+                  {totalPages > 1 && (
+                    <span className="fc-result-page"> · Trang {page}/{totalPages}</span>
+                  )}
+                </span>
               </div>
-            )}
 
-            {status === "error" && (
-              <div className="notice notice--danger">
-                <Icon name="alert" size={16} />
-                {errorMsg}
-                <button
-                  type="button"
-                  className="btn btn--sm"
-                  style={{ marginLeft: "auto" }}
-                  onClick={() => fetchFacilities(applied, page)}
-                >
-                  Thử lại
-                </button>
-              </div>
-            )}
-
-            {status === "ready" && items.length === 0 && (
-              <div className="empty">
-                <h3>Chưa có sân phù hợp</h3>
-                <button
-                  type="button"
-                  className="link"
-                  onClick={() => {
-                    const p = { q: "", city: "", district: "", sport: "" };
-                    setQ(""); setCity(""); setDistrict(""); setSport("");
-                    setApplied(p); setPage(0); fetchFacilities(p, 0);
-                  }}
-                >
-                  Bỏ bộ lọc
-                </button>
-              </div>
-            )}
-
-            {status === "ready" && items.length > 0 && (
-              <>
-                <div className="fac-grid stagger" key={items.map((f) => f.id).join()}>
-                  {items.map((f) => (
-                    <FacilityCard
-                      key={f.id}
-                      facility={f}
-                      hot={hot === f.id}
-                      onHover={setHot}
+              {items.length === 0 ? (
+                <div className="fc-empty">
+                  <div className="fc-empty-icon">🏟️</div>
+                  <p>Chưa có cơ sở nào.</p>
+                </div>
+              ) : (
+                <ul className="fc-list">
+                  {items.map((facility, idx) => (
+                    <CourtCard
+                      key={facility.id}
+                      facility={facility}
+                      index={(page - 1) * PAGE_LIMIT + idx}
                     />
                   ))}
+                </ul>
+              )}
+
+              {/* Phân trang */}
+              {totalPages > 1 && (
+                <div className="fc-pagination">
+                  <button
+                    className="fc-page-btn"
+                    type="button"
+                    disabled={page <= 1}
+                    onClick={() => goToPage(page - 1)}
+                  >
+                    ← Trang trước
+                  </button>
+                  <span className="fc-page-info">{page} / {totalPages}</span>
+                  <button
+                    className="fc-page-btn"
+                    type="button"
+                    disabled={page >= totalPages}
+                    onClick={() => goToPage(page + 1)}
+                  >
+                    Trang sau →
+                  </button>
                 </div>
-                <Pager
-                  page={page}
-                  pages={totalPages}
-                  size={PAGE_LIMIT}
-                  total={total}
-                  onPage={goPage}
-                />
-              </>
-            )}
-          </div>
-
-          <div className="sticky hide-sm">
-            <FacilitiesMap
-              facilities={items}
-              hot={hot}
-              setHot={setHot}
-              onOpen={(id) => nav(`/courts/${id}`)}
-            />
-          </div>
-        </div>
-      </div>
-    </main>
-  );
-}
-
-/* ── Facility card ── */
-function FacilityCard({ facility: f, hot, onHover }) {
-  const hasPrice = f.min_price != null;
-  const courts   = f.total_courts;
-  const sports   = f.sports_names ?? [];
-
-  return (
-    <Link
-      to={`/courts/${f.id}`}
-      className={"card fac" + (hot ? " is-hot" : "")}
-      onMouseEnter={() => onHover(f.id)}
-      onMouseLeave={() => onHover(null)}
-    >
-      <div className="fac__img">
-        {f.cover_photo ? (
-          <img src={f.cover_photo} alt="" loading="lazy" />
-        ) : (
-          <div style={{
-            position: "absolute", inset: 0,
-            background: "linear-gradient(135deg,var(--accent-soft),var(--surface-3))",
-            display: "grid", placeItems: "center",
-          }}>
-            <Icon name="court" size={40} style={{ color: "var(--accent)", opacity: .4 }} />
-          </div>
-        )}
-      </div>
-
-      <div className="fac__body">
-        <div className="row between small">
-          <span className="muted">{sports.length > 0 ? sports.join(" · ") : "Thể thao"}</span>
-          {f.rating != null && (
-            <span className="rating">
-              <Icon name="star" size={13} fill />
-              {Number(f.rating).toFixed(1)}
-            </span>
+              )}
+            </>
           )}
         </div>
 
-        <h3>{f.name}</h3>
-
-        <div className="fac__addr small ink2">
-          <Icon name="pin" size={14} />
-          {[f.district, f.city].filter(Boolean).join(", ") || f.address || "—"}
+        {/* Cột phải: bản đồ */}
+        <div className="fc-map-col">
+          <FacilitiesMap facilities={items} />
         </div>
 
-        <div className="fac__foot">
-          <div className="price">
-            {hasPrice ? (
-              <>
-                {formatVnd(f.min_price)}
-                {f.max_price != null && f.max_price !== f.min_price && (
-                  <small style={{ color: "var(--muted)" }}> – {formatVnd(f.max_price)}</small>
-                )}
-                <small>/giờ</small>
-              </>
-            ) : (
-              <small style={{ color: "var(--muted)" }}>Liên hệ</small>
-            )}
-          </div>
-          {courts != null && (
-            <span className={"badge" + (courts > 0 ? " badge--deposited" : " badge--cancelled")}>
-              {courts > 0 ? `${courts} giờ trống` : "Hôm nay kín"}
-            </span>
-          )}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-/* ── Skeleton ── */
-function SkeletonCard() {
-  return (
-    <div className="card fac fac--skel" aria-hidden="true">
-      <div className="fac__img skel" style={{ borderRadius: 0 }} />
-      <div className="fac__body">
-        <div className="skel" style={{ width: 120, height: 16 }} />
-        <div className="skel" style={{ width: "70%", height: 22, marginTop: 4 }} />
-        <div className="skel" style={{ width: "55%", height: 14, marginTop: 4 }} />
-        <div className="fac__foot">
-          <div className="skel" style={{ width: 110, height: 28 }} />
-          <div className="skel" style={{ width: 90, height: 20, borderRadius: 999 }} />
-        </div>
       </div>
     </div>
   );
 }
 
-/* ── Map ── */
-function FacilitiesMap({ facilities, hot, setHot, onOpen }) {
+// ─────────────────────────────────────────────────────────────────
+//  Card sân
+// ─────────────────────────────────────────────────────────────────
+function CourtCard({ facility, index }) {
+  const address  = [facility.district, facility.city].filter(Boolean).join(", ");
+  const hasPrice = facility.min_price != null;
+
+  return (
+    <li className="fc-card">
+      <div className="fc-card-img">
+        <div className="fc-card-img-placeholder">
+          <span className="fc-placeholder-icon">🏟️</span>
+        </div>
+        <span className="fc-card-index">#{index + 1}</span>
+      </div>
+
+      <div className="fc-card-body">
+        <div className="fc-card-top">
+          <div>
+            <h2 className="fc-card-name">{facility.name}</h2>
+            <p className="fc-card-address">{address || facility.address}</p>
+          </div>
+        </div>
+
+        <div className="fc-card-tags">
+          {facility.total_courts != null && (
+            <span className="fc-tag fc-tag-courts">{facility.total_courts} sân</span>
+          )}
+          {facility.city && (
+            <span className="fc-tag fc-tag-courts">{facility.city}</span>
+          )}
+        </div>
+
+        <div className="fc-card-footer">
+          <div className="fc-card-price">
+            {hasPrice ? (
+              <>
+                <span className="fc-price-label">Từ</span>
+                <span className="fc-price-value">{formatVnd(facility.min_price)}</span>
+                {facility.max_price != null && facility.max_price !== facility.min_price && (
+                  <>
+                    <span className="fc-price-sep">–</span>
+                    <span className="fc-price-max">{formatVnd(facility.max_price)}</span>
+                  </>
+                )}
+                <span className="fc-price-unit">/giờ</span>
+              </>
+            ) : (
+              <span className="fc-price-na">Liên hệ để biết giá</span>
+            )}
+          </div>
+          <Link className="fc-btn-detail" to={`/courts/${facility.id}`}>
+            Xem chi tiết
+          </Link>
+        </div>
+      </div>
+    </li>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Bản đồ
+// ─────────────────────────────────────────────────────────────────
+const DEFAULT_CENTER = [10.7769, 106.7009];
+const DEFAULT_ZOOM   = 12;
+
+function FacilitiesMap({ facilities }) {
   const pinned = facilities.filter((f) => f.latitude != null && f.longitude != null);
   const center = pinned.length > 0
     ? [
@@ -342,34 +304,25 @@ function FacilitiesMap({ facilities, hot, setHot, onOpen }) {
     : DEFAULT_CENTER;
 
   return (
-    <div className="map" role="region" aria-label="Bản đồ vị trí các cơ sở">
-      <MapContainer center={center} zoom={DEFAULT_ZOOM} key={center.join(",")}>
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>'
-        />
-        {pinned.map((f) => (
-          <Marker key={f.id} position={[f.latitude, f.longitude]}>
-            <Popup>
-              <strong>{f.name}</strong>
-              <p style={{ margin: "4px 0 0", fontSize: 13 }}>
-                {[f.district, f.city].filter(Boolean).join(", ")}
-              </p>
-              {f.min_price != null && (
-                <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--accent)", fontWeight: 600 }}>
-                  Từ {formatVnd(f.min_price)}/giờ
-                </p>
+    <MapContainer center={center} zoom={DEFAULT_ZOOM} className="fc-map" key={center.join(",")}>
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'
+      />
+      {pinned.map((f) => (
+        <Marker key={f.id} position={[f.latitude, f.longitude]}>
+          <Popup>
+            <div className="fc-map-popup">
+              <strong className="fc-map-popup-name">{f.name}</strong>
+              <p className="fc-map-popup-addr">{f.address}</p>
+              {[f.district, f.city].filter(Boolean).length > 0 && (
+                <p className="fc-map-popup-addr">{[f.district, f.city].filter(Boolean).join(", ")}</p>
               )}
-              <a
-                href={`/courts/${f.id}`}
-                style={{ display: "inline-block", marginTop: 8, fontSize: 13, fontWeight: 600, color: "var(--accent)" }}
-              >
-                Xem chi tiết →
-              </a>
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
-    </div>
+              <a className="fc-map-popup-link" href={`/courts/${f.id}`}>Xem chi tiết →</a>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+    </MapContainer>
   );
 }

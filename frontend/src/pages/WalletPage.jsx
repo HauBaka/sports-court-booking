@@ -2,252 +2,180 @@ import { useEffect, useState } from "react";
 import { getMyWallet, getMyTransactions } from "../services/walletService";
 import { TX_TYPE_LABEL } from "../utils/wallet";
 import { formatVnd } from "../utils/format";
-import Icon from "../components/ui/Icon";
+import "../styles/wallet.css";
 
 const LIMIT = 10;
+const PREVIEW = 3; // mặc định chỉ hiện 3 giao dịch mới nhất
 
-/** Chip lọc loại giao dịch */
-const FILTER_CHIPS = [
-  ["",         "Tất cả"],
-  ["TOPUP",    "Nạp tiền"],
-  ["DEPOSIT",  "Đặt cọc"],
-  ["REFUND",   "Hoàn cọc"],
-  ["FORFEIT",  "Bồi thường"],
-  ["SETTLE",   "Quyết toán"],
-];
+// Biểu tượng vẽ tay, cùng nét 1.8, cùng khung 20px
+const ICON_PATHS = {
+  TOPUP: "M12 5v14M5 12h14",
+  DEPOSIT: "M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z",
+  REFUND: "M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3",
+  FORFEIT: "M12 3 2.5 20h19zM12 10v5M12 18h.01",
+  SETTLE: "m5 12 5 5 9-10",
+};
 
-/** Format "2026-11-25T08:49:00" → "T4 25/11 · 08:49" */
-function fmtDateTime(iso) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const WD = ["CN","T2","T3","T4","T5","T6","T7"];
-  const dow = WD[d.getDay()];
-  const dd  = String(d.getDate()).padStart(2,"0");
-  const mm  = String(d.getMonth()+1).padStart(2,"0");
-  const hh  = String(d.getHours()).padStart(2,"0");
-  const min = String(d.getMinutes()).padStart(2,"0");
-  return `${dow} ${dd}/${mm} · ${hh}:${min}`;
+function Icon({ d, size = 20 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d={d} />
+    </svg>
+  );
 }
 
-/** Format số âm/dương "+1.000.000đ" */
-function fmtSigned(n) {
-  const abs = Math.abs(n).toLocaleString("vi-VN");
-  return (n >= 0 ? "+" : "−") + abs + "đ";
-}
+const WALLET_ICON = "M3 7a2 2 0 0 1 2-2h13v4M3 7v11a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2zM16 14h.01";
 
-/** Format số dư: "183.800 ₫" */
-function fmtBalance(n) {
-  return n.toLocaleString("vi-VN") + " ₫";
-}
+const formatDateTime = (iso) =>
+  new Date(iso).toLocaleString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
 export default function WalletPage() {
-  /* ── Số dư ── */
-  const [wallet,  setWallet]  = useState(null);
+  const [wallet, setWallet] = useState(null);
+  const [type, setType] = useState("");
+  const [page, setPage] = useState(1);
+  const [expanded, setExpanded] = useState(false);
+  const [state, setState] = useState({ status: "loading", items: [], meta: null, error: "" });
+  const [reloadKey, setReloadKey] = useState(0);
 
-  /* ── Giao dịch ── */
-  const [type,    setType]    = useState("");
-  const [page,    setPage]    = useState(1);
-  const [txState, setTxState] = useState({ status: "loading", items: [], meta: null, error: "" });
-  const [reload,  setReload]  = useState(0);
-
-  /* Tải số dư */
+  // Số dư: tải 1 lần
   useEffect(() => {
-    getMyWallet().then((r) => setWallet(r.data)).catch(() => {});
-  }, [reload]);
+    getMyWallet().then((res) => setWallet(res.data)).catch(() => {});
+  }, [reloadKey]);
 
-  /* Tải danh sách phân trang theo bộ lọc */
+  // Lịch sử: tải lại khi đổi loại hoặc đổi trang
   useEffect(() => {
     let cancelled = false;
-    setTxState((s) => ({ ...s, status: "loading" }));
+    setState((s) => ({ ...s, status: "loading" }));
     getMyTransactions({ type, page, limit: LIMIT })
-      .then((r) => {
-        if (!cancelled)
-          setTxState({ status: "ready", items: r.data ?? [], meta: r.meta, error: "" });
+      .then((res) => {
+        if (!cancelled) setState({ status: "ready", items: res.data, meta: res.meta, error: "" });
       })
-      .catch((e) => {
+      .catch((err) => {
         if (!cancelled)
-          setTxState({ status: "error", items: [], meta: null, error: e.message || "Không tải được lịch sử." });
+          setState({ status: "error", items: [], meta: null, error: err.message || "Không tải được lịch sử." });
       });
     return () => { cancelled = true; };
-  }, [type, page, reload]);
+  }, [type, page, reloadKey]);
 
-  const changeType = (t) => { setType(t); setPage(1); };
+  const chooseType = (value) => {
+    setType(value);
+    setPage(1); // đổi bộ lọc thì quay về trang 1
+    setExpanded(false);
+  };
 
-  const { status, items, meta, error } = txState;
-
-  /* ── "Xem thêm" trên 1 trang ── */
-  const [expanded, setExpanded] = useState(false);
-
-  // Reset expanded khi items thay đổi
-  useEffect(() => { setExpanded(false); }, [items]);
-
-  const visibleItems = expanded ? items : items.slice(0, 3);
-  const hiddenCount  = items.length - 3;
-  const showSeeMore  = !expanded && hiddenCount > 0;
-
-  // Phân trang chỉ hiện sau khi đã expand (hoặc items <= 3)
-  const showPager = expanded || items.length <= 3;
+  const { status, items, meta, error } = state;
+  const collapsed = items.length > PREVIEW && !expanded;
+  const visible = collapsed ? items.slice(0, PREVIEW) : items;
+  const chips = [["", "Tất cả"], ...Object.entries(TX_TYPE_LABEL)];
 
   return (
-    <main className="page">
-      <div className="wrap">
-        <div className="page-head">
-          <h1>Ví của tôi</h1>
+    <div className="wallet-page">
+      <div className="wallet-head">
+        <h1>Ví của tôi</h1>
+        <p>Số dư và lịch sử giao dịch của bạn.</p>
+      </div>
+
+      <section className="balance-card" aria-label="Số dư ví">
+        <div>
+          <div className="balance-label"><span className="dot" />Số dư hiện tại</div>
+          <div className="balance-amount">{wallet ? formatVnd(wallet.balance) : "—"}</div>
+          <p className="balance-note">Dùng để đặt cọc sân và nhận hoàn cọc.</p>
+        </div>
+        <div className="balance-icon"><Icon d={WALLET_ICON} size={26} /></div>
+      </section>
+
+      <section className="history-card" aria-label="Lịch sử giao dịch">
+        <div className="history-head">
+          <h2>Lịch sử giao dịch</h2>
+          {status === "ready" && meta && <span className="history-total">{meta.total} giao dịch</span>}
         </div>
 
-        <div className="wallet">
-          {/* ── Cột trái: số dư ── */}
-          <section className="card wallet__board">
-            <div className="wallet__top">
-              <div>
-                <div className="wallet__label">Số dư hiện tại</div>
-                <div
-                  className="wallet__bal mono"
-                  aria-label="Số dư ví"
-                >
-                  {wallet ? fmtBalance(wallet.balance) : "—"}
-                </div>
-              </div>
-              <div className="wallet__mini">
-                <div>
-                  <div className="wallet__label">Đã đặt cọc</div>
-                  <div className="mono">{formatVnd(0)}</div>
-                </div>
-                <div>
-                  <div className="wallet__label">Được hoàn lại</div>
-                  <div className="mono">{formatVnd(0)}</div>
-                </div>
-              </div>
-            </div>
-          </section>
+        <div className="filter-chips" role="group" aria-label="Lọc theo loại giao dịch">
+          {chips.map(([value, label]) => (
+            <button
+              key={value || "all"}
+              type="button"
+              className="chip"
+              aria-pressed={type === value}
+              onClick={() => chooseType(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-          {/* ── Cột phải: danh sách giao dịch ── */}
-          <section className="card wallet__list" aria-label="Giao dịch">
-            <div className="row between" style={{ marginBottom: 12 }}>
-              <h2>Giao dịch</h2>
-              <div
-                className="seg seg--scroll"
-                role="group"
-                aria-label="Lọc theo loại giao dịch"
-              >
-                {FILTER_CHIPS.map(([v, l]) => (
-                  <button
-                    key={v || "all"}
-                    type="button"
-                    className={type === v ? "on" : ""}
-                    onClick={() => changeType(v)}
-                  >
-                    {l}
-                  </button>
-                ))}
-              </div>
-            </div>
+        {status === "loading" && <p className="wallet-state" aria-busy="true">Đang tải...</p>}
 
-            {/* Trạng thái loading */}
-            {status === "loading" && (
-              <div className="stack" style={{ "--gap": "0px" }} aria-hidden="true">
-                {[1,2,3,4,5,6].map((i) => (
-                  <div key={i} className="skel-row">
-                    <div className="skel skel-line" />
-                    <div className="skel skel-line" style={{ width:"80%" }} />
-                    <div className="skel skel-line" style={{ width:"60%" }} />
-                    <div className="skel skel-line" style={{ width:"70%", justifySelf:"end" }} />
+        {status === "error" && (
+          <div className="wallet-state">
+            <p className="wallet-error" role="alert">{error}</p>
+            <button className="wallet-retry" type="button" onClick={() => setReloadKey((k) => k + 1)}>
+              Thử lại
+            </button>
+          </div>
+        )}
+
+        {status === "ready" && items.length === 0 && (
+          <p className="wallet-state">Chưa có giao dịch nào.</p>
+        )}
+
+        {status === "ready" && items.length > 0 && (
+          <>
+            <ul className="tx-list">
+              {visible.map((t) => (
+                <li key={t.id} className="tx-row">
+                  <span className={`tx-icon ${t.type}`}>
+                    <Icon d={ICON_PATHS[t.type] ?? ICON_PATHS.TOPUP} />
+                  </span>
+                  <div className="tx-main">
+                    <div className="tx-type">{TX_TYPE_LABEL[t.type] ?? t.type}</div>
+                    <div className="tx-meta">
+                      {formatDateTime(t.created_at)}
+                      {t.related_booking_id != null && <> · Đơn #{t.related_booking_id}</>}
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
+                  <div className="tx-money">
+                    <div className="tx-amount">{formatVnd(t.amount)}</div>
+                    <div className="tx-after">Số dư sau: {formatVnd(t.balance_after)}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
 
-            {/* Trạng thái lỗi */}
-            {status === "error" && (
-              <div className="notice notice--danger">
-                <Icon name="alert" size={16} />{error}
-                <button
-                  className="btn btn--sm btn--ghost"
-                  style={{ marginLeft:"auto" }}
-                  onClick={() => setReload((k) => k+1)}
-                >
-                  Thử lại
+            {collapsed && (
+              <div className="pager">
+                <button type="button" onClick={() => setExpanded(true)}>
+                  Xem thêm ({meta.total - PREVIEW})
                 </button>
               </div>
             )}
 
-            {/* Trạng thái trống */}
-            {status === "ready" && items.length === 0 && (
-              <div className="empty">
-                <p>Chưa có giao dịch nào.</p>
+            {!collapsed && meta.total_pages > 1 && (
+              <div className="pager">
+                <button type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Trước</button>
+                <span>Trang {meta.page} / {meta.total_pages}</span>
+                <button type="button" disabled={page >= meta.total_pages} onClick={() => setPage((p) => p + 1)}>Sau</button>
               </div>
             )}
-
-            {/* Danh sách giao dịch */}
-            {status === "ready" && items.length > 0 && (
-              <>
-                <ul className="txl">
-                  {visibleItems.map((t) => (
-                    <li key={t.id}>
-                      <i className={t.amount > 0 ? "in" : "out"} aria-hidden="true">
-                        {t.amount > 0 ? "+" : "−"}
-                      </i>
-                      <div className="txl__main">
-                        <div>
-                          {t.description ?? TX_TYPE_LABEL[t.type] ?? t.type}
-                          {t.related_booking_id != null && (
-                            <span className="mono muted" style={{ fontSize:12, marginLeft:6 }}>
-                              · Đơn #{t.related_booking_id}
-                            </span>
-                          )}
-                        </div>
-                        <div className="small muted">
-                          <span className="mono">{fmtDateTime(t.created_at)}</span>
-                          {" · "}{TX_TYPE_LABEL[t.type] ?? t.type}
-                          {" · "}<span className="mono">{t.id}</span>
-                        </div>
-                      </div>
-                      <b className={"mono " + (t.amount > 0 ? "amount-in" : "amount-out")}>
-                        {fmtSigned(t.amount)}
-                      </b>
-                    </li>
-                  ))}
-                </ul>
-
-                {/* Nút Xem thêm */}
-                {showSeeMore && (
-                  <button
-                    type="button"
-                    className="btn btn--ghost"
-                    style={{ width:"100%", marginTop:8 }}
-                    onClick={() => setExpanded(true)}
-                  >
-                    Xem thêm ({hiddenCount})
-                  </button>
-                )}
-
-                {/* Phân trang — chỉ hiện sau khi đã expand */}
-                {showPager && meta && meta.total_pages > 1 && (
-                  <nav className="pager" aria-label="Phân trang giao dịch" style={{ marginTop:12 }}>
-                    <span className="pager__count mono">
-                      Trang {page} / {meta.total_pages}
-                    </span>
-                    <button
-                      className="pager__btn"
-                      disabled={page <= 1}
-                      onClick={() => setPage((p) => p-1)}
-                    >
-                      Trước
-                    </button>
-                    <button
-                      className="pager__btn"
-                      disabled={page >= meta.total_pages}
-                      onClick={() => setPage((p) => p+1)}
-                    >
-                      Sau
-                    </button>
-                  </nav>
-                )}
-              </>
-            )}
-          </section>
-        </div>
-      </div>
-    </main>
+          </>
+        )}
+      </section>
+    </div>
   );
 }

@@ -1,455 +1,442 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { getFacility, getFacilityServices } from "../../services/facilityService";
 import { getCourtSlots } from "../../services/courtService";
 import { calculatePrice } from "../../services/bookingService";
-import { formatTime, formatVnd } from "../../utils/format";
-import Icon from "../../components/ui/Icon";
-import DayStrip from "../../components/DayStrip";
-import { SlotLegend } from "../../components/SlotGrid";
+import { formatTime } from "../../utils/format";
+import "../../styles/court-detail.css";
 
-/* ── Helpers ──────────────────────────────────────────────────── */
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+
+// ─────────────────────────────────────────────────────────────────
+//  Helpers
+// ─────────────────────────────────────────────────────────────────
+const fmtVnd = (n) => Number(n ?? 0).toLocaleString("vi-VN") + " ₫";
+
 function getTodayStr() {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  const yyyy = d.getFullYear();
+  const mm   = String(d.getMonth() + 1).padStart(2, "0");
+  const dd   = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 }
-function addDays(s, n) {
-  const d = new Date(s); d.setDate(d.getDate() + n); return d.toISOString().slice(0,10);
+function addDays(dateStr, n) {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
 }
-function timeToMin(t = "") {
-  const [h, m] = t.split(":"); return Number(h)*60 + Number(m||0);
+function formatDateLabel(dateStr) {
+  const d = new Date(dateStr + "T00:00:00");
+  const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+  return { dow: days[d.getDay()], short: `${d.getDate()}/${d.getMonth() + 1}` };
 }
-
-
-
-
-/* ── SlotRow — một hàng sân trong lưới ───────────────────────── */
-function SlotRow({ court, slots, selected, onToggle }) {
-  return (
-    <>
-      {/* Cột tên sân (sticky trái) */}
-      <span className="gs-c">
-        {court.name}
-        <small>{court.court_type ?? ""}</small>
-      </span>
-
-      {/* Các ô giờ */}
-      {slots.map((s) => {
-        const isPicked = selected.includes(s.time_slot_id);
-        const st = s.status?.toUpperCase() ?? "AVAILABLE";
-        const disabled = st !== "AVAILABLE";
-
-        let cls = "slot";
-        if      (isPicked)         cls += " slot--pick";
-        else if (st === "HOLDING") cls += " slot--held";
-        else if (st === "BOOKED")  cls += " slot--taken";
-        else if (st === "UNAVAILABLE") cls += " slot--past";
-
-        const label = isPicked ? "Đang chọn"
-          : st === "HOLDING"     ? "Đang giữ"
-          : st === "BOOKED"      ? "Đã cọc"
-          : st === "UNAVAILABLE" ? "Qua giờ"
-          : "Trống";
-
-        return (
-          <button
-            key={s.time_slot_id}
-            className={cls}
-            disabled={disabled}
-            aria-pressed={isPicked}
-            aria-label={`${formatTime(s.start_time)}: ${label}`}
-            onClick={() => !disabled && onToggle(court.id, s.time_slot_id)}
-          >
-            {label}
-          </button>
-        );
-      })}
-    </>
-  );
+function timeToMin(t) {
+  if (!t) return 0;
+  const [h, m] = t.split(":");
+  return Number(h) * 60 + Number(m);
+}
+function normalizeStatus(s) {
+  return (s ?? "available").toLowerCase();
 }
 
-/* ── Main page ────────────────────────────────────────────────── */
+// ─────────────────────────────────────────────────────────────────
+//  COMPONENT
+// ─────────────────────────────────────────────────────────────────
 export default function CourtDetailPage() {
-  const { id }     = useParams();
-  const navigate   = useNavigate();
-  const today      = getTodayStr();
-  const dates      = useMemo(() => Array.from({length:7},(_,i) => addDays(today,i)), [today]);
+  const { id } = useParams();
+  const navigate = useNavigate();
 
-  /* Facility */
-  const [facility, setFacility]   = useState(null);
-  const [fStatus,  setFStatus]    = useState("loading");
-  const [fError,   setFError]     = useState("");
+  const today = getTodayStr();
+  const dates = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDays(today, i)),
+    [today]
+  );
 
-  /* Services */
-  const [services,    setServices]    = useState([]);
-  const [serviceQty,  setServiceQty]  = useState({});
+  // ── Facility ──
+  const [facility, setFacility]           = useState(null);
+  const [facilityStatus, setFacilityStatus] = useState("loading");
+  const [facilityError, setFacilityError]   = useState("");
 
-  /* Ngày & sân đang xem */
-  const [selDate,  setSelDate]  = useState(today);
-  const [selCourt, setSelCourt] = useState(null);  // court.id
+  // ── Services ──
+  const [services, setServices]   = useState([]);
+  const [serviceQty, setServiceQty] = useState({});
 
-  /* Slots của sân đang xem */
-  const [slots,       setSlots]       = useState([]);
-  const [slotsStatus, setSlotsStatus] = useState("idle");
+  // ── Slots ──
+  const [selectedDate, setSelectedDate]   = useState(today);
+  const [selectedCourt, setSelectedCourt] = useState(null);
+  const [slots, setSlots]                 = useState([]);
+  const [slotsStatus, setSlotsStatus]     = useState("idle");
+  const [slotsError, setSlotsError]       = useState("");
 
-  /* Slot đã chọn: { courtId, ids[] } — chỉ cho phép 1 sân */
-  const [selection, setSelection] = useState({ courtId: null, ids: [] });
+  // ── Chọn slot ──
+  const [selectedSlots, setSelectedSlots] = useState([]);
 
-  /* Tính giá */
-  const [priceData,   setPriceData]   = useState(null);
+  // ── Tính giá preview ──
+  const [priceData, setPriceData]     = useState(null);
   const [priceStatus, setPriceStatus] = useState("idle");
 
-  /* Tab */
-  const [tab, setTab] = useState("lich");
-
-  /* Load facility + services */
+  // ── Load facility + services ──
   useEffect(() => {
-    setFStatus("loading");
+    let cancelled = false;
+    setFacilityStatus("loading");
     Promise.all([getFacility(id), getFacilityServices(id)])
       .then(([fRes, sRes]) => {
+        if (cancelled) return;
         const f = fRes.data;
         setFacility(f);
-        const first = (f.courts ?? []).find((c) => c.is_active !== false) ?? f.courts?.[0];
-        setSelCourt(first?.id ?? null);
-        setFStatus("ready");
+        const firstActive = (f.courts ?? []).find((c) => c.is_active !== false);
+        setSelectedCourt(firstActive?.id ?? f.courts?.[0]?.id ?? null);
+        setFacilityStatus("ready");
         const svcs = sRes.data ?? [];
         setServices(svcs);
-        setServiceQty(Object.fromEntries(svcs.map((s) => [s.id, 0])));
+        const initQty = {};
+        svcs.forEach((s) => { initQty[s.id] = 0; });
+        setServiceQty(initQty);
       })
-      .catch((e) => { setFError(e.message || "Không tải được thông tin cơ sở."); setFStatus("error"); });
+      .catch((err) => {
+        if (cancelled) return;
+        setFacilityError(err.message || "Không tải được thông tin cơ sở.");
+        setFacilityStatus("error");
+      });
+    return () => { cancelled = true; };
   }, [id]);
 
-  /* Load slots khi đổi sân hoặc ngày */
+  // ── Load slots ──
   const loadSlots = useCallback(async (courtId, date) => {
     if (!courtId) return;
     setSlotsStatus("loading");
-    setSlots([]);
+    setSlotsError("");
+    setSelectedSlots([]);
+    setPriceData(null);
     try {
       const res = await getCourtSlots(courtId, date);
       setSlots(res.data?.slots ?? []);
       setSlotsStatus("ready");
-    } catch {
+    } catch (err) {
+      setSlotsError(err.message || "Không tải được lịch khung giờ.");
       setSlotsStatus("error");
+      setSlots([]);
     }
   }, []);
 
   useEffect(() => {
-    if (selCourt && selDate) loadSlots(selCourt, selDate);
-  }, [selCourt, selDate, loadSlots]);
+    if (selectedCourt && selectedDate) loadSlots(selectedCourt, selectedDate);
+  }, [selectedCourt, selectedDate, loadSlots]);
 
-  /* Đổi ngày: giữ sân, bỏ chọn slot */
-  const changeDate = (d) => {
-    setSelDate(d);
-    setSelection({ courtId: null, ids: [] });
-    setPriceData(null);
-  };
-
-  /* Toggle slot — đổi sân thì reset selection */
-  const toggleSlot = (courtId, slotId) => {
-    setSelection((prev) => {
-      let ids;
-      if (prev.courtId !== courtId) {
-        ids = [slotId];
-      } else if (prev.ids.includes(slotId)) {
-        ids = prev.ids.filter((x) => x !== slotId);
-      } else {
-        ids = [...prev.ids, slotId];
-      }
-      return { courtId: ids.length ? courtId : null, ids };
-    });
-    setPriceData(null);
-  };
-
-  /* Services payload */
-  const servicesPayload = useMemo(() =>
-    Object.entries(serviceQty)
-      .filter(([,q]) => q > 0)
-      .map(([service_id, quantity]) => ({ service_id: Number(service_id), quantity })),
-    [serviceQty]);
-
-  /* Tính giá */
-  const sortedIds = useMemo(() =>
-    [...selection.ids].sort((a, b) => {
+  // ── Slots đã chọn, sort theo start_time ──
+  const selectedSlotsSorted = useMemo(() =>
+    [...selectedSlots].sort((a, b) => {
       const sa = slots.find((s) => s.time_slot_id === a);
       const sb = slots.find((s) => s.time_slot_id === b);
       return timeToMin(sa?.start_time) - timeToMin(sb?.start_time);
     }),
-    [selection.ids, slots]);
+    [selectedSlots, slots]
+  );
 
+  const servicesPayload = useMemo(() =>
+    Object.entries(serviceQty)
+      .filter(([, qty]) => qty > 0)
+      .map(([service_id, quantity]) => ({ service_id: Number(service_id), quantity })),
+    [serviceQty]
+  );
+
+  // ── Gọi calculate-price khi slot / dịch vụ thay đổi ──
   useEffect(() => {
-    if (!sortedIds.length || !selection.courtId) { setPriceData(null); setPriceStatus("idle"); return; }
+    if (selectedSlotsSorted.length === 0 || !selectedCourt) {
+      setPriceData(null);
+      setPriceStatus("idle");
+      return;
+    }
     let cancelled = false;
     setPriceStatus("loading");
-    calculatePrice({ court_id: selection.courtId, play_date: selDate, time_slot_ids: sortedIds, services: servicesPayload })
+    calculatePrice({
+      court_id: selectedCourt,
+      play_date: selectedDate,
+      time_slot_ids: selectedSlotsSorted,
+      services: servicesPayload,
+    })
       .then((res) => { if (!cancelled) { setPriceData(res.data); setPriceStatus("ready"); } })
       .catch(() => { if (!cancelled) setPriceStatus("error"); });
     return () => { cancelled = true; };
-  }, [sortedIds, servicesPayload, selection.courtId, selDate]);
+  }, [selectedSlotsSorted, servicesPayload, selectedCourt, selectedDate]);
 
-  /* Tiếp tục → confirm */
-  const handleProceed = () => navigate("/booking/confirm", {
-    state: { courtId: selection.courtId, playDate: selDate, timeSlotIds: sortedIds, services: servicesPayload },
-  });
+  // ── Đổi sân / ngày ──
+  const handleCourtChange = (cid) => { setSelectedCourt(cid); setSelectedSlots([]); setPriceData(null); };
+  const handleDateChange  = (d)   => { setSelectedDate(d);    setSelectedSlots([]); setPriceData(null); };
 
-  /* Tất cả giờ bắt đầu duy nhất (header hàng ngang) — PHẢI trước guard return */
-  const headers = useMemo(() => {
-    const times = [...new Set(slots.map((s) => s.start_time))].sort();
-    return times;
-  }, [slots]);
+  // ── Chọn slot liên tiếp (so theo time, không phải index) ──
+  const handleSlotClick = (slot) => {
+    if (normalizeStatus(slot.status) !== "available") return;
+    setSelectedSlots((prev) => {
+      if (prev.length === 0) return [slot.time_slot_id];
+      const prevObjs = prev
+        .map((sid) => slots.find((s) => s.time_slot_id === sid))
+        .filter(Boolean)
+        .sort((a, b) => timeToMin(a.start_time) - timeToMin(b.start_time));
+      const first = prevObjs[0];
+      const last  = prevObjs[prevObjs.length - 1];
+      if (prev.includes(slot.time_slot_id)) {
+        if (slot.time_slot_id === first.time_slot_id || slot.time_slot_id === last.time_slot_id)
+          return prev.filter((sid) => sid !== slot.time_slot_id);
+        return [slot.time_slot_id];
+      }
+      if (timeToMin(slot.end_time)   === timeToMin(first.start_time)) return [...prev, slot.time_slot_id];
+      if (timeToMin(slot.start_time) === timeToMin(last.end_time))    return [...prev, slot.time_slot_id];
+      return [slot.time_slot_id];
+    });
+  };
 
-  /* Derived từ facility — an toàn khi facility null vì dùng ?? [] */
-  const courts  = facility?.courts ?? [];
-  const sports  = facility?.sports_names ?? [];
-  const minPrice = courts.length
-    ? Math.min(...courts.filter((c) => c.is_active !== false).map((c) => c.base_hourly_rate ?? c.price ?? 0))
-    : null;
-  const selSlotObjs = sortedIds.map((sid) => slots.find((s) => s.time_slot_id === sid)).filter(Boolean);
-  const timeRange = selSlotObjs.length
-    ? `${formatTime(selSlotObjs[0].start_time)}–${formatTime(selSlotObjs[selSlotObjs.length-1].end_time)}`
-    : null;
+  // ── Dịch vụ ──
+  const handleQtyChange = (serviceId, delta) => {
+    setServiceQty((prev) => ({ ...prev, [serviceId]: Math.max(0, (prev[serviceId] ?? 0) + delta) }));
+  };
 
-  /* ── Render guards (sau tất cả hooks) ── */
-  if (fStatus === "loading") return (
-    <main className="page"><div className="wrap">
-      <div className="notice" style={{ marginTop: 32 }}>
-        <div className="skel" style={{ width: 200, height: 20 }} />
+  // ── Tiếp tục → navigate sang trang xác nhận ──
+  const handleProceed = () => {
+    navigate("/booking/confirm", {
+      state: {
+        courtId:     selectedCourt,
+        playDate:    selectedDate,
+        timeSlotIds: selectedSlotsSorted,
+        services:    servicesPayload,
+      },
+    });
+  };
+
+  // ── Render guards ──
+  if (facilityStatus === "loading") {
+    return (
+      <div className="cd-page">
+        <div className="cd-state-center"><div className="fc-spinner" /><p>Đang tải thông tin cơ sở...</p></div>
       </div>
-    </div></main>
-  );
-  if (fStatus === "error") return (
-    <main className="page"><div className="wrap">
-      <div className="notice notice--danger"><Icon name="alert" size={16} />{fError}</div>
-      <Link to="/courts" className="link" style={{ marginTop: 12, display: "inline-block" }}>← Quay lại tìm sân</Link>
-    </div></main>
-  );
+    );
+  }
+  if (facilityStatus === "error") {
+    return (
+      <div className="cd-page">
+        <div className="cd-breadcrumb"><Link to="/courts" className="cd-back-link">← Quay lại tìm sân</Link></div>
+        <div className="cd-state-center">
+          <p className="cd-error-msg">{facilityError}</p>
+          <Link to="/courts" className="cd-btn-retry">← Quay lại tìm sân</Link>
+        </div>
+      </div>
+    );
+  }
 
-  /* Tabs */
-  const TABS = [
-    ["lich", "Lịch trống"],
-    ["info", "Sân và giá"],
-    ...(services.length ? [["dv", "Dịch vụ"]] : []),
-  ];
+  const courts = facility.courts ?? [];
+  const courtTypes = [...new Set(courts.map((c) => c.court_type).filter(Boolean))];
+  const selectedSlotObjs = selectedSlotsSorted
+    .map((sid) => slots.find((s) => s.time_slot_id === sid)).filter(Boolean);
+  const startTimeFmt = selectedSlotObjs.length ? formatTime(selectedSlotObjs[0].start_time) : "";
+  const endTimeFmt   = selectedSlotObjs.length ? formatTime(selectedSlotObjs[selectedSlotObjs.length - 1].end_time) : "";
 
   return (
-    <main className="page">
-      <div className="wrap">
+    <div className="cd-page">
+      {/* Breadcrumb */}
+      <div className="cd-breadcrumb">
+        <Link to="/courts" className="cd-back-link">← Quay lại tìm sân</Link>
+      </div>
 
-        {/* ── Breadcrumb ── */}
-        <div className="crumbs">
-          <Link to="/courts">Tìm sân</Link>
-          <span>·</span>
-          <span>{facility.district ?? facility.city}</span>
-          {sports.length > 0 && <><span>·</span><span>{sports.join(", ")}</span></>}
+      {/* Header cơ sở */}
+      <div className="cd-header">
+        <div className="cd-header-img">
+          <div className="cd-header-img-placeholder"><span>🏟️</span></div>
         </div>
-
-        {/* ── fhead: tiêu đề trái + ảnh phải ── */}
-        <header className="fhead">
-          <div className="fhead__text">
-            <h1>{facility.name}</h1>
-            <div className="row small ink2" style={{ "--gap": "14px", marginTop: 6 }}>
-              {facility.address && (
-                <span className="row" style={{ "--gap": "5px" }}>
-                  <Icon name="pin" size={14} />
-                  {[facility.address, facility.district].filter(Boolean).join(", ")}
-                </span>
-              )}
-              {(facility.open_time || facility.close_time) && (
-                <span className="row" style={{ "--gap": "5px" }}>
-                  <Icon name="clock" size={14} />
-                  <span className="mono">{formatTime(facility.open_time)}–{formatTime(facility.close_time)}</span>
-                </span>
-              )}
-              {facility.rating != null && (
-                <span className="rating">
-                  <Icon name="star" size={13} fill />
-                  {Number(facility.rating).toFixed(1)}
-                  {facility.reviews_count != null && <span className="muted">({facility.reviews_count} đánh giá)</span>}
-                </span>
+        <div className="cd-header-info">
+          <div className="cd-header-top">
+            <div>
+              <h1 className="cd-facility-name">{facility.name}</h1>
+              <p className="cd-facility-address">{facility.address}</p>
+              {facility.district && facility.city && (
+                <p className="cd-facility-address">{facility.district}, {facility.city}</p>
               )}
             </div>
           </div>
-
-          {/* Ảnh 3 cột — chỉ render khi có ít nhất 1 ảnh thực */}
-          {(() => {
-            const photos = facility.photos ?? (facility.cover_photo ? [facility.cover_photo] : []);
-            if (!photos.length) return null;
-            return (
-              <div className="fhead__photos">
-                {[0,1,2].map((i) => (
-                  <div key={i}>
-                    <img src={photos[i % photos.length]} alt="" loading="lazy" />
-                  </div>
-                ))}
-              </div>
-            );
-          })()}
-        </header>
-
-        {/* ── Tabs ── */}
-        <div className="seg seg--scroll ftabs" role="tablist" aria-label="Thông tin cơ sở">
-          {TABS.map(([k, l]) => (
-            <button key={k} role="tab" aria-selected={tab===k}
-              className={tab===k ? "on" : ""} onClick={() => setTab(k)}>
-              {l}
-            </button>
-          ))}
+          {courtTypes.length > 0 && (
+            <div className="cd-sports-tags">
+              {courtTypes.map((t) => <span key={t} className="cd-sport-tag">{t}</span>)}
+            </div>
+          )}
+          <div className="cd-hours-row">
+            <span className="cd-hours-label">Giờ mở cửa:</span>
+            <span className="cd-hours-value">
+              {formatTime(facility.open_time)} – {formatTime(facility.close_time)}
+            </span>
+          </div>
+          {facility.description && <p className="cd-description">{facility.description}</p>}
         </div>
+      </div>
 
-        {/* ── Tab: Lịch trống ── */}
-        {tab === "lich" && (
-          <section className="card fboard" aria-label="Lịch trống theo ngày">
-            {/* Dải ngày + chú giải */}
-            <div className="fboard__top">
-              <DayStrip dates={dates} value={selDate} onChange={changeDate} />
-              <SlotLegend />
+      {/* Bản đồ nhỏ */}
+      {facility.latitude != null && facility.longitude != null && (
+        <div className="cd-map-wrap">
+          <MapContainer center={[facility.latitude, facility.longitude]} zoom={15} className="cd-map" scrollWheelZoom={false}>
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'
+            />
+            <Marker position={[facility.latitude, facility.longitude]}>
+              <Popup><strong>{facility.name}</strong><br />{facility.address}</Popup>
+            </Marker>
+          </MapContainer>
+        </div>
+      )}
+
+      {/* Khu vực chọn sân & khung giờ */}
+      <div className="cd-booking-area">
+        <h2 className="cd-section-title">Chọn sân & khung giờ</h2>
+
+        {courts.length === 0 ? (
+          <p className="cd-no-courts">Cơ sở này chưa có sân con nào.</p>
+        ) : (
+          <>
+            {/* Tabs sân */}
+            <div className="cd-court-tabs">
+              {courts.map((c) => (
+                <button
+                  key={c.id}
+                  className={`cd-court-tab${selectedCourt === c.id ? " active" : ""}${c.is_active === false ? " inactive" : ""}`}
+                  onClick={() => c.is_active !== false && handleCourtChange(c.id)}
+                  type="button"
+                  disabled={c.is_active === false}
+                  title={c.is_active === false ? "Sân đang tạm ngưng" : c.court_type}
+                >
+                  <span className="cd-court-tab-name">{c.name}</span>
+                  <span className="cd-court-tab-sport">{c.court_type ?? c.environment}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Strip ngày */}
+            <div className="cd-date-strip">
+              {dates.map((d) => {
+                const { dow, short } = formatDateLabel(d);
+                const isToday = d === today;
+                return (
+                  <button
+                    key={d}
+                    className={`cd-date-btn${selectedDate === d ? " active" : ""}${isToday ? " today" : ""}`}
+                    onClick={() => handleDateChange(d)}
+                    type="button"
+                  >
+                    <span className="cd-date-dow">{isToday ? "Hôm nay" : dow}</span>
+                    <span className="cd-date-day">{short}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Chú giải */}
+            <div className="cd-legend">
+              <span className="cd-legend-item"><span className="cd-legend-dot available" />Trống</span>
+              <span className="cd-legend-item"><span className="cd-legend-dot unavailable" />Đã qua giờ</span>
+              <span className="cd-legend-item"><span className="cd-legend-dot holding" />Đang giữ chỗ</span>
+              <span className="cd-legend-item"><span className="cd-legend-dot booked" />Đã đặt</span>
+              <span className="cd-legend-item"><span className="cd-legend-dot selected" />Đang chọn</span>
             </div>
 
             {/* Lưới slot */}
-            <div className="fboard__grid slots-scroll">
-              {slotsStatus === "loading" && (
-                <div className="stack" style={{ "--gap":"8px" }} aria-hidden="true">
-                  {[0,1,2].map((i) => (
-                    <div key={i} className="skel" style={{ height:52, borderRadius:12 }} />
-                  ))}
-                </div>
-              )}
-
-              {slotsStatus === "error" && (
-                <div className="notice notice--danger">
-                  <Icon name="alert" size={16} />Không tải được lịch khung giờ.
-                  <button className="btn btn--sm btn--ghost" style={{ marginLeft:"auto" }}
-                    onClick={() => loadSlots(selCourt, selDate)}>Thử lại</button>
-                </div>
-              )}
-
-              {slotsStatus === "ready" && slots.length === 0 && (
-                <p className="muted small">Không có khung giờ nào trong ngày này.</p>
-              )}
-
-              {slotsStatus === "ready" && slots.length > 0 && headers.length > 0 && (
-                <div
-                  className="grid-slots"
-                  style={{ "--cols": headers.length, gridTemplateColumns: `140px repeat(${headers.length}, minmax(72px,1fr))` }}
-                >
-                  {/* Header hàng giờ */}
-                  <span />
-                  {headers.map((h) => (
-                    <span key={h} className="gs-h">{formatTime(h)}</span>
-                  ))}
-
-                  {/* Hàng mỗi sân */}
-                  {courts.filter((c) => c.is_active !== false).map((court) => {
-                    /* Map header → slot tương ứng của sân này */
-                    const courtSlots = slots.filter((s) =>
-                      s.court_id == null || s.court_id === court.id
-                    );
-                    const slotByTime = Object.fromEntries(
-                      courtSlots.map((s) => [s.start_time, s])
-                    );
+            {slotsStatus === "loading" && (
+              <div className="cd-slots-loading"><div className="fc-spinner" /><span>Đang tải lịch...</span></div>
+            )}
+            {slotsStatus === "error" && (
+              <div className="cd-slots-error">
+                <p>{slotsError}</p>
+                <button className="cd-btn-retry" type="button" onClick={() => loadSlots(selectedCourt, selectedDate)}>Thử lại</button>
+              </div>
+            )}
+            {slotsStatus === "ready" && slots.length === 0 && (
+              <p className="cd-no-slots">Không có khung giờ nào trong ngày này.</p>
+            )}
+            {slotsStatus === "ready" && slots.length > 0 && (
+              <>
+                <div className="cd-slots-grid">
+                  {slots.map((slot) => {
+                    const status = normalizeStatus(slot.status);
+                    const isSelected = selectedSlots.includes(slot.time_slot_id);
+                    const isSelectable = status === "available";
+                    const label = `${formatTime(slot.start_time)} – ${formatTime(slot.end_time)}`;
                     return (
-                      <SlotRow
-                        key={court.id}
-                        court={court}
-                        slots={headers.map((h) => slotByTime[h]).filter(Boolean)}
-                        selected={selection.courtId === court.id ? selection.ids : []}
-                        onToggle={toggleSlot}
-                      />
+                      <button
+                        key={slot.time_slot_id}
+                        type="button"
+                        className={["cd-slot", `cd-slot--${status}`, isSelected ? "cd-slot--selected" : ""].join(" ").trim()}
+                        onClick={() => handleSlotClick(slot)}
+                        disabled={!isSelectable}
+                        title={
+                          status === "booked"      ? "Đã được đặt" :
+                          status === "holding"     ? "Đang có người giữ chỗ" :
+                          status === "unavailable" ? "Khung giờ đã qua" : label
+                        }
+                      >
+                        <span className="cd-slot-time">{label}</span>
+                        {isSelectable && slot.base_price != null && (
+                          <span className="cd-slot-price">{fmtVnd(slot.base_price)}</span>
+                        )}
+                        {status === "booked"      && <span className="cd-slot-badge">Đã đặt</span>}
+                        {status === "holding"     && <span className="cd-slot-badge">Giữ chỗ</span>}
+                        {status === "unavailable" && <span className="cd-slot-badge">Qua giờ</span>}
+                      </button>
                     );
                   })}
                 </div>
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* ── Tab: Sân và giá ── */}
-        {tab === "info" && (
-          <section className="scroll stack" style={{ "--gap":"18px" }}>
-            {facility.description && (
-              <p className="ink2" style={{ maxWidth:"64ch" }}>{facility.description}</p>
+                <p className="cd-slots-hint">Chỉ chọn được các khung liên tiếp trên cùng một sân.</p>
+              </>
             )}
-            <div className="table-wrap">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Sân</th>
-                    <th>Loại</th>
-                    <th>Môi trường</th>
-                    <th className="r">Giá/giờ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {courts.map((c) => (
-                    <tr key={c.id} style={c.is_active===false ? { opacity:.5 } : null}>
-                      <td>
-                        {c.name}
-                        {c.is_active===false && (
-                          <span className="badge badge--cancelled" style={{ marginLeft:8 }}>Tạm ngưng</span>
-                        )}
-                      </td>
-                      <td>{c.court_type ?? "—"}</td>
-                      <td>{c.environment ?? "—"}</td>
-                      <td className="r num">
-                        {c.base_hourly_rate != null ? formatVnd(c.base_hourly_rate) : "—"}
-                      </td>
-                    </tr>
+
+            {/* Dịch vụ đi kèm */}
+            {services.length > 0 && selectedSlots.length > 0 && (
+              <div className="cd-services">
+                <h3 className="cd-services-title">Dịch vụ đi kèm <span className="cd-services-opt">(tùy chọn)</span></h3>
+                <div className="cd-services-list">
+                  {services.map((svc) => (
+                    <div key={svc.id} className="cd-service-row">
+                      <div className="cd-service-info">
+                        <span className="cd-service-name">{svc.name}</span>
+                        <span className="cd-service-price">{fmtVnd(svc.unit_price)} / {svc.unit}</span>
+                      </div>
+                      <div className="cd-service-qty">
+                        <button type="button" className="cd-qty-btn" onClick={() => handleQtyChange(svc.id, -1)} disabled={!serviceQty[svc.id]}>−</button>
+                        <span className="cd-qty-val">{serviceQty[svc.id] ?? 0}</span>
+                        <button type="button" className="cd-qty-btn" onClick={() => handleQtyChange(svc.id, 1)}>+</button>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-
-        {/* ── Tab: Dịch vụ ── */}
-        {tab === "dv" && (
-          <section className="grid-3 stagger" style={{ alignContent:"start" }}>
-            {services.map((svc) => (
-              <div key={svc.id} className="card card--tight">
-                <div style={{ fontWeight:500 }}>{svc.name}</div>
-                <div className="muted small mono">{formatVnd(svc.unit_price)} / {svc.unit}</div>
+                </div>
               </div>
-            ))}
-          </section>
-        )}
-
-        {/* ── Bottom bar: tóm tắt + nút đặt sân ── */}
-        <div className={"fbar" + (selection.ids.length ? " is-on" : "")}>
-          <div className="fbar__text">
-            {selection.ids.length ? (
-              <>
-                <span className="small ink2">
-                  {courts.find((c) => c.id === selection.courtId)?.name}
-                  {timeRange && <> · <span className="mono">{timeRange}</span></>}
-                </span>
-                <span>
-                  {priceStatus === "loading" && <span className="muted small">Đang tính giá…</span>}
-                  {priceStatus === "ready" && priceData && (
-                    <>
-                      <b className="mono">{formatVnd(priceData.pricing_summary?.grand_total_amount ?? 0)}</b>
-                      <span className="small muted"> · cọc <span className="mono">{formatVnd(priceData.pricing_summary?.deposit_amount ?? 0)}</span></span>
-                    </>
-                  )}
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="small muted">Chọn ô trống trên cùng một sân</span>
-                {minPrice != null && (
-                  <span>Giá từ <b className="mono">{formatVnd(minPrice)}</b><span className="small muted">/giờ</span></span>
-                )}
-              </>
             )}
-          </div>
-          <button
-            className="btn btn--primary btn--lg"
-            disabled={!selection.ids.length || priceStatus !== "ready"}
-            onClick={handleProceed}
-          >
-            Đặt sân <Icon name="arrowR" size={16} />
-          </button>
-        </div>
 
+            {/* Nút Tiếp tục */}
+            {selectedSlots.length > 0 && (
+              <div className="cd-proceed-bar">
+                {priceStatus === "loading" && <span className="cd-price-loading">Đang tính giá...</span>}
+                {priceStatus === "ready" && priceData && (
+                  <span className="cd-price-preview">
+                    {startTimeFmt} – {endTimeFmt} &nbsp;·&nbsp;
+                    <strong>{fmtVnd(priceData.pricing_summary.grand_total_amount)}</strong>
+                  </span>
+                )}
+                <button
+                  className="cd-btn-proceed"
+                  type="button"
+                  onClick={handleProceed}
+                  disabled={priceStatus !== "ready"}
+                >
+                  Tiếp tục →
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
-    </main>
+    </div>
   );
 }
