@@ -1102,6 +1102,7 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
 * **Mô tả:** **Server tính toán toàn bộ số tiền hoàn trả theo QĐ5**. Đo khoảng cách từ thời điểm hiện tại (`:now`) đến giờ bắt đầu chơi (`start_at`) và trả về chi tiết chính sách hoàn cọc để Frontend hiển thị hộp thoại xác nhận.
 * **Quyền truy cập:** Đã đăng nhập (`customer` sở hữu đơn đặt).
 * **Điều kiện hủy:** Đơn phải có trạng thái `PENDING_DEPOSIT` hoặc `DEPOSITED`, và `:now < start_at`. Trả `400 CANNOT_CANCEL_BOOKING` nếu không thỏa điều kiện, `404 BOOKING_NOT_FOUND` nếu đơn không tồn tại, hoặc `403 AUTH_FORBIDDEN` nếu người gọi không có quyền.
+* **Thời gian còn lại:** `hours_until_start` trong phản hồi 4.1 và 4.2 được làm tròn đến một chữ số thập phân. Mức hoàn cọc được tính theo thời gian thực đến `start_at` trước khi làm tròn.
 * **Đơn `PENDING_DEPOSIT`:** Trả `deposit_amount_paid`, `refund_percentage`, `penalty_percentage`, `refund_amount_to_player` và `penalty_amount_to_facility` đều bằng `0`. `rule_matched` và `customer_display_message` cho biết đơn chưa thanh toán cọc. Xem trước chỉ đọc dữ liệu.
 * **Database Transaction:** Không.
 * **Response (200 OK, đơn đã cọc 39.000đ, hủy trước giờ chơi 30 giờ):**
@@ -1153,7 +1154,7 @@ Epic API chia nhỏ hơn 5 chức năng trong `docs/project-proposal.md` (mục 
     * **Nếu `refund > 0`**: Cộng ví khách và ghi `wallet_transactions` loại `REFUND` (`from_wallet_id = ví hệ thống`, `to_wallet_id = ví khách`, `related_booking_id = booking.id`).
     * **Nếu `forfeit > 0`**: Cộng ví chủ sân và ghi `wallet_transactions` loại `FORFEIT` (`from_wallet_id = ví hệ thống`, `to_wallet_id = ví chủ sân`, `related_booking_id = booking.id`).
   * **Bước 5:** Commit Transaction. Với đơn `PENDING_DEPOSIT`, bỏ qua bước 4 và vẫn hủy đơn, nhả khung giờ. `refund_percentage`, `refunded_to_customer_wallet` và `compensated_to_facility_wallet` đều bằng `0`. Số dư ví khách giữ nguyên và không phát sinh giao dịch ví.
-* **Request Body:**
+* **Request Body** có trường bắt buộc `cancel_reason`, dài từ 1 đến 500 ký tự sau khi bỏ khoảng trắng ở đầu và cuối.
   ```json
   {
     "cancel_reason": "Bận việc gia đình đột xuất"

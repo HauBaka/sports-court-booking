@@ -688,7 +688,7 @@ def _evaluate_cancellation(
     amounts = CancellationRefund(0, 0, 0)
     if booking.status == "DEPOSITED":
         amounts = calculate_cancellation_refund(booking.deposit_amount, booking.start_at, now)
-    return time_until_start.total_seconds() / 3600, amounts
+    return round(time_until_start.total_seconds() / 3600, 1), amounts
 
 
 @router.get("/bookings/{id}/cancel-preview", summary="Xem trước số tiền hoàn khi hủy lịch")
@@ -732,7 +732,9 @@ def preview_booking_cancellation(
             "financial_result": {
                 "refund_amount_to_player": amounts.refund,
                 "penalty_amount_to_facility": amounts.forfeit,
-                "customer_display_message": display_message,
+                "customer_display_message": (
+                    f"Bạn đang yêu cầu hủy trước giờ chơi {hours_until_start:g} giờ. {display_message}"
+                ),
             },
         },
     }

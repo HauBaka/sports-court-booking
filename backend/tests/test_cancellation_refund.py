@@ -43,11 +43,12 @@ def test_refund_is_calculated_on_total_booking_deposit():
     assert result == CancellationRefund(50, 3_003, 3_003)
 
 
-def test_refund_rounds_down_and_forfeit_keeps_the_remainder():
-    # HUY-13
-    result = calculate_cancellation_refund(12_345, START_AT, START_AT - timedelta(hours=30))
+@pytest.mark.parametrize(("deposit", "refund", "forfeit"), [(12_345, 6_172, 6_173), (12_347, 6_173, 6_174)])
+def test_refund_rounds_down_and_forfeit_keeps_the_remainder(deposit, refund, forfeit):
+    # HUY-13: 50% của số cọc lẻ luôn có phần dư 0,5đ.
+    result = calculate_cancellation_refund(deposit, START_AT, START_AT - timedelta(hours=18))
 
-    assert result == CancellationRefund(80, 9_876, 2_469)
+    assert result == CancellationRefund(50, refund, forfeit)
 
 
 def test_naive_booking_start_is_vietnam_time_when_now_is_utc():

@@ -1,7 +1,7 @@
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional
-from pydantic import BaseModel, Field
+from typing import Annotated, List, Optional
+from pydantic import BaseModel, Field, StringConstraints
 
 
 class BookingServiceItem(BaseModel):
@@ -77,7 +77,7 @@ class BookingCreateResponseData(BaseModel):
 
 
 class BookingCancelIn(BaseModel):
-    cancel_reason: str
+    cancel_reason: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
 
 
 class ExpireHoldsResponseData(BaseModel):

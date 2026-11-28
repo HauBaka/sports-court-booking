@@ -139,6 +139,9 @@ def test_paid_cancellation_matches_preview_and_transfers_once(cancellation_api, 
     assert evaluation["hours_until_start"] == hours
     assert evaluation["refund_percentage"] == percent and evaluation["penalty_percentage"] == 100 - percent
     financial_result = data["financial_result"]
+    assert financial_result["customer_display_message"].startswith(
+        f"Bạn đang yêu cầu hủy trước giờ chơi {hours} giờ. "
+    )
 
     response = cancel(client, booking_id)
     assert response.status_code == 200
@@ -161,6 +164,40 @@ def test_paid_cancellation_matches_preview_and_transfers_once(cancellation_api, 
         assert {tx.type: tx.amount for tx in transactions} == expected
         # chk_wt_shape yêu cầu created_by là NULL với giao dịch gắn với booking.
         assert all(tx.created_by is None and tx.from_wallet_id is not None for tx in transactions)
+
+
+@pytest.mark.parametrize(("threshold_hours", "percent"), [(24, 50), (12, 0)])
+def test_cancellation_rounds_hours_for_display_only(cancellation_api, monkeypatch, threshold_hours, percent):
+    client, _ = cancellation_api
+    booking_id = book_slot(client, paid=True)
+    now = NOW + timedelta(hours=30 - threshold_hours, seconds=1)
+    monkeypatch.setattr(bookings, "now_vn", lambda: now)
+
+    response = preview(client, booking_id)
+    assert response.status_code == 200
+    evaluation = response.json()["data"]["cancellation_evaluation"]
+    assert evaluation["hours_until_start"] == float(threshold_hours)
+    assert evaluation["refund_percentage"] == percent
+
+    response = cancel(client, booking_id)
+    assert response.status_code == 200
+    assert response.json()["data"]["hours_until_start"] == float(threshold_hours)
+    assert response.json()["data"]["refund_percentage"] == percent
+
+
+@pytest.mark.parametrize("reason", ["", " \t", "x" * 501], ids=["empty", "whitespace", "too-long"])
+def test_invalid_cancel_reason_keeps_booking_unchanged(cancellation_api, reason):
+    client, sessions = cancellation_api
+    booking_id = book_slot(client)
+
+    response = client.post(
+        f"{BASE_PATH}/{booking_id}/cancel", headers=auth_header(CUSTOMER_ID), json={"cancel_reason": reason},
+    )
+
+    assert response.status_code == 422
+    with sessions() as db:
+        assert db.get(Booking, booking_id).status == "PENDING_DEPOSIT"
+        assert db.query(BookingSlot).one().released_at is None
 
 
 def test_cancellation_permissions_and_missing_booking(cancellation_api):
