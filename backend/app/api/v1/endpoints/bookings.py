@@ -1,7 +1,7 @@
 # pyright: reportAttributeAccessIssue=false
 import logging
 import math
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Literal, Optional, cast
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
@@ -11,6 +11,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_current_user, get_db, require_role
+from app.core.booking_time import VN_TZ, booking_time_to_utc
+from app.core.cancellation import CancellationRefund, calculate_cancellation_refund
 from app.core.exceptions import BusinessException
 from app.core.pricing import (
     OrderPricingResult,
@@ -25,15 +27,13 @@ from app.models.facility import Court, CourtSlot, Facility, Service, TimeSlot
 from app.models.pricing import Holiday, PricingRule
 from app.models.user import User
 from app.models.wallet import Wallet
-from app.schemas.booking import BookingCalculatePriceIn, BookingCreateIn
+from app.schemas.booking import BookingCalculatePriceIn, BookingCancelIn, BookingCreateIn
 from app.services.booking_email import build_deposit_confirmation_email, send_email_safely
 from app.services.wallet_service import get_system_wallet, get_wallet_by_user, lock_wallets, transfer
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-VN_TZ = timezone(timedelta(hours=7))
 
 BookingStatus = Literal["PENDING_DEPOSIT", "DEPOSITED", "COMPLETED", "CANCELLED"]
 
@@ -45,9 +45,17 @@ def now_vn() -> datetime:
 
 def _format_utc_timestamp(value: datetime) -> str:
     """Đổi DATETIME giờ Việt Nam trong booking sang UTC trước khi gắn hậu tố Z."""
-    if value.tzinfo is None:
-        value = value.replace(tzinfo=VN_TZ)
-    return value.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return booking_time_to_utc(value).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _get_booking(db: Session, booking_id: int, *, for_update: bool = False) -> Booking:
+    query = db.query(Booking).filter(Booking.id == booking_id)
+    if for_update:
+        query = query.with_for_update().populate_existing()
+    booking = query.first()
+    if booking is None:
+        raise BusinessException(status.HTTP_404_NOT_FOUND, "BOOKING_NOT_FOUND", "Không tìm thấy đơn đặt sân.")
+    return booking
 
 
 def _prepare_pricing(
@@ -273,11 +281,8 @@ def pay_deposit(
     db: Session = Depends(get_db),
 ):
     try:
-        # Cùng thứ tự khóa với 4.2 và 4.3: đơn trước, ví sau. Ngược thứ tự thì request cọc gửi lại
-        # và kết toán cùng đơn deadlock.
-        booking = db.query(Booking).filter(Booking.id == id).with_for_update().populate_existing().first()
-        if not booking:
-            raise BusinessException(status.HTTP_404_NOT_FOUND, "BOOKING_NOT_FOUND", "Không tìm thấy đơn đặt sân.")
+        # Cùng thứ tự khóa với luồng hủy và kết toán: đơn trước, ví sau.
+        booking = _get_booking(db, id, for_update=True)
         if booking.user_id != current_user.id:
             raise BusinessException(
                 status.HTTP_403_FORBIDDEN, "AUTH_FORBIDDEN", "Bạn không có quyền thanh toán cọc cho đơn này."
@@ -916,4 +921,159 @@ def trigger_expire_holds(
         "success": True,
         "message": "Quét và dọn dẹp các lịch giữ chỗ hết hạn thành công.",
         "data": result,
+    }
+
+
+_CANCELLATION_RULES = {
+    80: "QĐ5.1 - Hủy từ 24 giờ trở lên trước giờ chơi (Hoàn 80% cọc)",
+    50: "QĐ5.2 - Hủy từ 12 giờ đến dưới 24 giờ trước giờ chơi (Hoàn 50% cọc)",
+    0: "QĐ5.3 - Hủy dưới 12 giờ trước giờ chơi (Không hoàn cọc)",
+}
+_CANNOT_CANCEL_MESSAGE = "Chỉ có thể hủy đơn đang chờ cọc hoặc đã cọc trước giờ bắt đầu chơi."
+
+
+def _evaluate_cancellation(
+    booking: Booking, current_user: User, now: datetime, *, allow_admin: bool = False
+) -> tuple[float, CancellationRefund]:
+    if booking.user_id != current_user.id and not (
+        allow_admin and any(role.name.lower() == "admin" for role in current_user.roles)
+    ):
+        raise BusinessException(
+            status.HTTP_403_FORBIDDEN, "AUTH_FORBIDDEN", "Bạn không có quyền hủy đơn đặt sân này."
+        )
+
+    time_until_start = booking_time_to_utc(booking.start_at) - booking_time_to_utc(now)
+    if booking.status not in ("PENDING_DEPOSIT", "DEPOSITED") or time_until_start <= timedelta(0):
+        raise BusinessException(status.HTTP_400_BAD_REQUEST, "CANNOT_CANCEL_BOOKING", _CANNOT_CANCEL_MESSAGE)
+
+    amounts = CancellationRefund(0, 0, 0)
+    if booking.status == "DEPOSITED":
+        amounts = calculate_cancellation_refund(booking.deposit_amount, booking.start_at, now)
+    return round(time_until_start.total_seconds() / 3600, 1), amounts
+
+
+@router.get("/bookings/{id}/cancel-preview", summary="Xem trước số tiền hoàn khi hủy lịch")
+def preview_booking_cancellation(
+    id: int,
+    current_user: User = Depends(require_role("customer")),
+    db: Session = Depends(get_db),
+):
+    booking = _get_booking(db, id)
+    now = now_vn()
+    hours_until_start, amounts = _evaluate_cancellation(booking, current_user, now)
+    if booking.status == "PENDING_DEPOSIT":
+        rule = "Đơn chưa thanh toán cọc"
+        penalty_percentage = 0
+        display_message = "Đơn chưa thanh toán cọc nên không có tiền cọc để hoàn."
+    else:
+        rule = _CANCELLATION_RULES[amounts.refund_percentage]
+        penalty_percentage = 100 - amounts.refund_percentage
+        refund_text = f"{amounts.refund:,}".replace(",", ".")
+        display_message = (
+            f"Khi xác nhận hủy, bạn sẽ được hoàn {refund_text} VNĐ vào ví nội bộ theo QĐ5."
+        )
+
+    return {
+        "success": True,
+        "message": "Tính toán chính sách hoàn cọc thành công.",
+        "data": {
+            "booking_id": booking.id,
+            "deposit_amount_paid": amounts.refund + amounts.forfeit,
+            "schedule_info": {
+                "play_date": booking.play_date.isoformat(),
+                "start_at": _format_utc_timestamp(booking.start_at),
+            },
+            "cancellation_evaluation": {
+                "evaluated_at": _format_utc_timestamp(now),
+                "hours_until_start": hours_until_start,
+                "rule_matched": rule,
+                "refund_percentage": amounts.refund_percentage,
+                "penalty_percentage": penalty_percentage,
+            },
+            "financial_result": {
+                "refund_amount_to_player": amounts.refund,
+                "penalty_amount_to_facility": amounts.forfeit,
+                "customer_display_message": (
+                    f"Bạn đang yêu cầu hủy trước giờ chơi {hours_until_start:g} giờ. {display_message}"
+                ),
+            },
+        },
+    }
+
+
+def _refund_cancelled_booking(db: Session, booking: Booking, amounts: CancellationRefund) -> int:
+    customer_wallet = get_wallet_by_user(db, booking.user_id)
+    if not (amounts.refund or amounts.forfeit):
+        return customer_wallet.balance
+
+    system_wallet = get_system_wallet(db)
+    transfers = []
+    if amounts.refund:
+        transfers.append(("REFUND", amounts.refund, customer_wallet.id))
+    if amounts.forfeit:
+        owner_wallet = get_wallet_by_user(db, booking.court.facility.owner_id)
+        transfers.append(("FORFEIT", amounts.forfeit, owner_wallet.id))
+
+    # Khóa tất cả ví sẽ ghi theo cùng một thứ tự trước khi transfer khóa từng cặp ví.
+    lock_wallets(db, [system_wallet.id, *(wallet_id for _, _, wallet_id in transfers)])
+    for transaction_type, amount, wallet_id in transfers:
+        transfer(
+            db,
+            type=transaction_type,
+            amount=amount,
+            from_wallet_id=system_wallet.id,
+            to_wallet_id=wallet_id,
+            related_booking_id=booking.id,
+        )
+    return customer_wallet.balance
+
+
+@router.post("/bookings/{id}/cancel", summary="Hủy lịch đặt sân và xử lý hoàn cọc")
+def cancel_booking(
+    id: int,
+    body: BookingCancelIn,
+    current_user: User = Depends(require_role("customer", "admin")),
+    db: Session = Depends(get_db),
+):
+    try:
+        booking = _get_booking(db, id, for_update=True)
+        now = now_vn()
+        hours_until_start, amounts = _evaluate_cancellation(booking, current_user, now, allow_admin=True)
+        cancelled_at = now.replace(tzinfo=None)  # DATETIME của booking lưu theo giờ Việt Nam.
+        updated = (
+            db.query(Booking)
+            .filter(Booking.id == id, Booking.status == booking.status)
+            .update(
+                {
+                    Booking.status: "CANCELLED",
+                    Booking.cancelled_at: cancelled_at,
+                    Booking.cancel_reason: body.cancel_reason,
+                },
+                synchronize_session=False,
+            )
+        )
+        if updated != 1:
+            raise BusinessException(status.HTTP_400_BAD_REQUEST, "CANNOT_CANCEL_BOOKING", _CANNOT_CANCEL_MESSAGE)
+
+        db.query(BookingSlot).filter(BookingSlot.booking_id == id, BookingSlot.released_at.is_(None)).update(
+            {BookingSlot.released_at: cancelled_at}, synchronize_session=False
+        )
+        customer_balance = _refund_cancelled_booking(db, booking, amounts)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    return {
+        "success": True,
+        "message": "Hủy đơn đặt sân thành công. Tiền cọc đã được xử lý tự động theo quy định.",
+        "data": {
+            "booking_id": id,
+            "status": "CANCELLED",
+            "hours_until_start": hours_until_start,
+            "refund_percentage": amounts.refund_percentage,
+            "refunded_to_customer_wallet": amounts.refund,
+            "compensated_to_facility_wallet": amounts.forfeit,
+            "customer_new_wallet_balance": customer_balance,
+        },
     }
