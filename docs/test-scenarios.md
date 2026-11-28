@@ -1,6 +1,6 @@
 # Kịch bản kiểm thử
 
-Tài liệu liệt kê các tình huống cần kiểm thử của phần xác thực và phân quyền (mục 4), quản lý sân và bảng giá (mục 5) và phần tiền: tính giá, giữ chỗ, đặt cọc, đặt trùng, hủy và hoàn cọc, kết toán, ví. Mỗi kịch bản nêu tình huống và kết quả đúng, chưa đi vào từng bước hay dữ liệu cụ thể. Khi API hoàn thành, mỗi mã kịch bản được triển khai thành test case (unit test, test CSDL hoặc request Postman) mang cùng mã.
+Tài liệu liệt kê các tình huống cần kiểm thử của phần xác thực và phân quyền (mục 4), quản lý sân và bảng giá (mục 5), lịch đặt và ghép đội (mục 7) và phần tiền: tính giá, giữ chỗ, đặt cọc, đặt trùng, hủy và hoàn cọc, kết toán, ví. Mỗi kịch bản nêu tình huống và kết quả đúng, chưa đi vào từng bước hay dữ liệu cụ thể. Khi API hoàn thành, mỗi mã kịch bản được triển khai thành test case (unit test, test CSDL hoặc request Postman) mang cùng mã.
 
 Quy định QĐ1 đến QĐ7 xem ở `docs/project-proposal.md`. Công thức tiền và luồng xử lý xem ở `docs/database-entities.md`.
 
@@ -10,7 +10,7 @@ Quy định QĐ1 đến QĐ7 xem ở `docs/project-proposal.md`. Công thức ti
 | --- | --- | --- | --- | --- | --- | --- |
 | `<NHÓM>-<số>` | Tên story | QĐ liên quan | Dữ liệu và trạng thái cần có | 1. Bước một<br>2. Bước hai | Kết quả cụ thể: số tiền, trạng thái, mã lỗi | Điền khi chạy test |
 
-Nhóm: `AUTH` xác thực và phân quyền, `SAN` quản lý sân và bảng giá, `GIA` tính giá, `DAT` tạo đơn và giữ chỗ, `COC` đặt cọc, `TRUNG` đặt trùng, `HUY` hủy và hoàn cọc, `KT` kết toán, `VI` ví.
+Nhóm: `AUTH` xác thực và phân quyền, `SAN` quản lý sân và bảng giá, `GIA` tính giá, `DAT` tạo đơn và giữ chỗ, `COC` đặt cọc, `TRUNG` đặt trùng, `HUY` hủy và hoàn cọc, `KT` kết toán, `VI` ví, `LICH` lịch đặt, `GHEP` ghép đội.
 
 ## 2. Kịch bản mẫu có số tiền
 
@@ -54,6 +54,8 @@ Cột "Cấp" là nơi nên kiểm: Unit (hàm tính, không cần CSDL), DB (r�
 | DAT-04 | Đặt khung giờ đã qua hoặc đang diễn ra | Bị từ chối | QĐ3 | API |
 | DAT-05 | Đặt ngoài giờ hoạt động của sân, hoặc sân tạm dừng | Bị từ chối | QĐ3 | DB |
 | DAT-06 | Chưa đăng nhập | Bị từ chối 401 | QĐ7 | API |
+| DAT-07 | Chủ sân đặt sân của cơ sở khác | Đặt và cọc như khách | QĐ7 | API |
+| DAT-08 | Chủ sân đặt sân của cơ sở mình | Bị từ chối | QĐ7 | API |
 
 ### Đặt cọc
 
@@ -116,6 +118,32 @@ Cột "Cấp" là nơi nên kiểm: Unit (hàm tính, không cần CSDL), DB (r�
 | VI-03 | Người không phải Admin cấp tiền | Bị từ chối 403 | QĐ6 | API |
 | VI-04 | Xem lịch sử giao dịch | Đủ giao dịch, đúng loại, chỉ thấy ví của mình | QĐ6 | API |
 | VI-05 | Sau cọc, hủy, kết toán | Tổng số dư các ví không đổi, số dư mỗi ví khớp tổng giao dịch của ví đó | QĐ6 | DB |
+
+### Lịch đặt
+
+| Mã | Tình huống | Kết quả đúng | QĐ | Cấp |
+| --- | --- | --- | --- | --- |
+| LICH-01 | Khách xem danh sách đơn | Chỉ thấy đơn của mình | QĐ7 | API |
+| LICH-02 | Chủ sân xem danh sách đơn | Chỉ thấy đơn của cơ sở mình | QĐ7 | API |
+| LICH-03 | Admin xem danh sách đơn | Thấy đơn của mọi người | QĐ7 | API |
+| LICH-04 | Lọc theo trạng thái và ngày | Chỉ trả đơn khớp bộ lọc | | API |
+| LICH-05 | Xem chi tiết đơn | Đủ khung giờ, dịch vụ và bảng kê tiền do server tính | QĐ2 | API |
+| LICH-06 | Xem chi tiết đơn không thuộc quyền | Bị từ chối 403 | QĐ7 | API |
+| LICH-07 | Chưa đăng nhập | Bị từ chối 401 | QĐ7 | API |
+
+### Ghép đội
+
+| Mã | Tình huống | Kết quả đúng | QĐ | Cấp |
+| --- | --- | --- | --- | --- |
+| GHEP-01 | Tạo bài từ đơn đã cọc | Bài "Đang mở", hiện trong danh sách | | API |
+| GHEP-02 | Tạo bài từ đơn chưa cọc | Bị từ chối | | API |
+| GHEP-03 | Tạo bài từ đơn của người khác | Bị từ chối 403 | QĐ7 | API |
+| GHEP-04 | Ứng tuyển | Đơn ứng tuyển "Chờ duyệt", chủ bài thấy trong danh sách ứng viên | | API |
+| GHEP-05 | Tự ứng tuyển bài của mình | Bị từ chối | | API |
+| GHEP-06 | Ứng tuyển trùng | Bị từ chối 409 | | API |
+| GHEP-07 | Duyệt đủ số người cần | Bài tự đóng, ứng tuyển tiếp bị từ chối | | API |
+| GHEP-08 | Người không phải chủ bài duyệt hoặc xem ứng viên | Bị từ chối 403 | QĐ7 | API |
+| GHEP-09 | Hủy đơn đang có bài mở | Bài bị hủy, đơn ứng tuyển chờ duyệt bị từ chối | QĐ5 | API |
 
 ## 4. Kịch bản xác thực và phân quyền - Epic 1 (SCB-67)
 
@@ -228,3 +256,72 @@ Mỗi ca đặt một khung giờ riêng để các ca không đặt trùng nhau
 | VI-06 | Admin tìm người dùng | | Admin, Khách A đã đăng nhập | 1. Admin gọi 5.4 với `search=customer.a`<br>2. Khách A gọi 5.4 | Bước 1: 1 kết quả, `id` 5, `balance` 500.000đ<br>Bước 2: 403 `AUTH_FORBIDDEN` |
 
 Khung giờ đã dùng, để thêm ca mới không trùng: sân 1 ngày T dùng 06:00 đến 08:00, 10:00 đến 12:00, 18:00 đến 21:00. Sân 2 ngày T dùng 06:00 đến 07:00, 18:00 đến 21:00. Ngày mai dùng sân 1 từ 07:00 đến 11:00 và sân 2 từ 08:00 đến 09:00.
+
+## 7. Kịch bản lịch đặt, hủy, kết toán và ghép đội - Epic 3, 4, 6 (SCB-232)
+
+Mục này ghi đủ dữ liệu, các bước và số tiền cho nhóm HUY, KT, VI-05, LICH, GHEP và DAT-07, DAT-08 (chủ sân đặt sân, SCB-254). Khuôn giống mục 6.
+
+Endpoint, ngoài các endpoint ở mục 6:
+
+| Mục | Endpoint | Việc |
+| --- | --- | --- |
+| 3.5 | `GET /bookings` | List đơn, lọc theo role và query `status`, `facility_id`, `court_id`, `from_date`, `to_date` |
+| 3.6 | `GET /bookings/{id}` | Chi tiết đơn |
+| 4.1 | `GET /bookings/{id}/cancel-preview` | Xem trước tiền hoàn |
+| 4.2 | `POST /bookings/{id}/cancel` | Hủy đơn, sinh `REFUND`, `FORFEIT` |
+| 4.3 | `POST /bookings/{id}/complete` | Chủ sân xác nhận hoàn tất, sinh `SETTLE` |
+| 6.1 | `GET /team-posts?status=` | List bài ghép đội |
+| 6.2 | `POST /team-posts` | Tạo bài từ đơn |
+| 6.3 | `POST /team-posts/{id}/applications` | Ứng tuyển |
+| 6.4 | `PATCH /team-posts/{id}/applications/{app_id}` | Chủ bài duyệt hoặc từ chối |
+| 6.5 | `GET /team-posts/{id}/applications` | Chủ bài xem ứng viên. Chưa có trong `api-endpoints.md`, chờ SCB-192 |
+
+Dữ liệu chung như mục 6, thêm:
+
+| Dữ liệu | Giá trị |
+| --- | --- |
+| Ngày U | Thứ Ba sau ngày T (T + 7 ngày). Mục 7 chỉ đặt ngày U nên không trùng khung giờ của mục 6 |
+| Giá ngày U | Khung 17:00 đến 21:00: 130.000đ, cọc 39.000đ. Khung khác: 100.000đ, cọc 30.000đ |
+| Chủ sân cơ sở 2 | `owner2@scb.vn`, không quản lý sân 1, 2, 3 |
+| Khách mới | Tạo trong ca bằng 1.1, email theo mã ca (ví dụ `huy01.<ngẫu nhiên>@scb.vn`), Admin cấp 100.000đ bằng 5.3. Postman dùng Khách A thay khách mới |
+| Đổi giờ chơi | Ca cần mốc T−18h, T−6h hoặc giờ đã qua thì sửa DB: `start_at` = giờ VN hiện tại + n giờ. `bookings` lưu giờ VN (UTC+7), DB chạy UTC nên không dùng `NOW()`. Ca này chỉ chạy bằng pytest |
+
+Mã lỗi 403 của 3.6 và 6.5 chưa có trong spec, tạm ghi `AUTH_FORBIDDEN` theo `api-conventions.md`. Gọi 3.5 với `limit` 100 để đơn cần tìm nằm trong trang đầu.
+
+| Mã | Story | QĐ | Điều kiện trước | Các bước | Kết quả mong đợi |
+| --- | --- | --- | --- | --- | --- |
+| DAT-07 | Chủ sân đặt sân cơ sở khác | QĐ4, QĐ7 | Admin cấp 100.000đ cho Chủ sân cơ sở 2 (`user_id` 4) bằng 5.3 | 1. Chủ sân cơ sở 2 gọi 3.3 đặt sân 2, ngày U, 21:00 đến 22:00<br>2. Gọi 3.4 | Bước 1: 201, `PENDING_DEPOSIT`<br>Bước 2: `DEPOSITED`, `deposit_amount_paid` 30.000đ, ví chủ sân 2 giảm 30.000đ |
+| DAT-08 | Chủ sân đặt sân cơ sở mình | QĐ7 | Chủ sân cơ sở 1 đã đăng nhập | Gọi 3.3 đặt sân 2, ngày U, 22:00 đến 23:00 | 400 `CANNOT_BOOK_OWN_FACILITY`. Không tạo đơn |
+| HUY-01 | Hủy từ 24 giờ trở lên | QĐ5 | Khách mới | 1. Gọi 3.3 đặt sân 1, ngày U, 18:00 đến 19:00, rồi 3.4<br>2. Gọi 4.2<br>3. Gọi 3.1 sân 1 ngày U | Bước 2: `CANCELLED`, `refund_percentage` 80, `refunded_to_customer_wallet` 31.200đ, `compensated_to_facility_wallet` 7.800đ, `customer_new_wallet_balance` 92.200đ<br>Ví chủ sân 1 tăng 7.800đ, ví hệ thống giảm 39.000đ, có 1 `REFUND` và 1 `FORFEIT`<br>Bước 3: khung 18:00 là `AVAILABLE` |
+| HUY-02 | Hủy từ 12 đến dưới 24 giờ | QĐ5 | Khách mới. Chỉ chạy bằng pytest | 1. Gọi 3.3 đặt sân 1, ngày U, 19:00 đến 20:00, rồi 3.4<br>2. Sửa DB: `start_at` = giờ VN + 18 giờ<br>3. Gọi 4.2 | `refund_percentage` 50, hoàn 19.500đ, chủ sân nhận 19.500đ |
+| HUY-03 | Hủy dưới 12 giờ | QĐ5 | Khách mới. Chỉ chạy bằng pytest | 1. Gọi 3.3 đặt sân 1, ngày U, 20:00 đến 21:00, rồi 3.4<br>2. Sửa DB: `start_at` = giờ VN + 6 giờ<br>3. Gọi 4.2 | `refund_percentage` 0, không có `REFUND`<br>Chủ sân nhận 39.000đ qua 1 `FORFEIT`, ví khách vẫn 61.000đ |
+| HUY-06 | Hủy đơn chưa cọc | QĐ5, QĐ7 | Khách A đã đăng nhập | 1. Gọi 3.3 đặt sân 2, ngày U, 10:00 đến 11:00<br>2. Gọi 4.2<br>3. Gọi 3.1 sân 2 ngày U | Bước 2: `CANCELLED`, hoàn 0đ, không có giao dịch ví gắn với đơn<br>Bước 3: khung 10:00 là `AVAILABLE` |
+| HUY-07 | Hủy sau giờ bắt đầu | QĐ7 | Khách mới. Chỉ chạy bằng pytest | 1. Gọi 3.3 đặt sân 2, ngày U, 11:00 đến 12:00, rồi 3.4<br>2. Sửa DB: `start_at` = giờ VN − 1 giờ<br>3. Gọi 4.2 | 400 `CANNOT_CANCEL_BOOKING`. Đơn vẫn `DEPOSITED`, ví không đổi |
+| HUY-08 | Hủy hai lần | QĐ6 | Khách mới | 1. Gọi 3.3 đặt sân 2, ngày U, 12:00 đến 13:00, rồi 3.4<br>2. Gọi 4.2 hai lần liền | Lần 1: 200, hoàn 24.000đ<br>Lần 2: 400 `CANNOT_CANCEL_BOOKING`<br>Đơn chỉ có 1 `REFUND` và 1 `FORFEIT` |
+| HUY-09 | Hủy đơn của người khác | QĐ7 | Khách A, Khách B đã đăng nhập | 1. Khách A gọi 3.3 đặt sân 2, ngày U, 13:00 đến 14:00<br>2. Khách B gọi 4.2 với đơn đó | 403 `AUTH_FORBIDDEN`. Đơn vẫn `PENDING_DEPOSIT` |
+| HUY-10 | Hủy đơn đã hoàn tất | QĐ7 | Khách mới. Chỉ chạy bằng pytest | 1. Gọi 3.3 đặt sân 2, ngày U, 14:00 đến 15:00, rồi 3.4<br>2. Sửa DB: `start_at` = giờ VN − 1 giờ, chủ sân cơ sở 1 gọi 4.3<br>3. Sửa DB: `start_at` = giờ VN + 30 giờ<br>4. Khách gọi 4.2 | Bước 4: 400 `CANNOT_CANCEL_BOOKING`. Đơn vẫn `COMPLETED`, không có `REFUND` |
+| HUY-11 | Xem trước bằng hoàn thực tế | QĐ5 | Khách mới | 1. Gọi 3.3 đặt sân 2, ngày U, 15:00 đến 16:00, rồi 3.4<br>2. Gọi 4.1<br>3. Gọi 4.2 | Bước 2: `refund_percentage` 80, `refund_amount_to_player` 24.000đ, `penalty_amount_to_facility` 6.000đ<br>Bước 3: `refunded_to_customer_wallet` 24.000đ, `compensated_to_facility_wallet` 6.000đ |
+| KT-01 | Kết toán sau giờ chơi | QĐ6, QĐ7 | Khách mới. Chỉ chạy bằng pytest | 1. Gọi 3.3 đặt sân 2, ngày U, 18:00 đến 19:00, rồi 3.4<br>2. Sửa DB: `start_at` = giờ VN − 1 giờ<br>3. Chủ sân cơ sở 1 gọi 4.3 | 200, `COMPLETED`, `settled_deposit_amount` 39.000đ, `transaction_type` `SETTLE`<br>Ví chủ sân 1 tăng 39.000đ, ví hệ thống giảm 39.000đ, có 1 `SETTLE` |
+| KT-02 | Kết toán trước giờ chơi | QĐ7 | Khách mới | 1. Gọi 3.3 đặt sân 2, ngày U, 19:00 đến 20:00, rồi 3.4<br>2. Chủ sân cơ sở 1 gọi 4.3 | 400 `CANNOT_SETTLE_BEFORE_START`. Đơn vẫn `DEPOSITED` |
+| KT-03 | Đơn chưa cọc hoặc đã hủy | QĐ7 | Khách A đã đăng nhập. Chỉ chạy bằng pytest | 1. Khách A gọi 3.3 đặt sân 2, ngày U, 16:00 đến 17:00 (đơn a) và 17:00 đến 18:00 (đơn b)<br>2. Sửa DB: `hold_expires_at = NOW() - INTERVAL 1 MINUTE` cho đơn b, Admin gọi 3.7<br>3. Sửa DB: `start_at` = giờ VN − 1 giờ cho cả hai đơn<br>4. Chủ sân cơ sở 1 gọi 4.3 với từng đơn | Cả hai: 400. Không có `SETTLE`, ví chủ sân 1 không đổi |
+| KT-04 | Kết toán hai lần | QĐ6 | Khách mới. Chỉ chạy bằng pytest | 1. Gọi 3.3 đặt sân 2, ngày U, 20:00 đến 21:00, rồi 3.4<br>2. Sửa DB: `start_at` = giờ VN − 1 giờ<br>3. Chủ sân cơ sở 1 gọi 4.3 hai lần liền | Lần 1: 200<br>Lần 2: 400<br>Đơn chỉ có 1 `SETTLE`, ví chủ sân 1 chỉ tăng 39.000đ |
+| KT-05 | Chủ sân khác kết toán | QĐ7 | Khách mới. Chỉ chạy bằng pytest | 1. Gọi 3.3 đặt sân 1, ngày U, 21:00 đến 22:00, rồi 3.4<br>2. Sửa DB: `start_at` = giờ VN − 1 giờ<br>3. Chủ sân cơ sở 2 gọi 4.3 | 403 `AUTH_FORBIDDEN`. Đơn vẫn `DEPOSITED`, không có `SETTLE` |
+| VI-05 | Tổng tiền không đổi | QĐ6 | Khách mới. Chỉ chạy bằng pytest | 1. Ghi tổng `balance` của mọi ví<br>2. Gọi 3.3 đặt sân 1, ngày U, 06:00 đến 07:00, 3.4, rồi 4.2<br>3. Gọi 3.3 đặt sân 1, ngày U, 07:00 đến 08:00, 3.4. Sửa DB: `start_at` = giờ VN − 1 giờ. Chủ sân cơ sở 1 gọi 4.3<br>4. Ghi lại tổng `balance` | Tổng bước 4 bằng tổng bước 1<br>Mỗi ví: `balance` bằng tổng tiền vào trừ tổng tiền ra trong `wallet_transactions` |
+| LICH-01 | Khách xem lịch của mình | QĐ7 | Khách A đã đăng nhập | 1. Gọi 3.3 đặt sân 1, ngày U, 08:00 đến 09:00<br>2. Gọi 3.5 với `from_date` và `to_date` là ngày U<br>3. Gọi 3.5 với `from_date` và `to_date` là ngày mai | Bước 2: có đơn bước 1<br>Bước 3: không có đơn seed id 1 (của Khách B) |
+| LICH-02 | Chủ sân xem lịch cơ sở mình | QĐ7 | Chủ sân cơ sở 1, cơ sở 2 đã đăng nhập | 1. Chủ sân cơ sở 1 gọi 3.5 với `from_date` và `to_date` là ngày mai<br>2. Chủ sân cơ sở 2 gọi 3.5, cùng ngày | Bước 1: có đơn seed id 1, mọi đơn có `facility_id` 1<br>Bước 2: không có đơn nào `facility_id` 1 |
+| LICH-03 | Admin xem mọi lịch | QĐ7 | Admin đã đăng nhập | Gọi 3.5 với `court_id` 1, `from_date` và `to_date` là ngày mai | Có đơn seed id 1 (của Khách B) |
+| LICH-04 | Lọc theo trạng thái và ngày | | Khách A đã đăng nhập | 1. Gọi 3.3 đặt sân 3, ngày U, 08:00 đến 09:00<br>2. Gọi 3.5 với `status` `PENDING_DEPOSIT`, `from_date` và `to_date` là ngày U<br>3. Gọi 3.5 với `status` `DEPOSITED`, cùng ngày | Bước 2: có đơn bước 1, mọi đơn là `PENDING_DEPOSIT` và `play_date` là ngày U<br>Bước 3: không có đơn bước 1 |
+| LICH-05 | Xem chi tiết đơn | QĐ2 | Khách A đã đăng nhập | 1. Gọi 3.3 đặt sân 1, ngày U, 17:00 đến 18:00<br>2. Gọi 3.6 | `slots` có 1 khung, `multiplier` 1,30, `final_price` 130.000đ<br>`pricing_summary`: `total_amount` 130.000đ, `deposit_amount` 39.000đ, `remaining_amount_due_at_court` 91.000đ |
+| LICH-06 | Xem chi tiết đơn không thuộc quyền | QĐ7 | Khách A, Chủ sân cơ sở 2 đã đăng nhập | 1. Khách A gọi 3.6 với đơn seed id 1<br>2. Chủ sân cơ sở 2 gọi 3.6 với đơn seed id 1 | Cả hai: 403 `AUTH_FORBIDDEN` |
+| LICH-07 | Chưa đăng nhập | QĐ7 | Không gửi `Authorization` | Gọi 3.5 | 401 `AUTH_UNAUTHORIZED` |
+| GHEP-01 | Tạo bài từ đơn đã cọc | | Khách mới | 1. Gọi 3.3 đặt sân 1, ngày U, 09:00 đến 10:00, rồi 3.4<br>2. Gọi 6.2 với `players_needed` 2<br>3. Gọi 6.1 với `status` `OPEN` | Bước 2: 201, `status` `OPEN`<br>Bước 3: có bài bước 2 |
+| GHEP-02 | Tạo bài từ đơn chưa cọc | | Khách A đã đăng nhập | 1. Gọi 3.3 đặt sân 1, ngày U, 10:00 đến 11:00<br>2. Gọi 6.2 với đơn đó | 400 `BOOKING_NOT_DEPOSITED`. Không tạo bài |
+| GHEP-03 | Tạo bài từ đơn của người khác | QĐ7 | Khách A đã đăng nhập | Gọi 6.2 với đơn seed id 1 (của Khách B) | 403 `AUTH_FORBIDDEN`. Không tạo bài |
+| GHEP-04 | Ứng tuyển và xem ứng viên | | Khách mới, Khách B | 1. Khách mới gọi 3.3 đặt sân 1, ngày U, 11:00 đến 12:00, 3.4, rồi 6.2<br>2. Khách B gọi 6.3<br>3. Khách mới gọi 6.5 | Bước 2: 201, `status` `PENDING`<br>Bước 3: có đơn ứng tuyển của Khách B |
+| GHEP-05 | Tự ứng tuyển | | Khách mới | 1. Gọi 3.3 đặt sân 1, ngày U, 12:00 đến 13:00, 3.4, rồi 6.2<br>2. Gọi 6.3 vào bài của mình | 400 `CANNOT_APPLY_OWN_POST` |
+| GHEP-06 | Ứng tuyển trùng | | Khách mới, Khách B | 1. Khách mới gọi 3.3 đặt sân 1, ngày U, 13:00 đến 14:00, 3.4, rồi 6.2<br>2. Khách B gọi 6.3 hai lần liền | Lần 2: 409 `APPLICATION_ALREADY_EXISTS`. Bài chỉ có 1 đơn ứng tuyển |
+| GHEP-07 | Duyệt đủ người thì đóng bài | | Khách mới, Khách A, Khách B | 1. Khách mới gọi 3.3 đặt sân 1, ngày U, 14:00 đến 15:00, 3.4, rồi 6.2 với `players_needed` 1<br>2. Khách B gọi 6.3<br>3. Khách mới gọi 6.4 với `status` `ACCEPTED`<br>4. Khách A gọi 6.3 | Bước 3: 200, `ACCEPTED`. Bài chuyển `CLOSED`<br>Bước 4: 400 `TEAM_POST_CLOSED` |
+| GHEP-08 | Người khác duyệt hoặc xem ứng viên | QĐ7 | Khách mới, Khách A, Khách B | 1. Khách mới gọi 3.3 đặt sân 1, ngày U, 15:00 đến 16:00, 3.4, rồi 6.2<br>2. Khách B gọi 6.3<br>3. Khách A gọi 6.4 với `status` `ACCEPTED` cho đơn của Khách B<br>4. Khách A gọi 6.5 | Bước 3, 4: 403 `AUTH_FORBIDDEN`. Đơn của Khách B vẫn `PENDING` |
+| GHEP-09 | Hủy đơn thì đóng bài | QĐ5 | Khách mới, Khách B | 1. Khách mới gọi 3.3 đặt sân 1, ngày U, 16:00 đến 17:00, 3.4, rồi 6.2<br>2. Khách B gọi 6.3<br>3. Khách mới gọi 4.2<br>4. Gọi 6.1 với `status` `CANCELLED` | Bước 4: có bài, `status` `CANCELLED`<br>Đơn ứng tuyển của Khách B chuyển `REJECTED` |
+
+Khung giờ đã dùng ngày U: sân 1 từ 06:00 đến 22:00, sân 2 từ 10:00 đến 23:00, sân 3 từ 08:00 đến 09:00.

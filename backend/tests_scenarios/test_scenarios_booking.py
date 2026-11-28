@@ -1,57 +1,26 @@
 """Kịch bản đặt sân, đặt cọc, ví (docs/test-scenarios.md mục 6). Chạy trên CSDL vừa nạp seed S2, S3.
 Mỗi ca dùng một khung giờ riêng (bảng cuối mục 6). Chạy lại phải nạp lại seed."""
-import uuid
 from datetime import date, timedelta
 
 import pytest
 
-from .helpers import API, auth, execute, next_tuesday, register, scalar, slot_id
+from .helpers import (
+    ADMIN, API, CUSTOMER_A, CUSTOMER_B, OWNER, OWNER2, auth, balance, book, day_u, deposit, execute, new_customer,
+    next_tuesday, scalar, slot_status, system_balance, wait_for,
+)
 
-CUSTOMER_A, CUSTOMER_B, ADMIN, OWNER = "customer.a@scb.vn", "customer.b@scb.vn", "admin@scb.vn", "owner1@scb.vn"
 T = next_tuesday()
+U = day_u()  # DAT-07, DAT-08 đặt ngày U (mục 7)
 TOMORROW = date.today() + timedelta(days=1)
-
-
-
-def book(client, headers, court_id, play_date, hours, **extra):
-    return client.post(f"{API}/bookings", headers=headers, json={
-        "court_id": court_id, "play_date": play_date.isoformat(),
-        "time_slot_ids": [slot_id(h) for h in hours], "services": [], **extra,
-    })
-
-
-def deposit(client, headers, booking_id):
-    return client.post(f"{API}/bookings/{booking_id}/deposit", headers=headers)
-
-
-def balance(email):
-    return scalar("SELECT w.balance FROM wallets w JOIN users u ON u.id = w.user_id WHERE u.email = :e", e=email)
-
-
-def system_balance():
-    return scalar("SELECT balance FROM wallets WHERE id = 1")
 
 
 def deposit_count(booking_id):
     return scalar("SELECT COUNT(*) FROM wallet_transactions WHERE type = 'DEPOSIT' AND related_booking_id = :b", b=booking_id)
 
 
-def slot_status(client, headers, court_id, play_date, hour):
-    res = client.get(f"{API}/courts/{court_id}/slots", params={"date": play_date.isoformat()}, headers=headers)
-    return next(s["status"] for s in res.json()["data"]["slots"] if s["time_slot_id"] == slot_id(hour))
-
-
 def expire(booking_id):
     # Không chờ 10 phút: đẩy hạn giữ chỗ về quá khứ
     execute("UPDATE bookings SET hold_expires_at = NOW() - INTERVAL 1 MINUTE WHERE id = :b", b=booking_id)
-
-
-def new_customer(client, amount):
-    """Khách mới ví 0đ, Admin cấp `amount` bằng 5.3."""
-    email = f"coc.{uuid.uuid4().hex[:8]}@scb.vn"
-    user_id = register(client, email, "09" + str(uuid.uuid4().int)[:8]).json()["data"]["id"]
-    client.post(f"{API}/admin/wallet-topups", headers=auth(client, ADMIN), json={"user_id": user_id, "amount": amount})
-    return email
 
 
 def test_gia_09_doi_bang_gia_sau_khi_co_don(client):
@@ -116,6 +85,30 @@ def test_dat_06_chua_dang_nhap(client):
     res = book(client, {}, 1, T, [11])
     assert res.status_code == 401
     assert res.json()["error"]["code"] == "AUTH_UNAUTHORIZED"
+
+
+@wait_for("SCB-254")
+def test_dat_07_chu_san_dat_san_co_so_khac(client):
+    client.post(f"{API}/admin/wallet-topups", headers=auth(client, ADMIN), json={"user_id": 4, "amount": 100000})
+    before = balance(OWNER2)
+    owner2 = auth(client, OWNER2)
+    res = book(client, owner2, 2, U, [21])
+    assert res.status_code == 201
+    assert res.json()["data"]["status"] == "PENDING_DEPOSIT"
+    paid = deposit(client, owner2, res.json()["data"]["booking_id"])
+    assert paid.status_code == 200
+    assert paid.json()["data"]["status"] == "DEPOSITED"
+    assert paid.json()["data"]["deposit_amount_paid"] == 30000
+    assert balance(OWNER2) == before - 30000
+
+
+@wait_for("SCB-254")
+def test_dat_08_chu_san_dat_san_co_so_minh(client):
+    bookings_before = scalar("SELECT COUNT(*) FROM bookings")
+    res = book(client, auth(client, OWNER), 2, U, [22])
+    assert res.status_code == 400
+    assert res.json()["error"]["code"] == "CANNOT_BOOK_OWN_FACILITY"
+    assert scalar("SELECT COUNT(*) FROM bookings") == bookings_before
 
 
 def test_coc_01_coc_don_hop_le(client):
