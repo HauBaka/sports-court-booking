@@ -50,6 +50,7 @@ def client():
     db.add(TimeSlot(id=2, start_time=time(17), end_time=time(18)))
     db.add(CourtSlot(court_id=COURT_A, time_slot_id=1, base_price=100_000))
     db.add(CourtSlot(court_id=COURT_A, time_slot_id=2, base_price=100_000))
+    db.add(CourtSlot(court_id=COURT_B, time_slot_id=1, base_price=100_000))
     db.add(Service(id=1, facility_id=FACILITY_A_ID, name="Thuê vợt", unit_price=20_000))
     db.commit()
     db.close()
@@ -165,6 +166,15 @@ class TestListBookings:
         assert list_ids(client, OWNER_A_ID, facility_id=FACILITY_B_ID) == []
         assert list_ids(client, OWNER_A_ID, court_id=COURT_B) == []
 
+    def test_owner_thay_don_co_so_minh_va_don_minh_dat_o_co_so_khac(self, client):
+        at_my_facility = make_booking(court_id=COURT_A)
+        my_booking_elsewhere = make_booking(user_id=OWNER_A_ID, court_id=COURT_B)
+        make_booking(user_id=OTHER_CUSTOMER_ID, court_id=COURT_B)
+
+        assert list_ids(client, OWNER_A_ID) == [at_my_facility, my_booking_elsewhere]
+        assert list_ids(client, OWNER_A_ID, facility_id=FACILITY_B_ID) == [my_booking_elsewhere]
+        assert list_ids(client, OWNER_A_ID, court_id=COURT_B) == [my_booking_elsewhere]
+
     def test_admin_thay_het(self, client, three_bookings):
         assert list_ids(client, ADMIN_ID) == sorted(three_bookings)
 
@@ -253,6 +263,56 @@ class TestListBookings:
 # ==============================================================================
 def detail(client, bid, user_id=CUSTOMER_ID):
     return client.get(f"/api/v1/bookings/{bid}", headers=auth_header(user_id))
+
+
+class TestOwnerBooking:
+    def test_owner_cannot_book_own_facility(self, client):
+        response = client.post("/api/v1/bookings", headers=auth_header(OWNER_A_ID), json={
+            "court_id": COURT_A, "play_date": (now_naive().date() + timedelta(days=2)).isoformat(),
+            "time_slot_ids": [1],
+        })
+
+        assert response.status_code == 400
+        assert response.json()["error"]["code"] == "CANNOT_BOOK_OWN_FACILITY"
+        with TestingSessionLocal() as db:
+            assert db.query(Booking).count() == 0
+            assert db.query(BookingSlot).count() == 0
+
+    def test_owner_can_deposit_view_and_cancel_own_booking_elsewhere(self, client):
+        with TestingSessionLocal() as db:
+            db.get(Wallet, OWNER_A_WALLET).balance = 100_000
+            db.commit()
+
+        headers = auth_header(OWNER_A_ID)
+        response = client.post("/api/v1/bookings", headers=headers, json={
+            "court_id": COURT_B, "play_date": (now_naive().date() + timedelta(days=2)).isoformat(),
+            "time_slot_ids": [1],
+        })
+        assert response.status_code == 201, response.text
+        booking_id = response.json()["data"]["booking_id"]
+        path = f"/api/v1/bookings/{booking_id}"
+        facility_owner_headers = auth_header(OWNER_B_ID)
+        cancel_body = {"cancel_reason": "Đổi lịch chơi"}
+
+        assert client.post(f"{path}/deposit", headers=facility_owner_headers).status_code == 403
+        deposit = client.post(f"{path}/deposit", headers=headers)
+        assert deposit.status_code == 200, deposit.text
+        assert deposit.json()["data"]["wallet_balance_remaining"] == 70_000
+        assert balances()[SYSTEM_WALLET] == SYSTEM_START + 30_000
+
+        booking_detail = detail(client, booking_id, OWNER_A_ID)
+        assert booking_detail.status_code == 200 and booking_detail.json()["data"]["user_id"] == OWNER_A_ID
+        assert client.get(f"{path}/cancel-preview", headers=facility_owner_headers).status_code == 403
+        assert client.post(f"{path}/cancel", headers=facility_owner_headers, json=cancel_body).status_code == 403
+        preview = client.get(f"{path}/cancel-preview", headers=headers)
+        assert preview.status_code == 200, preview.text
+        assert preview.json()["data"]["financial_result"]["refund_amount_to_player"] == 24_000
+
+        cancelled = client.post(f"{path}/cancel", headers=headers, json=cancel_body)
+        assert cancelled.status_code == 200, cancelled.text
+        assert cancelled.json()["data"]["customer_new_wallet_balance"] == 94_000
+        assert status_of(booking_id) == "CANCELLED"
+        assert balances()[OWNER_B_WALLET] == 6_000
 
 
 class TestBookingDetail:
