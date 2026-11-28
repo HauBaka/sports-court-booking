@@ -6,8 +6,15 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+# Cột DEFAULT CURRENT_TIMESTAMP (vd. bookings.created_at) phải ra giờ UTC dù server CSDL đặt múi giờ nào,
+# vì API gắn hậu tố Z. Cột giờ nghiệp vụ (start_at, hold_expires_at...) do backend ghi nên không đổi.
+connect_args = (
+    {"init_command": "SET time_zone = '+00:00'"} if settings.DATABASE_URL.startswith(("mysql", "mariadb")) else {}
+)
+
 engine = create_engine(
     settings.DATABASE_URL,
+    connect_args=connect_args,
     pool_pre_ping=True,
     pool_recycle=3600,
     echo=settings.DEBUG,
