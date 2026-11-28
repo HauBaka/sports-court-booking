@@ -172,6 +172,7 @@ Khi xảy ra lỗi (HTTP Status >= 400), response trả về luôn tuân theo m�
 | | `HOLIDAY_DATE_EXISTS` | **409** | Ngày lễ (`holiday_date`) đã có trong danh sách, không được tạo trùng (ánh xạ từ `uq_holidays_date`). |
 | **4. Đặt sân & Giữ chỗ (Bookings)** | `BOOKING_NOT_FOUND` | **404** | Không tìm thấy đơn đặt sân. |
 | | `SLOT_ALREADY_BOOKED` | **409** | Khung giờ đã có người đặt cọc (`DEPOSITED`) hoặc đang trong thời gian giữ chỗ hợp lệ (`PENDING_DEPOSIT`). |
+| | `CANNOT_BOOK_OWN_FACILITY` | **400** | Chủ sân không thể đặt sân tại cơ sở do mình sở hữu. |
 | | `INVALID_BOOKING_TIME` | **400** | Khung giờ đặt nằm ngoài giờ hoạt động của sân hoặc cơ sở, hoặc giờ bắt đầu không ở tương lai khi đặt sân hay tạo bài ghép đội. |
 | | `CANNOT_CANCEL_BOOKING` | **400** | Chỉ đơn `PENDING_DEPOSIT` hoặc `DEPOSITED` mới được hủy và chỉ khi `:now < start_at`. |
 | | `CANNOT_DEPOSIT_EXPIRED_BOOKING` | **400** | Đơn đặt sân đã quá hạn giữ chỗ 10 phút, không thể thanh toán cọc. |
@@ -220,7 +221,7 @@ Authorization: Bearer <access_token>
 ### 4.4. Phân quyền người dùng (User Roles)
 Hệ thống gồm 3 nhóm quyền người dùng:
 1. `customer`: Khách hàng tìm sân, đặt sân, hủy đặt cọc, xem ví cá nhân.
-2. `owner`: Chủ sân có toàn quyền quản lý cụm sân, sân con, giờ mở cửa, bảng giá thời điểm của mình; xem lịch đặt và ví chủ sân.
+2. `owner`: Chủ sân quản lý cụm sân, sân con, giờ mở cửa và bảng giá thời điểm của mình, đồng thời xem lịch đặt và ví chủ sân. Chủ sân có thể đặt sân ở cơ sở khác, thanh toán cọc và hủy đơn do mình đặt.
 3. `admin`: Quản trị viên cấp cao: cấp tiền vào ví người dùng (QĐ6), quản lý tài khoản toàn hệ thống.
 
 ---
